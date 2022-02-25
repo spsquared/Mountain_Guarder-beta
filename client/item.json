@@ -1,0 +1,346 @@
+{
+    "missing": {
+        "name": "Missing Item",
+        "description": "Invalid item!",
+        "slotType": "none",
+        "rarity": "missing",
+        "effects": []
+    },
+    "simplewoodenbow": {
+        "name": "Simple Wooden Bow",
+        "description": "A cheap, simple bow of standard wood",
+        "slotType": "weapon",
+        "rarity": 0,
+        "damage": 10,
+        "damageType": "ranged",
+        "critChance": 0.02,
+        "critPower": 0.02,
+        "knockback": 0.1,
+        "useTime": "10",
+        "manaCost": "0",
+        "heldAngle": -45,
+        "heldDistance": 32,
+        "effects": []
+    },
+    "simplewoodensword": {
+        "name": "Simple Wooden Sword",
+        "description": "A trusty sword made of wood. Not much, but it'll do",
+        "slotType": "weapon",
+        "rarity": 0,
+        "damage": 10,
+        "damageType": "melee",
+        "critChance": 0.1,
+        "critPower": 0.15,
+        "knockback": 4,
+        "useTime": 15,
+        "manaCost": 0,
+        "heldAngle": 45,
+        "heldDistance": 64,
+        "effects": []
+    },
+    "simplewoodenstaff": {
+        "name": "Simple Wooden Staff",
+        "description": "A trusty wooden staff. Not the most powerful but will do",
+        "slotType": "weapon",
+        "rarity": 0,
+        "damage": 1,
+        "damageType": "magic",
+        "critChance": 0.05,
+        "critPower": 0.1,
+        "knockback": 0.2,
+        "useTime": 10,
+        "manaCost": 10,
+        "heldAngle": 45,
+        "heldDistance": 64,
+        "effects": []
+    },
+    "leatherhood": {
+        "name": "Leather Hood",
+        "description": "A hood. Attached to nothing. Made of leather",
+        "slotType": "helmet",
+        "rarity": 0,
+        "effects": [
+            {
+                "id": "rangedDamage",
+                "value": 1.1
+            },
+            {
+                "id": "meleeDamage",
+                "value": 0.9
+            },
+            {
+                "id": "magicDamage",
+                "value": 0.7
+            },
+            {
+                "id": "critChance",
+                "value": 0.1
+            }
+        ]
+    },
+    "leatherhat": {
+        "name": "Leather Hat",
+        "description": "A nice hat made of leather",
+        "slotType": "helmet",
+        "rarity": 0,
+        "effects": [
+            {
+                "id": "rangedDamage",
+                "value": 0.8
+            },
+            {
+                "id": "meleeDamage",
+                "value": 0.9
+            },
+            {
+                "id": "magicDamage",
+                "value": 1.1
+            },
+            {
+                "id": "critChance",
+                "value": 0.1
+            },
+            {
+                "id": "critPower",
+                "value": 0.03
+            }
+        ]
+    },
+    "woodenhelmet": {
+        "name": "Wooden Helmet",
+        "description": "A helmet made of wood?",
+        "slotType": "helmet",
+        "rarity": 0,
+        "effects": [
+            {
+                "id": "rangedDamage",
+                "value": 0.8
+            },
+            {
+                "id": "meleeDamage",
+                "value": 1.1
+            },
+            {
+                "id": "magicDamage",
+                "value": 0.8
+            },
+            {
+                "id": "critChance",
+                "value": 0.1
+            },
+            {
+                "id": "damageReduction",
+                "value": 5
+            }
+        ]
+    },
+    "leatherarmor": {
+        "name": "Leather Armor",
+        "description": "Simple armor made from leather",
+        "slotType": "armor",
+        "rarity": 0,
+        "effects": [
+            {
+                "id": "damageReduction",
+                "value": 2
+            },
+            {
+                "id": "defense",
+                "value": 0.05
+            }
+        ]
+    },
+    "steelbow": {
+        "name": "Steel Bow",
+        "description": "A simple bow forged from steel",
+        "slotType": "weapon",
+        "rarity": 1,
+        "damage": 1,
+        "damageType": "ranged",
+        "critChance": 0.04,
+        "critPower": 0.05,
+        "knockback": 0.1,
+        "useTime": 10,
+        "manaCost": 0,
+        "heldAngle": -45,
+        "heldDistance": 32,
+        "effects": []
+    },
+    "steelbroadsword": {
+        "name": "Steel Broadsword",
+        "description": "A decent broadsword forged from pure steel",
+        "slotType": "weapon",
+        "rarity": 1,
+        "damage": 12,
+        "damageType": "melee",
+        "critChance": 0.15,
+        "critPower": 0.2,
+        "knockback": 3,
+        "useTime": 12,
+        "manaCost": 0,
+        "heldAngle": 45,
+        "heldDistance": 64,
+        "effects": []
+    },
+    "steelcutlass": {
+        "name": "Steel Cutlass",
+        "description": "A thick-bladed heavy cutlass of steel",
+        "slotType": "weapon",
+        "rarity": 1,
+        "damage": 14,
+        "damageType": "melee",
+        "critChance": 0.15,
+        "critPower": 0.18,
+        "knockback": 2,
+        "useTime": 20,
+        "manaCost": 0,
+        "heldAngle": 45,
+        "heldDistance": 64,
+        "effects": []
+    },
+    "steelstaff": {
+        "name": "Steel Staff",
+        "description": "A nice steel staff that can better harness mana power",
+        "slotType": "weapon",
+        "rarity": 1,
+        "damage": 12,
+        "damageType": "magic",
+        "critChance": 0.1,
+        "critPower": 0.08,
+        "knockback": 0,
+        "useTime": 8,
+        "manaCost": 9,
+        "heldAngle": 45,
+        "heldDistance": 64,
+        "effects": []
+    },
+    "simplewizardhat": {
+        "name": "Simple Wizard's Hat",
+        "description": "A simple hat fit for a young wizard",
+        "slotType": "helmet",
+        "rarity": 1,
+        "effects": [
+            {
+                "id": "rangedDamage",
+                "value": 0.9
+            },
+            {
+                "id": "meleeDamage",
+                "value": 0.9
+            },
+            {
+                "id": "magicDamage",
+                "value": 1.2
+            },
+            {
+                "id": "critPower",
+                "value": 0.1
+            }
+        ]
+    },
+    "whitefabrichood": {
+        "name": "White Fabric Hood",
+        "description": "An archers hood, partly cotton, dyed white",
+        "slotType": "helmet",
+        "rarity": 1,
+        "effects": [
+            {
+                "id": "rangedDamage",
+                "value": 1.2
+            },
+            {
+                "id": "meleeDamage",
+                "value": 0.8
+            },
+            {
+                "id": "magicDamage",
+                "value": 0.9
+            }
+        ]
+    },
+    "steelhelmet": {
+        "name": "Steel Helmet",
+        "description": "A decent, lightweight helmet of steel",
+        "slotType": "helmet",
+        "rarity": 1,
+        "effects": [
+            {
+                "id": "rangedDamage",
+                "value": 0.9
+            },
+            {
+                "id": "meleeDamage",
+                "value": 1.2
+            },
+            {
+                "id": "magicDamage",
+                "value": 0.9
+            },
+            {
+                "id": "damageReduction",
+                "value": 3
+            },
+            {
+                "id": "defense",
+                "value": 0.1
+            }
+        ]
+    },
+    "steelarmor": {
+        "name": "Steel Chestplate",
+        "description": "Sturdy, \"lightweight\" steel armor great for close-combat fighting",
+        "slotType": "armor",
+        "rarity": 1,
+        "effects": [
+            {
+                "id": "meleeDamage",
+                "value": 1.08
+            },
+            {
+                "id": "damageReduction",
+                "value": 4
+            },
+            {
+                "id": "defense",
+                "value": 0.1
+            }
+        ]
+    },
+    "titaniumstaff": {
+        "name": "Titanium Staff",
+        "description": "A lightweight version of the steel staff. The higher quality means the Purple can phase through solid matter.",
+        "slotType": "weapon",
+        "rarity": 2,
+        "damage": 11,
+        "damageType": "magic",
+        "critChance": 0.1,
+        "critPower": 0.3,
+        "knockback": 0,
+        "useTime": 8,
+        "manaCost": 10,
+        "heldAngle": 45,
+        "heldDistance": 64,
+        "effects": []
+    },
+    "christmas2021": {
+        "name": "Season's Yeetings",
+        "description": "Merry Christmas from the Mountain Guarder devs! - Yeetmas 2021",
+        "slotType": "weapon",
+        "rarity": -1,
+        "damage": 1,
+        "damageType": "magic",
+        "critChance": 0.01,
+        "critPower": 0.5,
+        "knockback": 4,
+        "useTime": 20,
+        "manaCost": 8,
+        "heldAngle": 90,
+        "heldDistance": 48,
+        "effects": [
+            {
+                "id": "damageReduction",
+                "value": -10
+            }
+        ]
+    }
+}

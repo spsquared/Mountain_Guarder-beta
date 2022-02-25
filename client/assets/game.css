@@ -1,0 +1,662 @@
+/* Copyright (C) 2022 Radioactive64 */
+
+/* game container */
+#gameContainer {
+    display: none;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    padding: 0px 0px;
+    margin: 0px 0px;
+    width: 100vw;
+    height: 100vh;
+    overflow: clip;
+}
+
+/* canvas */
+#ctx {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100vw;
+    height: 100vh;
+    background-color: black;
+    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    z-index: 0;
+}
+
+/* crossHair */
+#crossHair {
+    position: absolute;
+    top: -22px;
+    left: -22px;
+    z-index: 1;
+}
+
+/* region name */
+#regionName {
+    display: none;
+    position: absolute;
+    top: 15%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 60px;
+    color: #362b20;
+    background-color: #725640;
+    border: 2px solid #000000;
+    margin-right: -50%;
+    padding: 8px 20px;
+    animation-duration: 2s;
+    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    z-index: 1;
+}
+
+/* bossbars */
+#bossBars {
+    position: absolute;
+    text-align: center;
+    z-index: 4;
+}
+.bossBar {
+    width: 70vw;
+    height: 40px;
+    margin: 4px;
+    border: 2px solid black;
+    font-family: 'Pixel';
+    font-size: 30px;
+    color: white;
+    text-align: center;
+}
+.bossBar-value {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    background-color: red;
+}
+.bossBar-text {
+    padding-top: -2px;
+}
+
+/* fade */
+#fade {
+    display: none;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100vw;
+    height: 100vh;
+    background-color: black;
+    animation-duration: 0.5s;
+    z-index: 2;
+}
+
+/* stats */
+#stats {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    width: 160px;
+    height: 80px;
+    z-index: 4;
+}
+#statsHP {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: 150px;
+    height: 20px;
+    background-color: black;
+}
+#statsHPvalue {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 20px;
+    background-color: red;
+}
+#statsHPtext {
+    position: absolute;
+    left: 0px;
+    top: -2px;
+    width: 150px;
+    height: 20px;
+    text-align: center;
+}
+#statsXP {
+    position: absolute;
+    top: 30px;
+    left: 5px;
+    width: 150px;
+    height: 20px;
+    background-color: black;
+}
+#statsXPvalue {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 20px;
+    background-color: #CCCC00;
+}
+#statsXPtext {
+    position: absolute;
+    left: 0px;
+    top: -2px;
+    width: 150px;
+    height: 20px;
+    text-align: center;
+}
+#statsMN {
+    position: absolute;
+    top: 55px;
+    left: 5px;
+    width: 150px;
+    height: 20px;
+    background-color: black;
+}
+#statsMNvalue {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 20px;
+    background-color: #FF9900;
+}
+#statsMNtext {
+    position: absolute;
+    left: 0px;
+    top: -2px;
+    width: 150px;
+    height: 20px;
+    text-align: center;
+}
+
+/* footer/debug */
+#version {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    font-size: 10px;
+    color: black;
+    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    z-index: 4;
+}
+#fps {
+    position: absolute;
+    bottom: 20px;
+    left: 16px;
+    background-color: #00000055;
+    padding: 2px 4px;
+    padding-right: 2px;
+    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    z-index: 4;
+}
+#tps {
+    display: none;
+    position: absolute;
+    bottom: 46px;
+    left: 16px;
+    background-color: #00000055;
+    padding: 2px 4px;
+    padding-right: 2px;
+    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    z-index: 4;
+}
+#ping {
+    display: none;
+    position: absolute;
+    bottom: 72px;
+    left: 16px;
+    background-color: #00000055;
+    padding: 2px 4px;
+    padding-right: 2px;
+    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    z-index: 4;
+}
+#mousepos {
+    display: none;
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background-color: #00000055;
+    padding: 2px 4px;
+    padding-right: 2px;
+    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    z-index: 4;
+}
+#position {
+    display: none;
+    position: absolute;
+    top: 42px;
+    right: 16px;
+    background-color: #00000055;
+    padding: 2px 4px;
+    padding-right: 2px;
+    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    z-index: 4;
+}
+#enttotal {
+    display: none;
+    position: absolute;
+    top: 72px;
+    right: 16px;
+    background-color: #00000055;
+    padding: 2px 4px;
+    padding-right: 2px;
+    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    z-index: 4;
+}
+#entmonst {
+    display: none;
+    position: absolute;
+    top: 98px;
+    right: 16px;
+    background-color: #00000055;
+    padding: 2px 4px;
+    padding-right: 2px;
+    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    z-index: 4;
+}
+#entproj {
+    display: none;
+    position: absolute;
+    top: 124px;
+    right: 16px;
+    background-color: #00000055;
+    padding: 2px 4px;
+    padding-right: 2px;
+    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    z-index: 4;
+}
+#entpart {
+    display: none;
+    position: absolute;
+    top: 150px;
+    right: 16px;
+    background-color: #00000055;
+    padding: 2px 4px;
+    padding-right: 2px;
+    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    z-index: 4;
+}
+
+/* chat */
+#chat {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    width: 40vw;
+    height: 160px;
+    border: 1px solid black;
+    padding: 0px 4px;
+    z-index: 4;
+}
+#chatText {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 40vw;
+    height: 140px;
+    padding: 0px 4px;
+    overflow-y: scroll;
+    overflow-x: clip;
+    overflow-wrap: break-word;
+}
+#chatInput {
+    position: absolute;
+    bottom: -1px;
+    left: -1px;
+    width: 40vw;
+    padding: 0px 4px;
+    border: 1px solid black;
+}
+@keyframes special {
+    0% {
+        color: red
+    }
+    50% {
+        color: #FF9900
+    }
+    100% {
+        color: red;
+    }
+}
+
+/* dropdown menu */
+#dropdownMenu {
+    position: absolute;
+    top: 0px;
+    left: 165px;
+    width: 80px;
+    z-index: 4;
+}
+#dropdownMenuItems {
+    display: none;
+}
+
+/* windows */
+.window {
+    display: none;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 900px;
+    height: 600px;
+    pointer-events: all;
+    z-index: 5;
+}
+.window .window-bar {
+    padding-left: 6px;
+    padding-top: 3px;
+    height: 24px;
+    background-color: #2c2216;
+    cursor: move;
+}
+.window .window-bar .window-close {
+    cursor: pointer;
+    display: inline-block;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background-color: crimson;
+    width: 16px;
+    height: 16px;
+    padding-left: 2px;
+    padding-top: 2px;
+}
+.window .window-body {
+    position: absolute;
+    top: 36px;
+    left: 8px;
+}
+.window .window-select {
+    position: absolute;
+    top: 32px;
+    right: 8px;
+    border: 1px solid black;
+    width: 106px;
+    height: 558px;
+}
+.window .window-select .window-select-button {
+    position: relative;
+    top: 3px;
+    left: 1px;
+    width: 103px;
+    height: 30px;
+    margin-bottom: 4px;
+    margin-right: 1px;
+}
+
+/* window container */
+#windows {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    padding: 0px 0px;
+    margin: 0px 0px;
+    width: 100%;
+    height: 100%;
+    overflow: clip;
+    pointer-events: none;
+}
+
+/* inventory */
+#inventoryItemsBlock {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 460px;
+    height: 524px;
+}
+#inventoryItemsBody {
+    margin-top: 8px;
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
+}
+#inventoryEquipsBlock {
+    position: absolute;
+    top: 0px;
+    left: 470px;
+    width: 296px;
+    height: 524px;
+}
+#inventoryEquipsBody {
+    margin-top: 8px;
+    width: 100%;
+    height: 100%;
+}
+#inventoryCraftingBlock {
+    position: absolute;
+    top: 0px;
+    left: 470px;
+    width: 296px;
+    height: 524px;
+}
+#inventoryCraftingBody {
+    margin-top: 8px;
+    width: 100%;
+    height: 100%;
+}
+
+/* inventory slot structure */
+.invSlot {
+    display: inline-block;
+    width: 70px;
+    height: 70px;
+    margin: 8px 8px;
+    background-color: #362A1E;
+    border: 1px solid black;
+}
+.invSlotImg {
+    position: relative;
+    top: 3px;
+    left: 3px;
+    width: 64px;
+    height: 64px;
+    padding: 0px 0px;
+    -webkit-user-drag: none;
+    cursor: grab;
+}
+.invSlotImgNoGrab {
+    position: relative;
+    top: 3px;
+    left: 3px;
+    width: 64px;
+    height: 64px;
+    -webkit-user-drag: none;
+}
+
+/* inventory drag/hover blocks */
+#invHoverTooltip {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    opacity: 0;
+    padding: 0px 4px;
+    max-width: 150px;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    z-index: 6;
+}
+#invDragImg {
+    display: none;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    cursor: grabbing;
+    pointer-events: none;
+    z-index: 6;
+}
+
+/* inventory equip slots */
+#invSlotEquipweapon {
+    position: absolute;
+    top: 123px;
+    left: 19px;
+    transform: scaleX(-1);
+}
+#invSlotEquipweapon2 {
+    position: absolute;
+    top: 123px;
+    left: 191px;
+}
+#invSlotEquiphelmet {
+    position: absolute;
+    top: 80px;
+    left: 105px;
+}
+#invSlotEquiparmor {
+    position: absolute;
+    top: 166px;
+    left: 105px;
+}
+#invSlotEquipboots {
+    position: absolute;
+    top: 252px;
+    left: 105px;
+}
+#invSlotEquipoffhand {
+    position: absolute;
+    top: 338px;
+    left: 191px;
+}
+#invSlotEquipkey {
+    position: absolute;
+    top: 338px;
+    left: 19px;
+}
+#invSlotEquipcrystal {
+    position: absolute;
+    top: 338px;
+    left: 105px;
+}
+
+/* world map */
+#map {
+    width: 600px;
+    background-color: transparent;
+    background-image: url(/client/img/assets/window_map.png);
+    background-size: contain;
+    background-repeat: no-repeat;
+    border-color: transparent;
+    image-rendering: pixelated;
+}
+#mapBar {
+    background-color: #362A1E55;
+    border-color: transparent;
+}
+#mapContainer {
+    position: absolute;
+    top: 20px;
+    left: 48px;
+    width: 488px;
+    height: 488px;
+    overflow: clip;
+    cursor: grab;
+}
+#worldMap {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    transform: scale(1);
+}
+
+/* settings */
+#settings {
+    width: 500px;
+    height: 300px;
+}
+#settingsSelect {
+    height: 258px;
+}
+#playerPreview {
+    width: 120px;
+    height: 200px;
+    border: 2px solid black;
+}
+
+/* debug console */
+#debugConsole {
+    width: 400px;
+    height: 600px;
+    background-color: #111111AA;
+}
+#debugLog {
+    width: 376px;
+    height: 524px;
+    margin-bottom: 8px;
+    overflow-y: scroll;
+    overflow-x: clip;
+    overflow-wrap: break-word;
+}
+#debugInput {
+    width: 376px;
+}
+#debugConsoleSelect {
+    display: none;
+}
+
+/* spuhctator div */
+#deathScreen {
+    display: none;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100vw;
+    height: 100vh;
+    background-color: #FF000055;
+    z-index: 3;
+}
+#youdied {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    text-align: center;
+    font-size: 60px;
+    transform: translate(-50%, -250%);
+}
+#respawnTimer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    text-align: center;
+    font-size: 30px;
+    transform: translate(-50%, -220%);
+}
+#respawnButton {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    font-size: 20px;
+    opacity: 0.75;
+    background-color: #555555;
+    border: 4px outset grey;
+    transform: translate(-50%, -50%);
+}
+#respawnButton:hover {
+    opacity: 1;
+}
+#respawnButton:active {
+    opacity: 1;
+    border: 4px inset grey;
+}
+
+/* christmas2021 */
+@keyframes christmas {
+    0% {
+        color: red;
+    }
+    49% {
+        color: red;
+    }
+    50% {
+        color: green;
+    }
+    100% {
+        color: green;
+    }
+}
