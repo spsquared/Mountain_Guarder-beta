@@ -1,27 +1,23 @@
 ---
-name: Bug Report
-about: Create a report to help us improve Mountain Guarder!
-title: BUG - [Summary here]
+name: Bug Diagnosis
+about: Give your diagnosis on what caused a particular bug
+title: BUG DIAGNUSIS - [Summary here]
 labels: bug
 assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug does.
+**Issue number**
+Link to the original bug report on https://github.com/definitely-nobody-is-here/Mountain_Guarder/issues
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Do '...'
-3. Go here: '...'
-4. See this: '...'
+**Describe the cause**
+A clear and concise description of what causes the bug.
+
+**Location of cause**
+Where in the code is the cause?
 
 **Screenshots**
-If applicable, add screenshots to help explain your problem.
+If applicable, add screenshots to help explain your diagnosis.
 
-**Environment**
- - Version [e.g. v0.4.3]
-
-**Logs**
-If applicable, place as many event logs as possible. Logs include log.txt, the server console, and client console(s).
+**Possible fixes**
+If possible, please suggest a possible fix for the bug.
