@@ -9,6 +9,7 @@ assignees: ''
 
 **Issue number**
 Link to the original bug report on https://github.com/definitely-nobody-is-here/Mountain_Guarder/issues
+If no issue has been created, describe the bug. Do not create a bug report.
 
 **Describe the cause**
 A clear and concise description of what causes the bug.
