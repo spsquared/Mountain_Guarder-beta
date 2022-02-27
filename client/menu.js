@@ -259,6 +259,7 @@ socket.on('signInState', function(state) {
         case 'disabled':
             signInError.style.color = '#FF0000';
             signInError.innerText = 'You cannot create or delete accounts on beta servers.';
+            break;
         default: 
             signInError.style.color = '#FF0000';
             signInError.innerText = 'Invalid signInState: ' + state;

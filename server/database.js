@@ -53,9 +53,11 @@ ACCOUNTS = {
         if (ENV.offlineMode) return 0;
         if (username == 'unavailable') return 3;
         if (await getCredentials(username) == false) {
-            var status = await writeCredentials(username, password);
-            if (status) {
-                return 0;
+            if (typeof username == 'string' && typeof password == 'string') {
+                var status = await writeCredentials(username, password);
+                if (status) {
+                    return 0;
+                }
             }
             warn('Failed to sign up!');
             return 2;

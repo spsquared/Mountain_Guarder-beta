@@ -134,6 +134,8 @@ Entity = function() {
         self.y = (self.y+self.lasty)/2;
         self.width += Math.abs(self.x-self.lastx);
         self.height += Math.abs(self.y-self.lasty);
+        self.gridx = Math.floor(self.x/64);
+        self.gridy = Math.floor(self.y/64);
         self.collisionBoxSize = Math.max(self.width, self.height);
         if (self.checkPointCollision()) colliding = true;
         self.x = x;
@@ -141,6 +143,8 @@ Entity = function() {
         self.width = width;
         self.height = height;
         self.collisionBoxSize = Math.max(self.width, self.height);
+        self.gridx = Math.floor(self.x/64);
+        self.gridy = Math.floor(self.y/64);
         return colliding;
     };
     self.checkLargeSpannedCollision = function() {
@@ -171,8 +175,8 @@ Entity = function() {
     self.doPointCollision = function() {
         var collisions = [];
         var range = Math.ceil(self.collisionBoxSize/128);
-        for (var x = self.gridx-range-1; x <= self.gridx+range+1; x++) {
-            for (var y = self.gridy-range-1; y <= self.gridy+range+1; y++) {
+        for (var x = self.gridx-range; x <= self.gridx+range; x++) {
+            for (var y = self.gridy-range; y <= self.gridy+range; y++) {
                 collisions.push(Collision.getColEntity(self.map, x, y, self.layer));
             }
         }
@@ -590,12 +594,12 @@ Rig = function() {
                         var remainingymove = self.ymove;
                         var remainingxknockback = Math.round(self.xknockback);
                         var remainingyknockback = Math.round(self.yknockback);
-                        var max = Math.max(Math.abs(remainingxmove), Math.max(Math.abs(remainingymove), Math.max(Math.abs(remainingxknockback), Math.max(Math.abs(remainingyknockback)))));
+                        var max = Math.max(Math.abs(remainingxmove), Math.abs(remainingymove), Math.abs(remainingxknockback), Math.abs(remainingyknockback));
                         var xdirmove = remainingxmove/Math.ceil(max/self.width) || 0;
                         var ydirmove = remainingymove/Math.ceil(max/self.height) || 0;
                         var xdirknockback = remainingxknockback/Math.ceil(max/self.width) || 0;
                         var ydirknockback = remainingyknockback/Math.ceil(max/self.height) || 0;
-                        while (Math.abs(remainingxmove) > 0 || Math.abs(remainingymove) > 0 || Math.abs(remainingxknockback) > 0 || Math.abs(remainingyknockback) > 0) {
+                        while (!(-1 < remainingxmove && remainingxmove < 1) || !(-1 < remainingymove && remainingymove < 1) || !(-1 < remainingxknockback && remainingxknockback < 1) || !(-1 < remainingyknockback && remainingyknockback < 1)) {
                             self.lastx = self.x;
                             self.lasty = self.y;
                             var lastmovexmove = movexmove;
@@ -631,10 +635,14 @@ Rig = function() {
                                 remainingxknockback = lastremainingxknockback;
                                 remainingyknockback = lastremainingyknockback;
                                 if (changedDir) {
-                                    if (self.xmove != 0) remainingxmove = Math.max(0, Math.abs(self.xmove)-movexmove)*Math.abs(self.xmove)/self.xmove;
-                                    else remainingxmove = 0;
-                                    if (self.ymove != 0) remainingymove = Math.max(0, Math.abs(self.ymove)-moveymove)*Math.abs(self.ymove)/self.ymove;
-                                    else remainingymove = 0;
+                                    self.aiControl();
+                                    remainingxmove = Math.max(0, Math.abs(self.xmove)-movexmove)*Math.abs(self.xmove)/self.xmove || 0;
+                                    remainingymove = Math.max(0, Math.abs(self.ymove)-moveymove)*Math.abs(self.ymove)/self.ymove || 0;
+                                    var max = Math.max(Math.abs(remainingxmove), Math.abs(remainingymove), Math.abs(remainingxknockback), Math.abs(remainingyknockback));
+                                    xdirmove = remainingxmove/Math.ceil(max/self.width) || 0;
+                                    ydirmove = remainingymove/Math.ceil(max/self.height) || 0;
+                                    xdirknockback = remainingxknockback/Math.ceil(max/self.width) || 0;
+                                    ydirknockback = remainingyknockback/Math.ceil(max/self.height) || 0;
                                 }
                                 var movexmove2 = 0;
                                 var moveymove2 = 0;
@@ -651,22 +659,18 @@ Rig = function() {
                                 var ydirmove2 = remainingymove2/Math.ceil(Math.abs(max2)) || 0;
                                 var xdirknockback2 = remainingxknockback2/Math.ceil(Math.abs(max2)) || 0;
                                 var ydirknockback2 = remainingyknockback2/Math.ceil(Math.abs(max2)) || 0;
-                                while (Math.abs(remainingxmove2) > 0 || Math.abs(remainingymove2) > 0 || Math.abs(remainingxknockback2) > 0 || Math.abs(remainingyknockback2) > 0) {
+                                while (!(-1 < remainingxmove2 && remainingxmove2 < 1) || !(-1 < remainingymove2 && remainingymove2 < 1) || !(-1 < remainingxknockback2 && remainingxknockback2 < 1) || !(-1 < remainingyknockback2 && remainingyknockback2 < 1)) {
                                     if (self.aiControlled) if (self.aiControl()) {
-                                        if (self.xmove != 0) remainingxmove = Math.max(0, Math.abs(self.xmove)-movexmove)*Math.abs(self.xmove)/self.xmove;
-                                        else remainingxmove = 0;
-                                        if (self.ymove != 0) remainingymove = Math.max(0, Math.abs(self.ymove)-moveymove)*Math.abs(self.ymove)/self.ymove;
-                                        else remainingymove = 0;
-                                        if (xdirmove != 0) remainingxmove2 = Math.max(0, Math.abs(xdirmove)-movexmove2)*Math.abs(xdirmove)/xdirmove;
-                                        else remainingxmove2 = 0;
-                                        if (ydirmove != 0) remainingymove2 = Math.max(0, Math.abs(ydirmove)-moveymove2)*Math.abs(ydirmove)/ydirmove;
-                                        else remainingymove2 = 0;
-                                        var max = Math.max(Math.abs(remainingxmove), Math.max(Math.abs(remainingymove), Math.max(Math.abs(remainingxknockback), Math.max(Math.abs(remainingyknockback)))));
+                                        remainingxmove = Math.max(0, Math.abs(self.xmove)-movexmove)*Math.abs(self.xmove)/self.xmove || 0;
+                                        remainingymove = Math.max(0, Math.abs(self.ymove)-moveymove)*Math.abs(self.ymove)/self.ymove || 0;
+                                        var max = Math.max(Math.abs(remainingxmove), Math.abs(remainingymove), Math.abs(remainingxknockback), Math.abs(remainingyknockback));
                                         xdirmove = remainingxmove/Math.ceil(max/self.width) || 0;
                                         ydirmove = remainingymove/Math.ceil(max/self.height) || 0;
                                         xdirknockback = remainingxknockback/Math.ceil(max/self.width) || 0;
                                         ydirknockback = remainingyknockback/Math.ceil(max/self.height) || 0;
-                                        var max2 = Math.max(Math.abs(remainingxmove2), Math.max(Math.abs(remainingymove2), Math.max(Math.abs(remainingxknockback2), Math.max(Math.abs(remainingyknockback2)))));
+                                        remainingxmove2 = Math.max(0, Math.abs(xdirmove)-movexmove2)*Math.abs(xdirmove)/xdirmove || 0;
+                                        remainingymove2 = Math.max(0, Math.abs(ydirmove)-moveymove2)*Math.abs(ydirmove)/ydirmove || 0;
+                                        var max2 = Math.max(Math.abs(remainingxmove2), Math.abs(remainingymove2), Math.abs(remainingxknockback2), Math.abs(remainingyknockback2));
                                         xdirmove2 = remainingxmove2/Math.ceil(Math.abs(max2)) || 0;
                                         ydirmove2 = remainingymove2/Math.ceil(Math.abs(max2)) || 0;
                                         xdirknockback2 = remainingxknockback2/Math.ceil(Math.abs(max2)) || 0;
@@ -692,11 +696,14 @@ Rig = function() {
                                     remainingyknockback2 -= ydirknockback2;
                                     self.gridx = Math.floor(self.x/64);
                                     self.gridy = Math.floor(self.y/64);
-                                    if (self.doPointCollision()) break;
+                                    // if (self.doPointCollision()) break;
+                                    self.doPointCollision();
+                                    // problem with point collision where player moves too far and then detects collision when it is too late
+                                    // console.log(Math.abs(self.x-self.lastx))
                                     self.checkLayer();
                                     self.checkSlowdown();
                                 }
-                                if (self.checkPointCollision()) break;
+                                // if (self.checkPointCollision()) break;
                             }
                         }
                     }

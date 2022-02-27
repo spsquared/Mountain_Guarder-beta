@@ -28,6 +28,7 @@ app.use(limiter);
 var started = false;
 ENV = {
     offlineMode: require('./config.json').offlineMode,
+    useDiscordWebhook: require('./config.json').useDiscordWebhook,
     ops: [
         'Sampleprovider(sp)',
         'suvanth',
@@ -310,6 +311,11 @@ s = {
     spawnMonster: function(type, x, y, map, layer) {
         var monster = new Monster(type, parseInt(x), parseInt(y), map, parseInt(layer));
         return monster;
+    },
+    slaughter: function() {
+        for (var i in Monster.list) {
+            Monster.list[i].onDeath();
+        }
     },
     nuke: function(username) {
         var player = s.findPlayer(username);
