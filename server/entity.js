@@ -698,8 +698,7 @@ Rig = function() {
                                     self.gridy = Math.floor(self.y/64);
                                     // if (self.doPointCollision()) break;
                                     self.doPointCollision();
-                                    // problem with point collision where player moves too far and then detects collision when it is too late
-                                    // console.log(Math.abs(self.x-self.lastx))
+                                    // if (self.creds) console.log(Math.abs(self.x-self.lastx))
                                     self.checkLayer();
                                     self.checkSlowdown();
                                 }
@@ -854,125 +853,125 @@ Rig = function() {
                 var x = self.x;
                 var y = self.y;
                 if (self.ai.entityTarget.layer != self.layer) {
-                    var openList = [];
-                    var closedList = [];
-                    for (var py in Layer.grid[self.map][self.layer]) {
-                        for (var px in Layer.grid[self.map][self.layer][py]) {
-                            if (Layer.grid[self.map][self.layer][py][px]) openList.push({
-                                x: px,
-                                y: py,
-                                layer: self.layer,
-                                f: 0,
-                                g: 0,
-                                h: 0,
-                                parent: null,
-                                visited: false,
-                                closed: false
-                            });
-                        }
-                    }
-                    while (openList.length > 0) {
-                        var lowest = 0;
-                        for (var i in openList) {
-                            if (openList[i].f < openList[lowest].f) lowest = i;
-                        }
-                        var currentNode = openList[lowest];
+                    // var openList = [];
+                    // var closedList = [];
+                    // for (var py in Layer.grid[self.map][self.layer]) {
+                    //     for (var px in Layer.grid[self.map][self.layer][py]) {
+                    //         if (Layer.grid[self.map][self.layer][py][px]) openList.push({
+                    //             x: px,
+                    //             y: py,
+                    //             layer: self.layer,
+                    //             f: 0,
+                    //             g: 0,
+                    //             h: 0,
+                    //             parent: null,
+                    //             visited: false,
+                    //             closed: false
+                    //         });
+                    //     }
+                    // }
+                    // while (openList.length > 0) {
+                    //     var lowest = 0;
+                    //     for (var i in openList) {
+                    //         if (openList[i].f < openList[lowest].f) lowest = i;
+                    //     }
+                    //     var currentNode = openList[lowest];
 
-                        // return if found
-                        if (currentNode.layer == self.ai.entityTarget.layer) {
-                            self.ai.posTarget = {
-                                x: entityTarget.x,
-                                y: entityTarget.y
-                            };
-                            self.x = currentNode.x;
-                            self.y = currentNode.y;
-                            var path = self.ai.pathtoPos();
-                            if (path[0]) {
-                                var retpath = path.reverse();
-                                var parent = closedList[currentNode.parent];
-                                var current = currentNode;
-                                while (parent) {
-                                    self.ai.posTarget = {
-                                        x: current.x,
-                                        y: current.y
-                                    };
-                                    self.x = parent.x;
-                                    self.y = parent.y;
-                                    path = self.ai.pathtoPos();
-                                    retpath = retpath.concat(path);
-                                    current = parent;
-                                    parent = closedList[current.parent];
-                                }
-                                retpath.reverse();
-                                console.log(retpath);
-                                return retpath;
-                            }
-                        }
+                    //     // return if found
+                    //     if (currentNode.layer == self.ai.entityTarget.layer) {
+                    //         self.ai.posTarget = {
+                    //             x: entityTarget.x,
+                    //             y: entityTarget.y
+                    //         };
+                    //         self.x = currentNode.x;
+                    //         self.y = currentNode.y;
+                    //         var path = self.ai.pathtoPos();
+                    //         if (path[0]) {
+                    //             var retpath = path.reverse();
+                    //             var parent = closedList[currentNode.parent];
+                    //             var current = currentNode;
+                    //             while (parent) {
+                    //                 self.ai.posTarget = {
+                    //                     x: current.x,
+                    //                     y: current.y
+                    //                 };
+                    //                 self.x = parent.x;
+                    //                 self.y = parent.y;
+                    //                 path = self.ai.pathtoPos();
+                    //                 retpath = retpath.concat(path);
+                    //                 current = parent;
+                    //                 parent = closedList[current.parent];
+                    //             }
+                    //             retpath.reverse();
+                    //             console.log(retpath);
+                    //             return retpath;
+                    //         }
+                    //     }
             
-                        // var removeIndex = openList.indexOf(currentNode);
-                        // openList.splice(removeIndex, 1);
-                        // currentNode.closed = true;
-                        // closedList.push(currentNode);
+                    //     // var removeIndex = openList.indexOf(currentNode);
+                    //     // openList.splice(removeIndex, 1);
+                    //     // currentNode.closed = true;
+                    //     // closedList.push(currentNode);
                         
-                        // var neighbors = findNeighbors(currentNode.x, currentNode.y);
-                        // for (var i in neighbors) {
-                        //     var neighbor = neighbors[i];
+                    //     // var neighbors = findNeighbors(currentNode.x, currentNode.y);
+                    //     // for (var i in neighbors) {
+                    //     //     var neighbor = neighbors[i];
                             
-                        //     if (neighbor.closed || !neighbor.walkable) {
-                        //         continue;
-                        //     }
+                    //     //     if (neighbor.closed || !neighbor.walkable) {
+                    //     //         continue;
+                    //     //     }
         
-                        //     var nodeAccessable = false;
-                        //     for (var i in self.collisionList) {
-                        //         var tempnode = self.collisionList[i];
-                        //         if (tempnode.x >= neighbor.x - 2 && tempnode.x <= neighbor.x + 2 && tempnode.y <= neighbor.y + 4 && tempnode.y > neighbor.y) {
-                        //             nodeAccessable = true;
-                        //         }
-                        //     }
-                        //     if (currentNode.y <= neighbor.y) {
-                        //         nodeAccessable = true;
-                        //     }
+                    //     //     var nodeAccessable = false;
+                    //     //     for (var i in self.collisionList) {
+                    //     //         var tempnode = self.collisionList[i];
+                    //     //         if (tempnode.x >= neighbor.x - 2 && tempnode.x <= neighbor.x + 2 && tempnode.y <= neighbor.y + 4 && tempnode.y > neighbor.y) {
+                    //     //             nodeAccessable = true;
+                    //     //         }
+                    //     //     }
+                    //     //     if (currentNode.y <= neighbor.y) {
+                    //     //         nodeAccessable = true;
+                    //     //     }
                             
-                        //     if (!nodeAccessable) {
-                        //         continue;
-                        //     }
+                    //     //     if (!nodeAccessable) {
+                    //     //         continue;
+                    //     //     }
             
-                        //     var gScore = currentNode.g+1;
-                        //     var bestG = false;
-                        //     if (!neighbor.visited) {
-                        //         bestG = true;
-                        //         neighbor.visited = true;
-                        //         self.visitedList.push(neighbor);
-                        //         self.openList.push(neighbor);
-                        //     } else if (gScore < neighbor.g) {
-                        //         bestG = true;
-                        //     }
-                        //     if (bestG) {
-                        //         neighbor.e = 0;
-                        //         var closest = {
-                        //             side1: false,
-                        //             side2: false,
-                        //             above: false,
-                        //             below: false,
-                        //         };
-                        //         for (var i in self.collisionList) {
-                        //             var tempnode = self.collisionList[i];
-                        //             if (tempnode.x >= neighbor.x - 2 && tempnode.x <= neighbor.x + 2) closest.side2 = true;
-                        //             if (tempnode.x >= neighbor.x - 1 && tempnode.x <= neighbor.x + 1) closest.side1 = true;
-                        //             if (tempnode.y == neighbor.y - 1) closest.above = true;
-                        //             if (tempnode.y == neighbor.y + 1) closest.below = true;
-                        //         }
-                        //         if (closest.side2) neighbor.e -= 1;
-                        //         if (closest.side1) neighbor.e -= 1;
-                        //         if (closest.above) neighbor.e += 4;
-                        //         if (closest.below) neighbor.e -= 2;
-                        //         neighbor.parent = self.closedList.indexOf(currentNode);
-                        //         neighbor.g = gScore;
-                        //         neighbor.h = self.heuristic(neighbor.x, neighbor.y, x2, y2);
-                        //         neighbor.f = neighbor.g + neighbor.h + neighbor.e;
-                        //     }
-                        // }
-                    }
+                    //     //     var gScore = currentNode.g+1;
+                    //     //     var bestG = false;
+                    //     //     if (!neighbor.visited) {
+                    //     //         bestG = true;
+                    //     //         neighbor.visited = true;
+                    //     //         self.visitedList.push(neighbor);
+                    //     //         self.openList.push(neighbor);
+                    //     //     } else if (gScore < neighbor.g) {
+                    //     //         bestG = true;
+                    //     //     }
+                    //     //     if (bestG) {
+                    //     //         neighbor.e = 0;
+                    //     //         var closest = {
+                    //     //             side1: false,
+                    //     //             side2: false,
+                    //     //             above: false,
+                    //     //             below: false,
+                    //     //         };
+                    //     //         for (var i in self.collisionList) {
+                    //     //             var tempnode = self.collisionList[i];
+                    //     //             if (tempnode.x >= neighbor.x - 2 && tempnode.x <= neighbor.x + 2) closest.side2 = true;
+                    //     //             if (tempnode.x >= neighbor.x - 1 && tempnode.x <= neighbor.x + 1) closest.side1 = true;
+                    //     //             if (tempnode.y == neighbor.y - 1) closest.above = true;
+                    //     //             if (tempnode.y == neighbor.y + 1) closest.below = true;
+                    //     //         }
+                    //     //         if (closest.side2) neighbor.e -= 1;
+                    //     //         if (closest.side1) neighbor.e -= 1;
+                    //     //         if (closest.above) neighbor.e += 4;
+                    //     //         if (closest.below) neighbor.e -= 2;
+                    //     //         neighbor.parent = self.closedList.indexOf(currentNode);
+                    //     //         neighbor.g = gScore;
+                    //     //         neighbor.h = self.heuristic(neighbor.x, neighbor.y, x2, y2);
+                    //     //         neighbor.f = neighbor.g + neighbor.h + neighbor.e;
+                    //     //     }
+                    //     // }
+                    // }
                 } else {
                     self.ai.posTarget = {
                         x: self.ai.entityTarget.gridx,

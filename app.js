@@ -1,7 +1,7 @@
 // Copyright (C) 2022 Radioactive64
 // Go to README.md for more information
 
-const version = 'v0.8.4';
+const version = 'v0.9.0';
 require('./server/log.js');
 console.info('\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' copyright (C) Radioactive64 2022');
 appendLog('Mountain Guarder ' + version + ' copyright (C) Radioactive64 2022', 'log');
@@ -511,7 +511,7 @@ forceQuit = function(err, code) {
             console.error(err);
             appendLog(err, 'error');
             insertChat('[!] SERVER ENCOUNTERED A CATASTROPHIC ERROR. [!]', 'error');
-            insertChat(err.message, 'error');
+            if (!err.message.includes('https://discord.com/api/webhooks/')) insertChat(err.message, 'error');
             appendLog('Error code ' + code, 'error');
             error('STOP.');
             clearInterval(updateTicks);

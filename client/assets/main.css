@@ -173,12 +173,13 @@ a:focus {
 }
 #backgroundImg {
     position: absolute;
+    top: -32px;
     left: 0px;
-    top: 0px;
     padding: 0px 0px;
     margin: 0px 0px;
-    width: calc(100% + 20px);
-    transform: translateZ(-100px) scale(11) translateY(50%) translateY(-50vh) translateY(-100px);
+    width: 100vw;
+    transform-origin: top;
+    transform: translateZ(-100px) scale(11) translateY(calc(-50vh * 0.9));
 }
 #backgroundShade {
     position: sticky;
