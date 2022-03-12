@@ -6,18 +6,33 @@ var firstload = false;
 CTXRAW = document.getElementById('ctx');
 CTX = CTXRAW.getContext('2d');
 MAPS = [];
+NO_OFFSCREENCANVAS = false;
+if (typeof OffscreenCanvas == 'undefined') NO_OFFSCREENCANVAS = true;
+function createCanvas(w, h) {
+    if (NO_OFFSCREENCANVAS) {
+        var canvas = document.createElement('canvas');
+        canvas.width = w || 1;
+        canvas.height = h || 1;
+        return canvas;
+    } else {
+        return new OffscreenCanvas(w || 1, h || 1);
+    }
+};
 LAYERS = {
-    map0: new OffscreenCanvas(100, 100),
-    entity0: new OffscreenCanvas(100, 100),
-    map1: new OffscreenCanvas(100, 100),
-    entity1: new OffscreenCanvas(100, 100),
+    map0: createCanvas(),
+    entity0: null,
+    mapvariables: [],
+    entitylayers: [],
+    map1: createCanvas(),
+    entity1: createCanvas(),
     mlower: null,
     elower: null,
+    mvariables: [],
+    elayers: [],
     mupper: null,
     eupper: null
 };
 LAYERS.mlower = LAYERS.map0.getContext('2d');
-LAYERS.elower = LAYERS.entity0.getContext('2d');
 LAYERS.mupper = LAYERS.map1.getContext('2d');
 LAYERS.eupper = LAYERS.entity1.getContext('2d');
 OFFSETX = 0;
@@ -78,10 +93,18 @@ function resetCanvases() {
     LAYERS.map0.height = window.innerHeight*scale;
     LAYERS.mlower.scale(scale, scale);
     resetCanvas(LAYERS.map0);
-    LAYERS.entity0.width = window.innerWidth*scale;
-    LAYERS.entity0.height = window.innerHeight*scale;
-    LAYERS.elower.scale(scale, scale);
-    resetCanvas(LAYERS.entity0);
+    for (var i in LAYERS.mapvariables) {
+        LAYERS.mapvariables[i].width = window.innerWidth*scale;
+        LAYERS.mapvariables[i].height = window.innerHeight*scale;
+        LAYERS.mvariables[i].scale(scale, scale);
+        resetCanvas(LAYERS.mapvariables[i]);
+    }
+    for (var i in LAYERS.entitylayers) {
+        LAYERS.entitylayers[i].width = window.innerWidth*scale;
+        LAYERS.entitylayers[i].height = window.innerHeight*scale;
+        LAYERS.elayers[i].scale(scale, scale);
+        resetCanvas(LAYERS.entitylayers[i]);
+    }
     LAYERS.map1.width = window.innerWidth*scale;
     LAYERS.map1.height = window.innerHeight*scale;
     LAYERS.mupper.scale(scale, scale);

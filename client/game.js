@@ -73,7 +73,8 @@ function loadMap(name) {
                         chunkwidth: 0,
                         chunkheight: 0,
                         chunks: [],
-                        chunkJSON: []
+                        chunkJSON: [],
+                        layerCount: 0
                     };
                     for (var i in json.layers) {
                         if (json.layers[i].visible) {
@@ -117,6 +118,7 @@ function loadMap(name) {
                                 if (json.layers[i].offsetx) MAPS[name].chunkJSON[0][0][json.layers[i].name].offsetX = json.layers[i].offsetx;
                                 if (json.layers[i].offsety) MAPS[name].chunkJSON[0][0][json.layers[i].name].offsetY = json.layers[i].offsety;
                             }
+                            if (json.layers[i].name.includes('Variable')) MAPS[name].layerCount++;
                         }
                     }
                     loadedassets++;
@@ -127,6 +129,7 @@ function loadMap(name) {
             };
             request.onerror = function(){
                 console.error('There was a connection error. Please retry');
+                reject();
             };
             request.send();
         } else {
@@ -141,10 +144,25 @@ function MGHC() {};
 var drawLoop = null;
 function drawFrame() {
     if (loaded && player) {
-        LAYERS.mlower.clearRect(0, 0, window.innerWidth, window.innerHeight);
-        LAYERS.elower.clearRect(0, 0, window.innerWidth, window.innerHeight);
-        LAYERS.mupper.clearRect(0, 0, window.innerWidth, window.innerHeight);
-        LAYERS.eupper.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        var scale = dpr*(settings.renderQuality/100);
+        for (var i = 0; i < MAPS[player.map].layerCount; i++) {
+            if (LAYERS.mapvariables[i] == null) {
+                LAYERS.mapvariables[i] = createCanvas();
+                LAYERS.mvariables[i] = LAYERS.mapvariables[i].getContext('2d');
+                LAYERS.mapvariables[i].width = window.innerWidth*scale;
+                LAYERS.mapvariables[i].height = window.innerHeight*scale;
+                LAYERS.mvariables[i].scale(scale, scale);
+                resetCanvas(LAYERS.mapvariables[i]);
+            }
+            if (LAYERS.entitylayers[i] == null) {
+                LAYERS.entitylayers[i] = createCanvas();
+                LAYERS.elayers[i] = LAYERS.entitylayers[i].getContext('2d');
+                LAYERS.entitylayers[i].width = window.innerWidth*scale;
+                LAYERS.entitylayers[i].height = window.innerHeight*scale;
+                LAYERS.elayers[i].scale(scale, scale);
+                resetCanvas(LAYERS.entitylayers[i]);
+            }
+        }
         CTX.clearRect(0, 0, window.innerWidth, window.innerHeight);
         OFFSETX = 0;
         OFFSETY = 0;
@@ -153,7 +171,10 @@ function drawFrame() {
         drawMap();
         Entity.draw();
         CTX.drawImage(LAYERS.map0, 0, 0, window.innerWidth, window.innerHeight);
-        CTX.drawImage(LAYERS.entity0, 0, 0, window.innerWidth, window.innerHeight);
+        for (var i = 0; i < MAPS[player.map].layerCount; i++) {
+            if (LAYERS.entitylayers[i]) CTX.drawImage(LAYERS.entitylayers[i], 0, 0, window.innerWidth, window.innerHeight);
+            if (LAYERS.mapvariables[i]) CTX.drawImage(LAYERS.mapvariables[i], 0, 0, window.innerWidth, window.innerHeight);
+        }
         CTX.drawImage(LAYERS.map1, 0, 0, window.innerWidth, window.innerHeight);
         CTX.drawImage(LAYERS.entity1, 0, 0, window.innerWidth, window.innerHeight);
         drawDebug();
@@ -168,14 +189,26 @@ function drawMap() {
         }
         lastmap = player.map;
     }
+    LAYERS.mlower.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    LAYERS.mupper.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    for (var i in LAYERS.mvariables) {
+        LAYERS.mvariables[i].clearRect(0, 0, window.innerWidth, window.innerHeight);
+    }
     LAYERS.mlower.save();
     LAYERS.mlower.translate((window.innerWidth/2)-player.x,(window.innerHeight/2)-player.y);
     LAYERS.mupper.save();
     LAYERS.mupper.translate((window.innerWidth/2)-player.x,(window.innerHeight/2)-player.y);
+    for (var i in LAYERS.mvariables) {
+        LAYERS.mvariables[i].save();
+        LAYERS.mvariables[i].translate((window.innerWidth/2)-player.x,(window.innerHeight/2)-player.y);
+    }
     for (var y in MAPS[player.map].chunks) {
         for (var x in MAPS[player.map].chunks[y]) {
             LAYERS.mlower.drawImage(MAPS[player.map].chunks[y][x].lower, (x*MAPS[player.map].chunkwidth*64)+OFFSETX, (y*MAPS[player.map].chunkheight*64)+OFFSETY, MAPS[player.map].chunkwidth*64, MAPS[player.map].chunkheight*64);
             LAYERS.mupper.drawImage(MAPS[player.map].chunks[y][x].upper, (x*MAPS[player.map].chunkwidth*64)+OFFSETX, (y*MAPS[player.map].chunkheight*64)+OFFSETY, MAPS[player.map].chunkwidth*64, MAPS[player.map].chunkheight*64);
+            for (var z in MAPS[player.map].chunks[y][x].variables) {
+                LAYERS.mvariables[z].drawImage(MAPS[player.map].chunks[y][x].variables[z], (x*MAPS[player.map].chunkwidth*64)+OFFSETX, (y*MAPS[player.map].chunkheight*64)+OFFSETY, MAPS[player.map].chunkwidth*64, MAPS[player.map].chunkheight*64);
+            }
         }
     }
     LAYERS.mupper.fillStyle = '#000000';
@@ -189,10 +222,15 @@ function drawMap() {
     LAYERS.mupper.fillRect(width+offsetX+OFFSETX, offsetY+OFFSETY, 1024, height+2048);
     LAYERS.mlower.restore();
     LAYERS.mupper.restore();
+    for (var i in LAYERS.mvariables) {
+        LAYERS.mvariables[i].restore();
+    }
 };
 async function resetRenderedChunks() {
     if (player) {
         MAPS[player.map].chunks = [];
+        LAYERS.mapvariables = [];
+        LAYERS.mvariables = [];
         await updateRenderedChunks();
     }
 };
@@ -219,16 +257,26 @@ async function updateRenderedChunks() {
     }
 };
 function renderChunk(x, y, map) {
-    var templower = new OffscreenCanvas(MAPS[map].chunkwidth * 64, MAPS[map].chunkheight * 64);
-    var tempupper = new OffscreenCanvas(MAPS[map].chunkwidth * 64, MAPS[map].chunkheight * 64);
+    var templower = createCanvas(MAPS[map].chunkwidth * 64, MAPS[map].chunkheight * 64);
+    var tempupper = createCanvas(MAPS[map].chunkwidth * 64, MAPS[map].chunkheight * 64);
     var tlower = templower.getContext('2d');
     var tupper = tempupper.getContext('2d');
     resetCanvas(tempupper);
     resetCanvas(templower);
+    var tempvariables = [];
+    var tvariables = [];
     for (var i in MAPS[player.map].chunkJSON[y][x]) {
         var above = false;
+        var variable = -1;
+        var vindex = 0;
         if (i.includes('Above')) above = true;
-        if (i.includes('Variable')) if (parseInt(i.replace('Variable', '')) >= player.layer) above = true;
+        if (i.includes('Variable')) {
+            variable = parseInt(i.replace('Variable', ''));
+            vindex = tempvariables.length;
+            tempvariables.push(createCanvas(MAPS[map].chunkwidth * 64, MAPS[map].chunkheight * 64));
+            tvariables.push(tempvariables[vindex].getContext('2d'));
+            resetCanvas(tempvariables[vindex]);
+        }
         for (var j in MAPS[player.map].chunkJSON[y][x][i]) {
             var tileid = MAPS[player.map].chunkJSON[y][x][i][j];
             if (tileid != 0) {
@@ -239,6 +287,8 @@ function renderChunk(x, y, map) {
                 var dy = ~~(j / MAPS[map].chunkwidth)*16+MAPS[player.map].chunkJSON[y][x][i].offsetY;
                 if (above) {
                     tupper.drawImage(tileset, Math.round(imgx), Math.round(imgy), 16, 16, Math.round(dx*4), Math.round(dy*4), 64, 64);
+                } else if (variable != -1) {
+                    tvariables[vindex].drawImage(tileset, Math.round(imgx), Math.round(imgy), 16, 16, Math.round(dx*4), Math.round(dy*4), 64, 64);
                 } else {
                     tlower.drawImage(tileset, Math.round(imgx), Math.round(imgy), 16, 16, Math.round(dx*4), Math.round(dy*4), 64, 64);
                 }
@@ -250,7 +300,8 @@ function renderChunk(x, y, map) {
     }
     MAPS[map].chunks[y][x] = {
         upper: tempupper,
-        lower: templower
+        lower: templower,
+        variables: tempvariables
     };
 };
 function drawDebug() {
@@ -496,6 +547,7 @@ function drawDebug() {
         document.getElementById('entpart').style.display = '';
     }
 };
+// special debug - shows frame times and individual draw times
 function resetFPS() {
     clearInterval(drawLoop);
     drawLoop = setInterval(function() {

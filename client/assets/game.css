@@ -21,7 +21,7 @@
     width: 100vw;
     height: 100vh;
     background-color: black;
-    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
     z-index: 0;
 }
 
@@ -30,7 +30,7 @@
     position: absolute;
     top: -22px;
     left: -22px;
-    z-index: 1;
+    z-index: 100;
 }
 
 /* region name */
@@ -47,7 +47,7 @@
     margin-right: -50%;
     padding: 8px 20px;
     animation-duration: 2s;
-    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
     z-index: 1;
 }
 
@@ -96,7 +96,7 @@
     position: absolute;
     top: 0px;
     left: 0px;
-    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
     width: 160px;
     height: 80px;
     z-index: 4;
@@ -181,7 +181,7 @@
     left: 4px;
     font-size: 10px;
     color: black;
-    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
     z-index: 4;
 }
 #fps {
@@ -191,7 +191,7 @@
     background-color: #00000055;
     padding: 2px 4px;
     padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
     z-index: 4;
 }
 #tps {
@@ -202,7 +202,7 @@
     background-color: #00000055;
     padding: 2px 4px;
     padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
     z-index: 4;
 }
 #ping {
@@ -213,7 +213,7 @@
     background-color: #00000055;
     padding: 2px 4px;
     padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
     z-index: 4;
 }
 #mousepos {
@@ -224,7 +224,7 @@
     background-color: #00000055;
     padding: 2px 4px;
     padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
     z-index: 4;
 }
 #position {
@@ -235,7 +235,7 @@
     background-color: #00000055;
     padding: 2px 4px;
     padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
     z-index: 4;
 }
 #enttotal {
@@ -246,7 +246,7 @@
     background-color: #00000055;
     padding: 2px 4px;
     padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
     z-index: 4;
 }
 #entmonst {
@@ -257,7 +257,7 @@
     background-color: #00000055;
     padding: 2px 4px;
     padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
     z-index: 4;
 }
 #entproj {
@@ -268,7 +268,7 @@
     background-color: #00000055;
     padding: 2px 4px;
     padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
     z-index: 4;
 }
 #entpart {
@@ -279,7 +279,7 @@
     background-color: #00000055;
     padding: 2px 4px;
     padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png'), crosshair;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
     z-index: 4;
 }
 
@@ -304,6 +304,7 @@
     overflow-y: scroll;
     overflow-x: clip;
     overflow-wrap: break-word;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
 }
 #chatInput {
     position: absolute;

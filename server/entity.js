@@ -125,19 +125,18 @@ Entity = function() {
         return false;
     };
     self.checkSpannedCollision = function() {
-        var colliding = false;
         var x = self.x;
         var y = self.y;
         var width = self.width;
         var height = self.height;
-        self.x = (self.x+self.lastx)/2;
-        self.y = (self.y+self.lasty)/2;
         self.width += Math.abs(self.x-self.lastx);
         self.height += Math.abs(self.y-self.lasty);
+        self.x = (self.x+self.lastx)/2;
+        self.y = (self.y+self.lasty)/2;
         self.gridx = Math.floor(self.x/64);
         self.gridy = Math.floor(self.y/64);
         self.collisionBoxSize = Math.max(self.width, self.height);
-        if (self.checkPointCollision()) colliding = true;
+        var colliding = self.checkPointCollision();
         self.x = x;
         self.y = y;
         self.width = width;
@@ -486,7 +485,7 @@ Rig = function() {
             self.hp = Math.min(self.hp+20, self.maxHP);
             self.mana -= 10;
             self.lastManaUse = 0;
-            new Particle(self.map, self.x, self.y, 'heal', '+' + self.hp-oldhp);
+            new Particle(self.map, self.x, self.y, self.layer, self.layer, 'heal', '+' + self.hp-oldhp);
         }
         self.lastManaRegen++;
         self.lastManaUse++;
@@ -698,7 +697,6 @@ Rig = function() {
                                     self.gridy = Math.floor(self.y/64);
                                     // if (self.doPointCollision()) break;
                                     self.doPointCollision();
-                                    // if (self.creds) console.log(Math.abs(self.x-self.lastx))
                                     self.checkLayer();
                                     self.checkSlowdown();
                                 }
@@ -1162,18 +1160,18 @@ Rig = function() {
                     break;
             }
         }
-        if (critHp) new Particle(self.map, self.x, self.y, 'critdamage', self.hp-oldhp);
-        else new Particle(self.map, self.x, self.y, 'damage', self.hp-oldhp);
+        if (critHp) new Particle(self.map, self.x, self.y, self.layer, 'critdamage', self.hp-oldhp);
+        else new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
     };
     self.onDeath = function(entity, type) {
         var oldhp = self.hp;
         self.hp = 0;
         self.alive = false;
         if (self.hp != oldhp) {
-            new Particle(self.map, self.x, self.y, 'damage', self.hp-oldhp);
+            new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
         }
         for (var i = 0; i < 20; i++) {
-            new Particle(self.map, self.x, self.y, 'death');
+            new Particle(self.map, self.x, self.y, self.layer, 'death');
         }
         switch (type) {
             case 'killed':
@@ -1202,7 +1200,7 @@ Rig = function() {
         if (!self.teleporting) {
             self.teleporting = true;
             for (var i = 0; i < 20; i++) {
-                new Particle(self.map, self.x, self.y, 'teleport');
+                new Particle(self.map, self.x, self.y, self.layer, 'teleport');
             }
             self.map = map;
             self.x = x*64+32;
@@ -1218,7 +1216,7 @@ Rig = function() {
             self.ai.idleWaypoints.walking = false;
             self.ai.idleWaypoints.lastWaypoints = [];
             for (var i = 0; i < 20; i++) {
-                new Particle(self.map, self.x, self.y, 'teleport');
+                new Particle(self.map, self.x, self.y, self.layer, 'teleport');
             }
             self.teleporting = false;
         }
@@ -1295,6 +1293,7 @@ Npc.update = function() {
             map: localnpc.map,
             x: localnpc.x,
             y: localnpc.y,
+            layer: localnpc.layer,
             name: localnpc.name,
             animationStage: localnpc.animationStage,
             characterStyle: localnpc.characterStyle,
@@ -1624,14 +1623,14 @@ Player = function(socket) {
     socket.on('teleport', function() {
         if (self.teleporting) {
             for (var i = 0; i < 20; i++) {
-                new Particle(self.map, self.x, self.y, 'teleport');
+                new Particle(self.map, self.x, self.y, self.layer, 'teleport');
             }
             self.map = self.teleportLocation.map;
             self.x = self.teleportLocation.x;
             self.y = self.teleportLocation.y;
             self.layer = self.teleportLocation.layer;
             for (var i = 0; i < 20; i++) {
-                new Particle(self.map, self.x, self.y, 'teleport');
+                new Particle(self.map, self.x, self.y, self.layer, 'teleport');
             }
             socket.emit('teleport2', {map: self.map, x: self.x, y: self.y});
             self.teleporting = false;
@@ -1815,7 +1814,7 @@ Player = function(socket) {
             self.hp = Math.min(self.hp+20, self.maxHP);
             self.mana -= 20;
             self.lastManaUse = 0;
-            new Particle(self.map, self.x, self.y, 'heal', '+' + self.hp-oldhp);
+            new Particle(self.map, self.x, self.y, self.layer, 'heal', '+' + self.hp-oldhp);
         }
         self.lastManaRegen++;
         self.lastManaUse++;
@@ -1903,10 +1902,10 @@ Player = function(socket) {
         };
         self.attacking = false;
         if (self.hp != oldhp) {
-            new Particle(self.map, self.x, self.y, 'damage', self.hp-oldhp);
+            new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
         }
         for (var i = 0; i < 20; i++) {
-            new Particle(self.map, self.x, self.y, 'playerdeath');
+            new Particle(self.map, self.x, self.y, self.layer, 'playerdeath');
         }
         switch (type) {
             case 'killed':
@@ -2358,7 +2357,7 @@ Monster = function(type, x, y, map, layer) {
                 if (self.ai.attackTime >= seconds(0.2)) {
                     self.ai.attackType = 'exploding';
                     for (var i = 0; i < 100; i++) {
-                        new Particle(self.map, self.x, self.y, 'explosion');
+                        new Particle(self.map, self.x, self.y, self.layer, 'explosion');
                     }
                     for (var i in Monster.list) {
                         if (parseFloat(i) != self.id && self.getDistance(Monster.list[i]) <= 64) {
@@ -2493,8 +2492,8 @@ Monster = function(type, x, y, map, layer) {
                     break;
             }
         }
-        if (critHp) new Particle(self.map, self.x, self.y, 'critdamage', self.hp-oldhp);
-        else new Particle(self.map, self.x, self.y, 'damage', self.hp-oldhp);
+        if (critHp) new Particle(self.map, self.x, self.y, self.layer, 'critdamage', self.hp-oldhp);
+        else new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
         if (self.hp < self.ai.fleeThreshold) self.ai.fleeing = true;
     };
     self.onDeath = function(entity, type) {
@@ -2567,10 +2566,10 @@ Monster = function(type, x, y, map, layer) {
             error(err);
         }
         if (self.hp != oldhp) {
-            new Particle(self.map, self.x, self.y, 'damage', self.hp-oldhp);
+            new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
         }
         for (var i = 0; i < 20; i++) {
-            new Particle(self.map, self.x+Math.random()*self.width*2-self.width, self.y+Math.random()*self.height*2-self.height, 'death');
+            new Particle(self.map, self.x+Math.random()*self.width*2-self.width, self.y+Math.random()*self.height*2-self.height, self.layer, 'death');
         }
         delete Monster.list[self.id];
     };
@@ -2598,6 +2597,7 @@ Monster.update = function() {
             map: localmonster.map,
             x: localmonster.x,
             y: localmonster.y,
+            layer: localmonster.layer,
             chunkx: localmonster.chunkx,
             chunky: localmonster.chunky,
             type: localmonster.type,
@@ -2858,6 +2858,7 @@ Projectile.update = function() {
             map: localprojectile.map,
             x: localprojectile.x,
             y: localprojectile.y,
+            layer: localprojectile.layer,
             chunkx: localprojectile.chunkx,
             chunky: localprojectile.chunky,
             angle: localprojectile.angle,
@@ -2991,11 +2992,12 @@ Projectile.patterns = {
 };
 
 // particles
-Particle = function(map, x, y, type, value) {
+Particle = function(map, x, y, layer, type, value) {
     var self = {
         map: map,
         x: x,
         y: y,
+        layer: layer,
         chunkx: Math.floor(x/(Collision.grid[map].chunkWidth*64)),
         chunky: Math.floor(y/(Collision.grid[map].chunkHeight*64)),
         type: type,
@@ -3046,7 +3048,7 @@ DroppedItem = function(map, x, y, itemId, enchantments, playerId) {
 
     self.update = function() {
         self.time++;
-        if (self.time >= seconds(300)) delete DroppedItem.list[self.id];
+        if (self.time >= seconds(ENV.itemDespawnTime*60)) delete DroppedItem.list[self.id];
     };
 
     DroppedItem.list[self.id] = self;
@@ -3062,6 +3064,7 @@ DroppedItem.update = function() {
             map: localdroppeditem.map,
             x: localdroppeditem.x,
             y: localdroppeditem.y,
+            layer: localdroppeditem.layer,
             chunkx: localdroppeditem.chunkx,
             chunky: localdroppeditem.chunky,
             itemId: localdroppeditem.itemId,

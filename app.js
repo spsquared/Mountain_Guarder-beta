@@ -44,6 +44,7 @@ ENV = {
     },
     pvp: false,
     difficulty: 1,
+    itemDespawnTime: 5,
     isBetaServer: false
 };
 if (process.env.IS_BETA == 'true') ENV.isBetaServer = true;
@@ -429,6 +430,7 @@ process.on('SIGINT', function() {
 // Tickrate
 TPS = 0;
 var tpscounter = 0;
+var consecutiveTimeouts = 0;
 const update = `
 try {
     var pack = Entity.update();
@@ -492,6 +494,15 @@ const updateTicks = setInterval(function() {
         } catch (err) {
             insertChat('[!] Server tick timed out! [!]', 'error');
             error('Server tick timed out!');
+            consecutiveTimeouts++;
+            if (consecutiveTimeouts > 5) {
+                for (var i in Monster.list) {
+                    Monster.list[i].onDeath();
+                }
+                consecutiveTimeouts = 0;
+                insertChat('[!] Internal server error! Killing all monsters... [!]', 'error');
+                error('Internal server error! Killing all monsters...');
+            }
         }
         tpscounter++;
     }
