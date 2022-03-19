@@ -155,13 +155,19 @@ io.on('connection', function(socket) {
                                 if (arg == '') break;
                             }
                             logColor(player.name + ': ' + input, '\x1b[33m', 'log');
-                            try {
-                                var self = player;
-                                var msg = s[cmd](args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15]);
-                                socket.emit('debugLog', {color:'lime', msg:msg});
-                                logColor(msg, '\x1b[33m', 'log');
-                            } catch (err) {
-                                var msg = err + '';
+                            if (s[cmd]) {
+                                try {
+                                    var self = player;
+                                    var msg = s[cmd](args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15]);
+                                    socket.emit('debugLog', {color:'lime', msg:msg});
+                                    logColor(msg, '\x1b[33m', 'log');
+                                } catch (err) {
+                                    var msg = err + '';
+                                    socket.emit('debugLog', {color:'red', msg:msg});
+                                    error(msg);
+                                }
+                            } else {
+                                var msg = '/' + cmd + ' is not an existing command. Try /help for help';
                                 socket.emit('debugLog', {color:'red', msg:msg});
                                 error(msg);
                             }
@@ -278,6 +284,14 @@ io.on('connection', function(socket) {
 // console inputs
 var active = true;
 s = {
+    help: function() {
+        var str = '';
+        for (var i in s) {
+            str += i;
+            str += '\n';
+        }
+        return str;
+    },
     findPlayer: function(username) {
         for (var i in Player.list) {
             if (Player.list[i].name == username) return Player.list[i];
@@ -431,6 +445,7 @@ process.on('SIGINT', function() {
 TPS = 0;
 var tpscounter = 0;
 var consecutiveTimeouts = 0;
+tickTimeCounter = 0;
 const update = `
 try {
     var pack = Entity.update();
@@ -479,7 +494,11 @@ try {
                         }
                     }
                 }
-                localplayer.socket.emit('debugTick', localpack);
+                localplayer.socket.emit('debugTick', {
+                    data: localpack,
+                    tps: TPS,
+                    tickTime: tickTimeCounter
+                });
             }
         }
     }
@@ -490,18 +509,29 @@ try {
 const updateTicks = setInterval(function() {
     if (started) {
         try {
+            var start = new Date();
             vm.runInThisContext(update, {timeout: 1000});
+            var current = new Date();
+            tickTimeCounter = current-start;
         } catch (err) {
             insertChat('[!] Server tick timed out! [!]', 'error');
             error('Server tick timed out!');
             consecutiveTimeouts++;
             if (consecutiveTimeouts > 5) {
+                insertChat('[!] Internal server error! Resetting server... [!]', 'error');
+                error('Internal server error! Resetting server...');
+                Monster.list = [];
+                Projectile.list = [];
+                DroppedItem.list = [];
+                Particle.list = [];
+                resetMaps();
+            }
+            if (consecutiveTimeouts > 4) {
+                insertChat('[!] Internal server error! Killing all monsters... [!]', 'error');
+                error('Internal server error! Killing all monsters...');
                 for (var i in Monster.list) {
                     Monster.list[i].onDeath();
                 }
-                consecutiveTimeouts = 0;
-                insertChat('[!] Internal server error! Killing all monsters... [!]', 'error');
-                error('Internal server error! Killing all monsters...');
             }
         }
         tpscounter++;

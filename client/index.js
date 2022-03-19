@@ -62,21 +62,23 @@ keybinds = {
     second: 2,
     chat: 't',
     settings: null,
-    inventory: 'i',
-    inventoryEquips: 'e',
+    inventory: 'e',
+    inventoryEquips: 'i',
     inventoryCrafting: 'c',
     map: 'm'
 };
 
 // canvas scaling and pixelation
-var dpr = 1;
+DPR = 1;
+SCALE = settings.renderQuality/100;
 if (window.devicePixelRatio) {
-    dpr = window.devicePixelRatio;
+    DPR = window.devicePixelRatio;
+    SCALE = (settings.renderQuality/100)*DPR;
 }
 
 window.onresize = function() {
     if (window.devicePixelRatio) {
-        dpr = window.devicePixelRatio;
+        DPR = window.devicePixelRatio;
     }
     resetCanvases();
     drawFrame();
@@ -88,34 +90,34 @@ function resetCanvas(ctx) {
     ctx.getContext('2d').mozImageSmoothingEnabled = false;
 };
 function resetCanvases() {
-    var scale = dpr*(settings.renderQuality/100);
-    LAYERS.map0.width = window.innerWidth*scale;
-    LAYERS.map0.height = window.innerHeight*scale;
-    LAYERS.mlower.scale(scale, scale);
+    SCALE = (settings.renderQuality/100)*DPR;
+    LAYERS.map0.width = window.innerWidth*SCALE;
+    LAYERS.map0.height = window.innerHeight*SCALE;
+    LAYERS.mlower.scale(SCALE, SCALE);
     resetCanvas(LAYERS.map0);
     for (var i in LAYERS.mapvariables) {
-        LAYERS.mapvariables[i].width = window.innerWidth*scale;
-        LAYERS.mapvariables[i].height = window.innerHeight*scale;
-        LAYERS.mvariables[i].scale(scale, scale);
+        LAYERS.mapvariables[i].width = window.innerWidth*SCALE;
+        LAYERS.mapvariables[i].height = window.innerHeight*SCALE;
+        LAYERS.mvariables[i].scale(SCALE, SCALE);
         resetCanvas(LAYERS.mapvariables[i]);
     }
     for (var i in LAYERS.entitylayers) {
-        LAYERS.entitylayers[i].width = window.innerWidth*scale;
-        LAYERS.entitylayers[i].height = window.innerHeight*scale;
-        LAYERS.elayers[i].scale(scale, scale);
+        LAYERS.entitylayers[i].width = window.innerWidth*SCALE;
+        LAYERS.entitylayers[i].height = window.innerHeight*SCALE;
+        LAYERS.elayers[i].scale(SCALE, SCALE);
         resetCanvas(LAYERS.entitylayers[i]);
     }
-    LAYERS.map1.width = window.innerWidth*scale;
-    LAYERS.map1.height = window.innerHeight*scale;
-    LAYERS.mupper.scale(scale, scale);
+    LAYERS.map1.width = window.innerWidth*SCALE;
+    LAYERS.map1.height = window.innerHeight*SCALE;
+    LAYERS.mupper.scale(SCALE, SCALE);
     resetCanvas(LAYERS.map1);
-    LAYERS.entity1.width = window.innerWidth*scale;
-    LAYERS.entity1.height = window.innerHeight*scale;
-    LAYERS.eupper.scale(scale, scale);
+    LAYERS.entity1.width = window.innerWidth*SCALE;
+    LAYERS.entity1.height = window.innerHeight*SCALE;
+    LAYERS.eupper.scale(SCALE, SCALE);
     resetCanvas(LAYERS.entity1);
-    CTXRAW.width = window.innerWidth*scale;
-    CTXRAW.height = window.innerHeight*scale;
-    CTX.scale(scale, scale);
+    CTXRAW.width = window.innerWidth*SCALE;
+    CTXRAW.height = window.innerHeight*SCALE;
+    CTX.scale(SCALE, SCALE);
     resetCanvas(CTXRAW);
     for (var i in MAPS) {
         for (var j in MAPS[i].chunks) {

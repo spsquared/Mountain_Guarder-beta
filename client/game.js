@@ -144,22 +144,14 @@ function MGHC() {};
 var drawLoop = null;
 function drawFrame() {
     if (loaded && player) {
-        var scale = dpr*(settings.renderQuality/100);
+        if (settings.debug) frameStart = Date.now();
         for (var i = 0; i < MAPS[player.map].layerCount; i++) {
-            if (LAYERS.mapvariables[i] == null) {
-                LAYERS.mapvariables[i] = createCanvas();
-                LAYERS.mvariables[i] = LAYERS.mapvariables[i].getContext('2d');
-                LAYERS.mapvariables[i].width = window.innerWidth*scale;
-                LAYERS.mapvariables[i].height = window.innerHeight*scale;
-                LAYERS.mvariables[i].scale(scale, scale);
-                resetCanvas(LAYERS.mapvariables[i]);
-            }
             if (LAYERS.entitylayers[i] == null) {
                 LAYERS.entitylayers[i] = createCanvas();
                 LAYERS.elayers[i] = LAYERS.entitylayers[i].getContext('2d');
-                LAYERS.entitylayers[i].width = window.innerWidth*scale;
-                LAYERS.entitylayers[i].height = window.innerHeight*scale;
-                LAYERS.elayers[i].scale(scale, scale);
+                LAYERS.entitylayers[i].width = window.innerWidth*SCALE;
+                LAYERS.entitylayers[i].height = window.innerHeight*SCALE;
+                LAYERS.elayers[i].scale(SCALE, SCALE);
                 resetCanvas(LAYERS.entitylayers[i]);
             }
         }
@@ -168,19 +160,36 @@ function drawFrame() {
         OFFSETY = 0;
         if (MAPS[player.map].width*64 > window.innerWidth) OFFSETX = -Math.max((window.innerWidth/2) - (player.x - MAPS[player.map].offsetX), Math.min((MAPS[player.map].offsetX + (MAPS[player.map].width*64)) - player.x - (window.innerWidth/2), 0));
         if (MAPS[player.map].height*64 > window.innerHeight) OFFSETY = -Math.max((window.innerHeight/2) - (player.y - MAPS[player.map].offsetY), Math.min((MAPS[player.map].offsetY + (MAPS[player.map].height*64)) - player.y - (window.innerHeight/2), 0));
+        // OFFSETX += Math.random()*200-100;
+        // OFFSETY += Math.random()*200-100;
         drawMap();
         Entity.draw();
         CTX.drawImage(LAYERS.map0, 0, 0, window.innerWidth, window.innerHeight);
-        for (var i = 0; i < MAPS[player.map].layerCount; i++) {
+        for (var i = 0; i < MAPS[player.map].layerCount+1; i++) {
             if (LAYERS.entitylayers[i]) CTX.drawImage(LAYERS.entitylayers[i], 0, 0, window.innerWidth, window.innerHeight);
             if (LAYERS.mapvariables[i]) CTX.drawImage(LAYERS.mapvariables[i], 0, 0, window.innerWidth, window.innerHeight);
         }
         CTX.drawImage(LAYERS.map1, 0, 0, window.innerWidth, window.innerHeight);
         CTX.drawImage(LAYERS.entity1, 0, 0, window.innerWidth, window.innerHeight);
         drawDebug();
+        if (settings.debug) {
+            var current = Date.now();
+            frameTimeCounter = current-frameStart;
+        }
     }
 };
 function drawMap() {
+    if (settings.debug) mapStart = Date.now();
+    for (var i = 0; i < MAPS[player.map].layerCount+1; i++) {
+        if (LAYERS.mapvariables[i] == null) {
+            LAYERS.mapvariables[i] = createCanvas();
+            LAYERS.mvariables[i] = LAYERS.mapvariables[i].getContext('2d');
+            LAYERS.mapvariables[i].width = window.innerWidth*SCALE;
+            LAYERS.mapvariables[i].height = window.innerHeight*SCALE;
+            LAYERS.mvariables[i].scale(SCALE, SCALE);
+            resetCanvas(LAYERS.mapvariables[i]);
+        }
+    }
     if (lastmap != player.map) {
         for (var i in MAPS) {
             for (var j in MAPS[i].chunks) {
@@ -224,6 +233,10 @@ function drawMap() {
     LAYERS.mupper.restore();
     for (var i in LAYERS.mvariables) {
         LAYERS.mvariables[i].restore();
+    }
+    if (settings.debug) {
+        var current = Date.now();
+        mapTimeCounter = current-mapStart;
     }
 };
 async function resetRenderedChunks() {
@@ -306,119 +319,122 @@ function renderChunk(x, y, map) {
 };
 function drawDebug() {
     if (debugData && settings.debug) {
+        debugStart = Date.now();
+        var temp = new createCanvas(window.innerWidth, window.innerHeight);
+        var tempctx = temp.getContext('2d');
         function getManhattanDistance(entity) {
             return Math.abs(player.x-entity.x) + Math.abs(player.y-entity.y);
         };
-        CTX.save();
-        CTX.translate((window.innerWidth/2)-player.x, (window.innerHeight/2)-player.y);
+        tempctx.save();
+        tempctx.translate((window.innerWidth/2)-player.x, (window.innerHeight/2)-player.y);
         // chunk borders
         var width = MAPS[player.map].chunkwidth*64;
         var height = MAPS[player.map].chunkheight*64;
-        CTX.beginPath();
-        CTX.strokeStyle = '#00FF00';
-        CTX.lineWidth = 4;
+        tempctx.beginPath();
+        tempctx.strokeStyle = '#00FF00';
+        tempctx.lineWidth = 4;
         for (var x = player.chunkx-settings.renderDistance; x <= player.chunkx+settings.renderDistance+1; x++) {
-            CTX.moveTo(x*width+OFFSETX, (player.chunky-settings.renderDistance)*height+OFFSETY);
-            CTX.lineTo(x*width+OFFSETX, (player.chunky+settings.renderDistance+1)*height+OFFSETY);
+            tempctx.moveTo(x*width+OFFSETX, (player.chunky-settings.renderDistance)*height+OFFSETY);
+            tempctx.lineTo(x*width+OFFSETX, (player.chunky+settings.renderDistance+1)*height+OFFSETY);
         }
         for (var y = player.chunky-settings.renderDistance; y <= player.chunky+settings.renderDistance+1; y++) {
-            CTX.moveTo((player.chunkx-settings.renderDistance)*width+OFFSETX, y*height+OFFSETY);
-            CTX.lineTo((player.chunkx+settings.renderDistance+1)*width+OFFSETX, y*height+OFFSETY);
+            tempctx.moveTo((player.chunkx-settings.renderDistance)*width+OFFSETX, y*height+OFFSETY);
+            tempctx.lineTo((player.chunkx+settings.renderDistance+1)*width+OFFSETX, y*height+OFFSETY);
         }
-        CTX.stroke();
+        tempctx.stroke();
         // players/npcs
         for (var i in debugData.players) {
             var localplayer = debugData.players[i];
             if (localplayer.map == player.map && getManhattanDistance(localplayer) < settings.renderDistance*2*MAPS[player.map].chunkwidth*64) {
                 // keys
-                CTX.beginPath();
-                CTX.strokeStyle = '#000000';
-                CTX.lineWidth = 2;
+                tempctx.beginPath();
+                tempctx.strokeStyle = '#000000';
+                tempctx.lineWidth = 2;
                 if (localplayer.keys.left) {
-                    CTX.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
-                    CTX.lineTo(localplayer.x-localplayer.width/2+OFFSETX, localplayer.y+OFFSETY);
+                    tempctx.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
+                    tempctx.lineTo(localplayer.x-localplayer.width/2+OFFSETX, localplayer.y+OFFSETY);
                 }
                 if (localplayer.keys.right) {
-                    CTX.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
-                    CTX.lineTo(localplayer.x+localplayer.width/2+OFFSETX, localplayer.y+OFFSETY);
+                    tempctx.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
+                    tempctx.lineTo(localplayer.x+localplayer.width/2+OFFSETX, localplayer.y+OFFSETY);
                 }
                 if (localplayer.keys.up) {
-                    CTX.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
-                    CTX.lineTo(localplayer.x+OFFSETX, localplayer.y-localplayer.height/2+OFFSETY);
+                    tempctx.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
+                    tempctx.lineTo(localplayer.x+OFFSETX, localplayer.y-localplayer.height/2+OFFSETY);
                 }
                 if (localplayer.keys.down) {
-                    CTX.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
-                    CTX.lineTo(localplayer.x+OFFSETX, localplayer.y+localplayer.height/2+OFFSETY);
+                    tempctx.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
+                    tempctx.lineTo(localplayer.x+OFFSETX, localplayer.y+localplayer.height/2+OFFSETY);
                 }
-                CTX.stroke();
+                tempctx.stroke();
                 // hitbox
-                CTX.beginPath();
-                CTX.strokeStyle = '#FF9900';
-                CTX.lineWidth = 4;
-                CTX.moveTo(localplayer.x-localplayer.width/2+OFFSETX, localplayer.y-localplayer.height/2+OFFSETY);
-                CTX.lineTo(localplayer.x-localplayer.width/2+OFFSETX, localplayer.y+localplayer.height/2+OFFSETY);
-                CTX.lineTo(localplayer.x+localplayer.width/2+OFFSETX, localplayer.y+localplayer.height/2+OFFSETY);
-                CTX.lineTo(localplayer.x+localplayer.width/2+OFFSETX, localplayer.y-localplayer.height/2+OFFSETY);
-                CTX.lineTo(localplayer.x-localplayer.width/2+OFFSETX, localplayer.y-localplayer.height/2+OFFSETY);
-                CTX.lineWidth = 2;
-                CTX.moveTo(localplayer.x-localplayer.collisionBoxSize/2+OFFSETX, localplayer.y-localplayer.collisionBoxSize/2+OFFSETY);
-                CTX.lineTo(localplayer.x-localplayer.collisionBoxSize/2+OFFSETX, localplayer.y+localplayer.collisionBoxSize/2+OFFSETY);
-                CTX.lineTo(localplayer.x+localplayer.collisionBoxSize/2+OFFSETX, localplayer.y+localplayer.collisionBoxSize/2+OFFSETY);
-                CTX.lineTo(localplayer.x+localplayer.collisionBoxSize/2+OFFSETX, localplayer.y-localplayer.collisionBoxSize/2+OFFSETY);
-                CTX.lineTo(localplayer.x-localplayer.collisionBoxSize/2+OFFSETX, localplayer.y-localplayer.collisionBoxSize/2+OFFSETY);
-                CTX.stroke();
+                tempctx.beginPath();
+                tempctx.strokeStyle = '#FF9900';
+                tempctx.lineWidth = 4;
+                tempctx.moveTo(localplayer.x-localplayer.width/2+OFFSETX, localplayer.y-localplayer.height/2+OFFSETY);
+                tempctx.lineTo(localplayer.x-localplayer.width/2+OFFSETX, localplayer.y+localplayer.height/2+OFFSETY);
+                tempctx.lineTo(localplayer.x+localplayer.width/2+OFFSETX, localplayer.y+localplayer.height/2+OFFSETY);
+                tempctx.lineTo(localplayer.x+localplayer.width/2+OFFSETX, localplayer.y-localplayer.height/2+OFFSETY);
+                tempctx.lineTo(localplayer.x-localplayer.width/2+OFFSETX, localplayer.y-localplayer.height/2+OFFSETY);
+                tempctx.lineWidth = 2;
+                tempctx.moveTo(localplayer.x-localplayer.collisionBoxSize/2+OFFSETX, localplayer.y-localplayer.collisionBoxSize/2+OFFSETY);
+                tempctx.lineTo(localplayer.x-localplayer.collisionBoxSize/2+OFFSETX, localplayer.y+localplayer.collisionBoxSize/2+OFFSETY);
+                tempctx.lineTo(localplayer.x+localplayer.collisionBoxSize/2+OFFSETX, localplayer.y+localplayer.collisionBoxSize/2+OFFSETY);
+                tempctx.lineTo(localplayer.x+localplayer.collisionBoxSize/2+OFFSETX, localplayer.y-localplayer.collisionBoxSize/2+OFFSETY);
+                tempctx.lineTo(localplayer.x-localplayer.collisionBoxSize/2+OFFSETX, localplayer.y-localplayer.collisionBoxSize/2+OFFSETY);
+                tempctx.stroke();
                 if (localplayer.path) {
                     if (localplayer.path[0]) {
-                        CTX.beginPath();
-                        CTX.strokeStyle = '#0000FF';
-                        CTX.lineWidth = 4;
-                        CTX.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
+                        tempctx.beginPath();
+                        tempctx.strokeStyle = '#0000FF';
+                        tempctx.lineWidth = 4;
+                        tempctx.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
                         for (var j in localplayer.path) {
-                            CTX.lineTo(localplayer.path[j][0]*64+32+OFFSETX, localplayer.path[j][1]*64+32+OFFSETY);
+                            tempctx.lineTo(localplayer.path[j][0]*64+32+OFFSETX, localplayer.path[j][1]*64+32+OFFSETY);
                         }
-                        CTX.stroke();
+                        tempctx.stroke();
                     }
                 }
                 if (localplayer.idleWaypoints) {
                     var waypoints = localplayer.idleWaypoints.waypoints;
                     var lastWaypoints = localplayer.idleWaypoints.lastWaypoints;
                     if (waypoints) if (waypoints[0]) {
-                        CTX.beginPath();
-                        CTX.strokeStyle = '#FFFF00';
-                        CTX.lineWidth = 4;
-                        CTX.textAlign = 'center';
-                        CTX.font = '10px Pixel';
-                        CTX.fillStyle = '#FFFF00';
+                        tempctx.beginPath();
+                        tempctx.strokeStyle = '#FFFF00';
+                        tempctx.lineWidth = 4;
+                        tempctx.textAlign = 'center';
+                        tempctx.font = '10px Pixel';
+                        tempctx.fillStyle = '#FFFF00';
                         for (var j in waypoints) {
                             if (waypoints[j].map == player.map) {
-                                CTX.moveTo(waypoints[j].x*64+OFFSETX, waypoints[j].y*64+OFFSETY);
-                                CTX.lineTo(waypoints[j].x*64+64+OFFSETX, waypoints[j].y*64+OFFSETY);
-                                CTX.lineTo(waypoints[j].x*64+64+OFFSETX, waypoints[j].y*64+64+OFFSETY);
-                                CTX.lineTo(waypoints[j].x*64+OFFSETX, waypoints[j].y*64+64+OFFSETY);
-                                CTX.lineTo(waypoints[j].x*64+OFFSETX, waypoints[j].y*64+OFFSETY);
-                                CTX.fillText(localplayer.name, waypoints[j].x*64+OFFSETX, waypoints[j].y*64+OFFSETY);
+                                tempctx.moveTo(waypoints[j].x*64+OFFSETX, waypoints[j].y*64+OFFSETY);
+                                tempctx.lineTo(waypoints[j].x*64+64+OFFSETX, waypoints[j].y*64+OFFSETY);
+                                tempctx.lineTo(waypoints[j].x*64+64+OFFSETX, waypoints[j].y*64+64+OFFSETY);
+                                tempctx.lineTo(waypoints[j].x*64+OFFSETX, waypoints[j].y*64+64+OFFSETY);
+                                tempctx.lineTo(waypoints[j].x*64+OFFSETX, waypoints[j].y*64+OFFSETY);
+                                tempctx.fillText(localplayer.name, waypoints[j].x*64+OFFSETX, waypoints[j].y*64+OFFSETY);
                             }
                         }
-                        CTX.stroke();
+                        tempctx.stroke();
                     }
                     if (lastWaypoints) if (lastWaypoints[0]) {
-                        CTX.beginPath();
-                        CTX.strokeStyle = '#00FFFF';
-                        CTX.lineWidth = 4;
-                        CTX.textAlign = 'center';
-                        CTX.font = '10px Pixel';
-                        CTX.fillStyle = '#FFFF00';
+                        tempctx.beginPath();
+                        tempctx.strokeStyle = '#00FFFF';
+                        tempctx.lineWidth = 4;
+                        tempctx.textAlign = 'center';
+                        tempctx.font = '10px Pixel';
+                        tempctx.fillStyle = '#FFFF00';
                         for (var j in lastWaypoints) {
                             if (lastWaypoints[j].map == player.map) {
-                                CTX.moveTo(lastWaypoints[j].x*64+OFFSETX, lastWaypoints[j].y*64+OFFSETY);
-                                CTX.lineTo(lastWaypoints[j].x*64+64+OFFSETX, lastWaypoints[j].y*64+OFFSETY);
-                                CTX.lineTo(lastWaypoints[j].x*64+64+OFFSETX, lastWaypoints[j].y*64+64+OFFSETY);
-                                CTX.lineTo(lastWaypoints[j].x*64+OFFSETX, lastWaypoints[j].y*64+64+OFFSETY);
-                                CTX.lineTo(lastWaypoints[j].x*64+OFFSETX, lastWaypoints[j].y*64+OFFSETY);
-                                CTX.fillText(localplayer.name, waypoints[j].x+OFFSETX, waypoints[j].y+OFFSETY);
+                                tempctx.moveTo(lastWaypoints[j].x*64+OFFSETX, lastWaypoints[j].y*64+OFFSETY);
+                                tempctx.lineTo(lastWaypoints[j].x*64+64+OFFSETX, lastWaypoints[j].y*64+OFFSETY);
+                                tempctx.lineTo(lastWaypoints[j].x*64+64+OFFSETX, lastWaypoints[j].y*64+64+OFFSETY);
+                                tempctx.lineTo(lastWaypoints[j].x*64+OFFSETX, lastWaypoints[j].y*64+64+OFFSETY);
+                                tempctx.lineTo(lastWaypoints[j].x*64+OFFSETX, lastWaypoints[j].y*64+OFFSETY);
+                                tempctx.fillText(localplayer.name, waypoints[j].x+OFFSETX, waypoints[j].y+OFFSETY);
                             }
                         }
-                        CTX.stroke();
+                        tempctx.stroke();
                     }
                 }
             }
@@ -428,69 +444,69 @@ function drawDebug() {
             var localmonster = debugData.monsters[i];
             if (localmonster) if (localmonster.map == player.map) {
                 // keys
-                CTX.beginPath();
-                CTX.strokeStyle = '#000000';
-                CTX.lineWidth = 2;
+                tempctx.beginPath();
+                tempctx.strokeStyle = '#000000';
+                tempctx.lineWidth = 2;
                 if (localmonster.keys.left) {
-                    CTX.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
-                    CTX.lineTo(localmonster.x-localmonster.width/2+OFFSETX, localmonster.y+OFFSETY);
+                    tempctx.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
+                    tempctx.lineTo(localmonster.x-localmonster.width/2+OFFSETX, localmonster.y+OFFSETY);
                 }
                 if (localmonster.keys.right) {
-                    CTX.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
-                    CTX.lineTo(localmonster.x+localmonster.width/2+OFFSETX, localmonster.y+OFFSETY);
+                    tempctx.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
+                    tempctx.lineTo(localmonster.x+localmonster.width/2+OFFSETX, localmonster.y+OFFSETY);
                 }
                 if (localmonster.keys.up) {
-                    CTX.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
-                    CTX.lineTo(localmonster.x+OFFSETX, localmonster.y-localmonster.height/2+OFFSETY);
+                    tempctx.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
+                    tempctx.lineTo(localmonster.x+OFFSETX, localmonster.y-localmonster.height/2+OFFSETY);
                 }
                 if (localmonster.keys.down) {
-                    CTX.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
-                    CTX.lineTo(localmonster.x+OFFSETX, localmonster.y+localmonster.height/2+OFFSETY);
+                    tempctx.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
+                    tempctx.lineTo(localmonster.x+OFFSETX, localmonster.y+localmonster.height/2+OFFSETY);
                 }
-                CTX.stroke();
+                tempctx.stroke();
                 // hitbox
-                CTX.beginPath();
-                CTX.strokeStyle = '#FF9900';
-                CTX.lineWidth = 4;
-                CTX.moveTo(localmonster.x-localmonster.width/2+OFFSETX, localmonster.y-localmonster.height/2+OFFSETY);
-                CTX.lineTo(localmonster.x-localmonster.width/2+OFFSETX, localmonster.y+localmonster.height/2+OFFSETY);
-                CTX.lineTo(localmonster.x+localmonster.width/2+OFFSETX, localmonster.y+localmonster.height/2+OFFSETY);
-                CTX.lineTo(localmonster.x+localmonster.width/2+OFFSETX, localmonster.y-localmonster.height/2+OFFSETY);
-                CTX.lineTo(localmonster.x-localmonster.width/2+OFFSETX, localmonster.y-localmonster.height/2+OFFSETY);
-                CTX.lineWidth = 2;
-                CTX.moveTo(localmonster.x-localmonster.collisionBoxSize/2+OFFSETX, localmonster.y-localmonster.collisionBoxSize/2+OFFSETY);
-                CTX.lineTo(localmonster.x-localmonster.collisionBoxSize/2+OFFSETX, localmonster.y+localmonster.collisionBoxSize/2+OFFSETY);
-                CTX.lineTo(localmonster.x+localmonster.collisionBoxSize/2+OFFSETX, localmonster.y+localmonster.collisionBoxSize/2+OFFSETY);
-                CTX.lineTo(localmonster.x+localmonster.collisionBoxSize/2+OFFSETX, localmonster.y-localmonster.collisionBoxSize/2+OFFSETY);
-                CTX.lineTo(localmonster.x-localmonster.collisionBoxSize/2+OFFSETX, localmonster.y-localmonster.collisionBoxSize/2+OFFSETY);
-                CTX.stroke();
+                tempctx.beginPath();
+                tempctx.strokeStyle = '#FF9900';
+                tempctx.lineWidth = 4;
+                tempctx.moveTo(localmonster.x-localmonster.width/2+OFFSETX, localmonster.y-localmonster.height/2+OFFSETY);
+                tempctx.lineTo(localmonster.x-localmonster.width/2+OFFSETX, localmonster.y+localmonster.height/2+OFFSETY);
+                tempctx.lineTo(localmonster.x+localmonster.width/2+OFFSETX, localmonster.y+localmonster.height/2+OFFSETY);
+                tempctx.lineTo(localmonster.x+localmonster.width/2+OFFSETX, localmonster.y-localmonster.height/2+OFFSETY);
+                tempctx.lineTo(localmonster.x-localmonster.width/2+OFFSETX, localmonster.y-localmonster.height/2+OFFSETY);
+                tempctx.lineWidth = 2;
+                tempctx.moveTo(localmonster.x-localmonster.collisionBoxSize/2+OFFSETX, localmonster.y-localmonster.collisionBoxSize/2+OFFSETY);
+                tempctx.lineTo(localmonster.x-localmonster.collisionBoxSize/2+OFFSETX, localmonster.y+localmonster.collisionBoxSize/2+OFFSETY);
+                tempctx.lineTo(localmonster.x+localmonster.collisionBoxSize/2+OFFSETX, localmonster.y+localmonster.collisionBoxSize/2+OFFSETY);
+                tempctx.lineTo(localmonster.x+localmonster.collisionBoxSize/2+OFFSETX, localmonster.y-localmonster.collisionBoxSize/2+OFFSETY);
+                tempctx.lineTo(localmonster.x-localmonster.collisionBoxSize/2+OFFSETX, localmonster.y-localmonster.collisionBoxSize/2+OFFSETY);
+                tempctx.stroke();
                 // aggro range
-                CTX.beginPath();
-                CTX.strokeStyle = '#FF0000';
-                CTX.fillStyle = '#FF00000A';
-                CTX.lineWidth = 4;
-                CTX.arc(localmonster.x+OFFSETX, localmonster.y+OFFSETY, localmonster.aggroRange*64, 0, 2*Math.PI, false);
-                CTX.fill();
-                CTX.stroke();
+                tempctx.beginPath();
+                tempctx.strokeStyle = '#FF0000';
+                tempctx.fillStyle = '#FF00000A';
+                tempctx.lineWidth = 4;
+                tempctx.arc(localmonster.x+OFFSETX, localmonster.y+OFFSETY, localmonster.aggroRange*64, 0, 2*Math.PI, false);
+                tempctx.fill();
+                tempctx.stroke();
                 // aggro target
                 if (Player.list[localmonster.aggroTarget]) {
-                    CTX.beginPath();
-                    CTX.strokeStyle = '#FF0000';
-                    CTX.lineWidth = 2;
-                    CTX.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
-                    CTX.lineTo(Player.list[localmonster.aggroTarget].x+OFFSETX, Player.list[localmonster.aggroTarget].y+OFFSETY);
-                    CTX.stroke();
+                    tempctx.beginPath();
+                    tempctx.strokeStyle = '#FF0000';
+                    tempctx.lineWidth = 2;
+                    tempctx.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
+                    tempctx.lineTo(Player.list[localmonster.aggroTarget].x+OFFSETX, Player.list[localmonster.aggroTarget].y+OFFSETY);
+                    tempctx.stroke();
                 }
                 // path
                 if (localmonster.path[0]) {
-                    CTX.beginPath();
-                    CTX.strokeStyle = '#0000FF';
-                    CTX.lineWidth = 4;
-                    CTX.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
+                    tempctx.beginPath();
+                    tempctx.strokeStyle = '#0000FF';
+                    tempctx.lineWidth = 4;
+                    tempctx.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
                     for (var j in localmonster.path) {
-                        CTX.lineTo(localmonster.path[j][0]*64+32+OFFSETX, localmonster.path[j][1]*64+32+OFFSETY);
+                        tempctx.lineTo(localmonster.path[j][0]*64+32+OFFSETX, localmonster.path[j][1]*64+32+OFFSETY);
                     }
-                    CTX.stroke();
+                    tempctx.stroke();
                 }
             }
         }
@@ -501,53 +517,54 @@ function drawDebug() {
                 var sinAngle = Math.sin(localprojectile.angle);
                 var cosAngle = Math.cos(localprojectile.angle);
                 // hitbox
-                CTX.beginPath();
-                CTX.strokeStyle = '#FF9900';
-                CTX.lineWidth = 4;
-                CTX.moveTo(((localprojectile.width/2)*cosAngle)-((localprojectile.height/2)*sinAngle)+localprojectile.x+OFFSETX, ((localprojectile.width/2)*sinAngle)+((localprojectile.height/2)*cosAngle)+localprojectile.y+OFFSETY);
-                CTX.lineTo(((localprojectile.width/2)*cosAngle)-((-localprojectile.height/2)*sinAngle)+localprojectile.x+OFFSETX, ((localprojectile.width/2)*sinAngle)+((-localprojectile.height/2)*cosAngle)+localprojectile.y+OFFSETY);
-                CTX.lineTo(((-localprojectile.width/2)*cosAngle)-((-localprojectile.height/2)*sinAngle)+localprojectile.x+OFFSETX, ((-localprojectile.width/2)*sinAngle)+((-localprojectile.height/2)*cosAngle)+localprojectile.y+OFFSETY);
-                CTX.lineTo(((-localprojectile.width/2)*cosAngle)-((localprojectile.height/2)*sinAngle)+localprojectile.x+OFFSETX, ((-localprojectile.width/2)*sinAngle)+((localprojectile.height/2)*cosAngle)+localprojectile.y+OFFSETY);
-                CTX.lineTo(((localprojectile.width/2)*cosAngle)-((localprojectile.height/2)*sinAngle)+localprojectile.x+OFFSETX, ((localprojectile.width/2)*sinAngle)+((localprojectile.height/2)*cosAngle)+localprojectile.y+OFFSETY);
-                CTX.lineWidth = 2;
-                CTX.moveTo(localprojectile.x-localprojectile.collisionBoxSize/2+OFFSETX, localprojectile.y-localprojectile.collisionBoxSize/2+OFFSETY);
-                CTX.lineTo(localprojectile.x-localprojectile.collisionBoxSize/2+OFFSETX, localprojectile.y+localprojectile.collisionBoxSize/2+OFFSETY);
-                CTX.lineTo(localprojectile.x+localprojectile.collisionBoxSize/2+OFFSETX, localprojectile.y+localprojectile.collisionBoxSize/2+OFFSETY);
-                CTX.lineTo(localprojectile.x+localprojectile.collisionBoxSize/2+OFFSETX, localprojectile.y-localprojectile.collisionBoxSize/2+OFFSETY);
-                CTX.lineTo(localprojectile.x-localprojectile.collisionBoxSize/2+OFFSETX, localprojectile.y-localprojectile.collisionBoxSize/2+OFFSETY);
-                CTX.stroke();
+                tempctx.beginPath();
+                tempctx.strokeStyle = '#FF9900';
+                tempctx.lineWidth = 4;
+                tempctx.moveTo(((localprojectile.width/2)*cosAngle)-((localprojectile.height/2)*sinAngle)+localprojectile.x+OFFSETX, ((localprojectile.width/2)*sinAngle)+((localprojectile.height/2)*cosAngle)+localprojectile.y+OFFSETY);
+                tempctx.lineTo(((localprojectile.width/2)*cosAngle)-((-localprojectile.height/2)*sinAngle)+localprojectile.x+OFFSETX, ((localprojectile.width/2)*sinAngle)+((-localprojectile.height/2)*cosAngle)+localprojectile.y+OFFSETY);
+                tempctx.lineTo(((-localprojectile.width/2)*cosAngle)-((-localprojectile.height/2)*sinAngle)+localprojectile.x+OFFSETX, ((-localprojectile.width/2)*sinAngle)+((-localprojectile.height/2)*cosAngle)+localprojectile.y+OFFSETY);
+                tempctx.lineTo(((-localprojectile.width/2)*cosAngle)-((localprojectile.height/2)*sinAngle)+localprojectile.x+OFFSETX, ((-localprojectile.width/2)*sinAngle)+((localprojectile.height/2)*cosAngle)+localprojectile.y+OFFSETY);
+                tempctx.lineTo(((localprojectile.width/2)*cosAngle)-((localprojectile.height/2)*sinAngle)+localprojectile.x+OFFSETX, ((localprojectile.width/2)*sinAngle)+((localprojectile.height/2)*cosAngle)+localprojectile.y+OFFSETY);
+                tempctx.lineWidth = 2;
+                tempctx.moveTo(localprojectile.x-localprojectile.collisionBoxSize/2+OFFSETX, localprojectile.y-localprojectile.collisionBoxSize/2+OFFSETY);
+                tempctx.lineTo(localprojectile.x-localprojectile.collisionBoxSize/2+OFFSETX, localprojectile.y+localprojectile.collisionBoxSize/2+OFFSETY);
+                tempctx.lineTo(localprojectile.x+localprojectile.collisionBoxSize/2+OFFSETX, localprojectile.y+localprojectile.collisionBoxSize/2+OFFSETY);
+                tempctx.lineTo(localprojectile.x+localprojectile.collisionBoxSize/2+OFFSETX, localprojectile.y-localprojectile.collisionBoxSize/2+OFFSETY);
+                tempctx.lineTo(localprojectile.x-localprojectile.collisionBoxSize/2+OFFSETX, localprojectile.y-localprojectile.collisionBoxSize/2+OFFSETY);
+                tempctx.stroke();
                 // angle
-                CTX.beginPath();
-                CTX.strokeStyle = '#000000';
-                CTX.lineWidth = 2;
-                CTX.moveTo(localprojectile.x+OFFSETX, localprojectile.y+OFFSETY);
-                CTX.lineTo(((localprojectile.width/2)*cosAngle)+localprojectile.x+OFFSETX, ((localprojectile.width/2)*sinAngle)+localprojectile.y+OFFSETY);
-                CTX.stroke();
+                tempctx.beginPath();
+                tempctx.strokeStyle = '#000000';
+                tempctx.lineWidth = 2;
+                tempctx.moveTo(localprojectile.x+OFFSETX, localprojectile.y+OFFSETY);
+                tempctx.lineTo(((localprojectile.width/2)*cosAngle)+localprojectile.x+OFFSETX, ((localprojectile.width/2)*sinAngle)+localprojectile.y+OFFSETY);
+                tempctx.stroke();
             }
         }
-        CTX.restore();
-        document.getElementById('tps').style.display = 'block';
-        document.getElementById('ping').style.display = 'block';
-        document.getElementById('mousepos').style.display = 'block';
-        document.getElementById('position').style.display = 'block';
-        document.getElementById('enttotal').style.display = 'block';
-        document.getElementById('entmonst').style.display = 'block';
-        document.getElementById('entproj').style.display = 'block';
-        document.getElementById('entpart').style.display = 'block';
+        // dropped items
+        for (var i in debugData.droppedItems) {
+            var localdroppeditem = debugData.droppedItems[i];
+            if (localdroppeditem) if (localdroppeditem.map == player.map) {
+                tempctx.strokeStyle = '#FF9900';
+                tempctx.lineWidth = 2;
+                tempctx.moveTo(localdroppeditem.x-24+OFFSETX, localdroppeditem.y-24+OFFSETY);
+                tempctx.lineTo(localdroppeditem.x-24+OFFSETX, localdroppeditem.y+24+OFFSETY);
+                tempctx.lineTo(localdroppeditem.x+24+OFFSETX, localdroppeditem.y+24+OFFSETY);
+                tempctx.lineTo(localdroppeditem.x+24+OFFSETX, localdroppeditem.y-24+OFFSETY);
+                tempctx.lineTo(localdroppeditem.x-24+OFFSETX, localdroppeditem.y-24+OFFSETY);
+            }
+        }
+        tempctx.restore();
+        CTX.drawImage(temp, 0, 0);
+        document.getElementById('debug').style.display = 'block';
         document.getElementById('mousepos').innerText = 'Mouse: (' + Math.floor((player.x+mouseX-OFFSETX)/64) + ', ' + Math.floor((player.y+mouseY-OFFSETY)/64) + ')';
         document.getElementById('position').innerText = 'Player: (' + Math.floor(player.x/64) + ', ' + Math.floor(player.y/64) + ')';
+        var current = Date.now();
+        debugTimeCounter = current-debugStart;
     } else {
-        document.getElementById('tps').style.display = '';
-        document.getElementById('ping').style.display = '';
-        document.getElementById('mousepos').style.display = '';
-        document.getElementById('position').style.display = '';
-        document.getElementById('enttotal').style.display = '';
-        document.getElementById('entmonst').style.display = '';
-        document.getElementById('entproj').style.display = '';
-        document.getElementById('entpart').style.display = '';
+        document.getElementById('debug').style.display = '';
     }
 };
-// special debug - shows frame times and individual draw times
 function resetFPS() {
     clearInterval(drawLoop);
     drawLoop = setInterval(function() {
@@ -566,10 +583,11 @@ socket.on('updateTick', function(data) {
         player = Player.list[playerid];
         updateRenderedChunks();
     }
-    tpsCounter++;
 });
 socket.on('debugTick', function(debug) {
-    debugData = debug;
+    debugData = debug.data;
+    tpsCounter = debug.tps;
+    tickTime = debug.tickTime;
 });
 document.onkeydown = function(e) {
     if (loaded) {
@@ -872,28 +890,47 @@ updateWorldMap();
 var fpsCounter = 0;
 var tpsCounter = 0;
 var pingCounter = 0;
+var pingSend = 0;
+var frameTimeCounter = 0;
+var frameStart = 0;
+var entTimeCounter = 0;
+var entStart = 0;
+var mapTimeCounter = 0;
+var mapStart = 0;
+var debugTimeCounter = 0;
+var debugStart = 0;
+var tickTime = 0;
+var entTime = 0;
+var packetTime = 0;
 setInterval(async function() {
     if (loaded) {
         document.getElementById('fps').innerText = 'FPS: ' + fpsCounter;
         document.getElementById('tps').innerText = 'TPS: ' + tpsCounter;
         document.getElementById('ping').innerText = 'Ping: ' + pingCounter + 'ms';
         fpsCounter = 0;
-        tpsCounter = 0;
+        pingSend = Date.now();
         socket.emit('ping');
-        pingSend = new Date();
-        var entities = 0, monsters = 0, projectiles = 0, particles = 0;
-        for (var i in Player.list) {entities++;}
-        for (var i in Monster.list) {entities++; monsters++;}
-        for (var i in Projectile.list) {entities++; projectiles++;}
-        for (var i in Particle.list) {entities++; particles++;}
-        document.getElementById('enttotal').innerText = 'E: ' + entities;
-        document.getElementById('entmonst').innerText = 'M: ' + monsters;
-        document.getElementById('entproj').innerText = 'P: ' + projectiles;
-        document.getElementById('entpart').innerText = 'H: ' + particles;
+        if (settings.debug) {
+            var entities = 0, monsters = 0, projectiles = 0, particles = 0;
+            for (var i in Player.list) {entities++;}
+            for (var i in Monster.list) {entities++; monsters++;}
+            for (var i in Projectile.list) {entities++; projectiles++;}
+            for (var i in Particle.list) {entities++; particles++;}
+            for (var i in DroppedItem.list) {entities++;}
+            document.getElementById('enttotal').innerText = 'Ent: ' + entities;
+            document.getElementById('entmonst').innerText = 'Mon: ' + monsters;
+            document.getElementById('entproj').innerText = 'Proj: ' + projectiles;
+            document.getElementById('entpart').innerText = 'Part: ' + particles;
+            document.getElementById('drawTime').innerText = 'Frame: ' + frameTimeCounter + 'ms';
+            document.getElementById('entdrawTime').innerText = 'Entity: ' + entTimeCounter + 'ms';
+            document.getElementById('mapdrawTime').innerText = 'Map: ' + mapTimeCounter + 'ms';
+            document.getElementById('debugdrawTime').innerText = 'Debug: ' + debugTimeCounter + 'ms';
+            document.getElementById('tickTime').innerText = 'Tick: ' + tickTime + 'ms';
+        }
     }
 }, 1000);
 socket.on('ping', function() {
-    var current = new Date();
+    var current = Date.now();
     pingCounter = current-pingSend;
 });
 

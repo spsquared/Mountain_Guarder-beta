@@ -75,6 +75,44 @@
                 </div> -->
                 <div class="stack ui-block ui-lighttext">
                     <div class="ui-lighttext stackHeader">
+                        v0.9.0 - 3/18/22
+                    </div>
+                    <div class="ui-lighttext stackBody">
+                        After exactly two months and a lot of pain, Mountain Guarder v0.9.0 is finished! It's a huge cumulative update with multiple typos, many new features, and lots of fixes and features are included. This update is chock-full of features and bug fixes, along with a complimentary bug or two. Have fun, and don't stop Garuding.
+                        <ul>
+                            <li>Added knockback</li>
+                            <li>Rewrote and optimized Rig collisions</li>
+                            <li>Added world map</li>
+                            <li>Fixed pathfinding and collisions causing server hangs</li>
+                            <li>Added console-editable keybinds</li>
+                            <li>Fixed bug involving layering issues with players on different layers</li>
+                            <li>Monsters now have a natural heal</li>
+                            <li>Added parallax effect to menu screen and shadow to title text</li>
+                            <li>Extended Preview.png</li>
+                            <li>Made arrows more consistently sized and fixed their hitbox</li>
+                            <li>Changed Snowy Outpost region size</li>
+                            <li>Added custom crosshair texture</li>
+                            <li>Smoothed out biome blending</li>
+                            <li>Changed monster drop lists</li>
+                            <li>Changed window close button to red</li>
+                            <li>Sliders and toggles are now square</li>
+                            <li>Fixed incorrect damage label on Wooden Bows</li>
+                            <li><a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder/issues/203" target="_blank">Fixed waypoint pathfinding getting stuck in a loop (Issue #203)</a></li>
+                            <li>Removed "double" projectile pattern</li>
+                            <li>Added debug view for dropped items</li>
+                            <li>Added frame time debug</li>
+                            <li>Added op, which is limited to just s commands</li>
+                            <li>Added help command to s</li>
+                            <li>Added server hang prevention correction</li>
+                            <li>Patched teleport to (0, 0) by socket.io exploits</li>
+                            <li>Fixed single pixel on snow cliff edge</li>
+                            <li>Added new stair direction</li>
+                            <li>Updated CSP</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="stack ui-block ui-lighttext">
+                    <div class="ui-lighttext stackHeader">
                         v0.8.4 - 1/18/22
                     </div>
                     <div class="ui-lighttext stackBody">
@@ -881,12 +919,23 @@
                 </div>
                 <div class="stack ui-block ui-lighttext">
                     <div class="ui-lighttext stackHeader">
-                        Ads
+                        Advertisements
                     </div>
                     <div class="ui-lighttext stackBody">
                         <!-- <iframe src="https://www.youtube.com/embed/ih8MFqBU4L4" width="300" height="200"></iframe><br> -->
                         <!-- <embed src="https://meadowguarderold.herokuapp.com/" width="540" height="400"><br> -->
-                        Go play <a href="https://meadowguarderold.herokuapp.com/" target="_blank">Meadow Guarder</a>!
+                        Wow! There's no ads here! Click <a href="https://forms.gle/aT2PKdByRTZz2ZcT6" target="_blank">here</a> to submit an ad request. Note: your ad may not be more than 200px tall when placed in an ad box. Not all ads will be displayed.
+                        <!-- Do YOU want to submit an ad? <a href="https://forms.gle/aT2PKdByRTZz2ZcT6" target="_blank">Click here!</a> -->
+                    </div>
+                </div>
+                <div class="stack ui-block ui-lighttext">
+                    <div class="ui-lighttext stackHeader">
+                        Dev Tools
+                    </div>
+                    <div class="ui-lighttext stackBody">
+                        Here are some tools (both internal and external) to help modders create assets easily.
+                        <a href="./client/itemCreator/" target="_blank">Mountain Guarder Item Creator</a>
+                        <a href="https://thorbjorn.itch.io/tiled" target="_blank">Tiled</a>
                     </div>
                 </div>
             </div>
@@ -920,15 +969,32 @@
             </div>
             <div class="ui-lighttext noSelect">
                 <div id="version">v0.0.0</div>
-                <div id="fps">FPS: 0</div>
-                <div id="tps">TPS: 0</div>
-                <div id="ping">Ping: 0ms</div>
-                <div id="position">(0, 0)</div>
-                <div id="mousepos">(0, 0)</div>
-                <div id="enttotal">E: 0</div>
-                <div id="entmonst">M: 0</div>
-                <div id="entproj">P: 0</div>
-                <div id="entpart">H: 0</div>
+                <div id="fps" class="debugOverlay">FPS: 0</div>
+            </div>
+            <div id="debug" class="ui-lighttext noSelect">
+                <div id="tps" class="debugOverlay">TPS: 0</div>
+                <div id="ping" class="debugOverlay">Ping: 0ms</div>
+                <div id="frameTimes" class="debugOverlay">
+                    Draw Times
+                    <div id="drawTime">Frame: 0ms</div>
+                    <div id="entdrawTime">Entity: 0ms</div>
+                    <div id="mapdrawTime">Map: 0ms</div>
+                    <div id="debugdrawTime">Debug: 0ms</div>
+                </div>
+                <div id="tickTimes" class="debugOverlay">
+                    Tick Times
+                    <div id="tickTime">Tick: 0ms</div>
+                    <!-- <div id="enttickTime">Entity: 0ms</div>
+                    <div id="packtickTime">Packet Compile: 0ms</div> -->
+                </div>
+                <div id="position" class="debugOverlay">(0, 0)</div>
+                <div id="mousepos" class="debugOverlay">(0, 0)</div>
+                <div id="entCount" class="debugOverlay">
+                    <div id="enttotal">Ent: 0</div>
+                    <div id="entmonst">Mon: 0</div>
+                    <div id="entproj">Proj: 0</div>
+                    <div id="entpart">Part: 0</div>
+                </div>
             </div>
             <div id="chat" class="ui-darktext noSelect">
                 <div id="chatText"></div>
@@ -1189,11 +1255,119 @@
                         </div>
                     </div>
                     <div id="settingsKeybinds" class="window-body">
-                        
+                        <table>
+                            <tbody style="text-align: right;">
+                                <tr>
+                                    <td>
+                                        Move up&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="keybind_up" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('up');">W</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Move down&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="keybind_down" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('down');">S</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Move left&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="keybind_left" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('left');">A</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Move right&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="keybind_right" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('right');">D</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Heal&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="keybind_heal" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('heal');">SPACE</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Use Item&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="keybind_use" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('use');">LMB</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Use Secondary&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="keybind_second" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('second');">RMB</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Open chat&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="keybind_chat" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('chat');">T</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Settings&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="keybind_settings" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('settings');">    </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Toggle Inventory&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="keybind_inventory" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('inventory');">E</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Open Items&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="keybind_inventoryEquips" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('inventoryEquips');">I</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Open Crafting&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="keybind_inventoryCrafting" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('inventoryCrafting');">C</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        World Map&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="keybind_map" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('map');">M</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                     <div id="settingsSelect" class="window-select">
                         <button id="settingsGameSelect" class="window-select-button ui-lightbutton">Settings</button>
                         <button id="settingsPlayerSelect" class="window-select-button ui-lightbutton">Customize</button>
+                        <button id="settingsKeybindsSelect" class="window-select-button ui-lightbutton">Keybinds</button>
                     </div>
                 </div>
             </div>

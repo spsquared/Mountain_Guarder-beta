@@ -449,7 +449,7 @@ Rig = function() {
                 x: null,
                 y: null
             },
-            waitTime: 10,
+            waitTime: 20,
             lastPathEnd: 0
         },
         path: [],
@@ -602,7 +602,7 @@ Rig = function() {
                             self.lastx = self.x;
                             self.lasty = self.y;
                             var lastmovexmove = movexmove;
-                            var lastmoveymove = movexmove;
+                            var lastmoveymove = moveymove;
                             var lastremainingxmove = remainingxmove;
                             var lastremainingymove = remainingymove;
                             var lastremainingxknockback = remainingxknockback;
@@ -635,8 +635,8 @@ Rig = function() {
                                 remainingyknockback = lastremainingyknockback;
                                 if (changedDir) {
                                     self.aiControl();
-                                    remainingxmove = Math.max(0, Math.abs(self.xmove)-movexmove)*Math.abs(self.xmove)/self.xmove || 0;
-                                    remainingymove = Math.max(0, Math.abs(self.ymove)-moveymove)*Math.abs(self.ymove)/self.ymove || 0;
+                                    remainingxmove = self.xmove-(movexmove*Math.abs(self.xmove)/self.xmove) || 0;
+                                    remainingymove = self.ymove-(moveymove*Math.abs(self.ymove)/self.ymove) || 0;
                                     var max = Math.max(Math.abs(remainingxmove), Math.abs(remainingymove), Math.abs(remainingxknockback), Math.abs(remainingyknockback));
                                     xdirmove = remainingxmove/Math.ceil(max/self.width) || 0;
                                     ydirmove = remainingymove/Math.ceil(max/self.height) || 0;
@@ -649,7 +649,7 @@ Rig = function() {
                                 var remainingymove2 = ydirmove;
                                 var remainingxknockback2 = xdirknockback;
                                 var remainingyknockback2 = ydirknockback;
-                                var max2 = Math.max(Math.abs(remainingxmove2), Math.max(Math.abs(remainingymove2), Math.max(Math.abs(remainingxknockback2), Math.max(Math.abs(remainingyknockback2)))));
+                                var max2 = Math.max(Math.abs(remainingxmove2), Math.abs(remainingymove2), Math.abs(remainingxknockback2), Math.abs(remainingyknockback2));
                                 var xdirmove2 = 0;
                                 var ydirmove2 = 0;
                                 var xdirknockback2 = 0;
@@ -660,15 +660,15 @@ Rig = function() {
                                 var ydirknockback2 = remainingyknockback2/Math.ceil(Math.abs(max2)) || 0;
                                 while (!(-1 < remainingxmove2 && remainingxmove2 < 1) || !(-1 < remainingymove2 && remainingymove2 < 1) || !(-1 < remainingxknockback2 && remainingxknockback2 < 1) || !(-1 < remainingyknockback2 && remainingyknockback2 < 1)) {
                                     if (self.aiControlled) if (self.aiControl()) {
-                                        remainingxmove = Math.max(0, Math.abs(self.xmove)-movexmove)*Math.abs(self.xmove)/self.xmove || 0;
-                                        remainingymove = Math.max(0, Math.abs(self.ymove)-moveymove)*Math.abs(self.ymove)/self.ymove || 0;
+                                        remainingxmove = self.xmove-(movexmove*Math.abs(self.xmove)/self.xmove) || 0;
+                                        remainingymove = self.ymove-(moveymove*Math.abs(self.ymove)/self.ymove) || 0;
                                         var max = Math.max(Math.abs(remainingxmove), Math.abs(remainingymove), Math.abs(remainingxknockback), Math.abs(remainingyknockback));
                                         xdirmove = remainingxmove/Math.ceil(max/self.width) || 0;
                                         ydirmove = remainingymove/Math.ceil(max/self.height) || 0;
                                         xdirknockback = remainingxknockback/Math.ceil(max/self.width) || 0;
                                         ydirknockback = remainingyknockback/Math.ceil(max/self.height) || 0;
-                                        remainingxmove2 = Math.max(0, Math.abs(xdirmove)-movexmove2)*Math.abs(xdirmove)/xdirmove || 0;
-                                        remainingymove2 = Math.max(0, Math.abs(ydirmove)-moveymove2)*Math.abs(ydirmove)/ydirmove || 0;
+                                        remainingxmove2 = xdirmove-(movexmove2*Math.abs(self.xmove)/self.xmove) || 0;
+                                        remainingymove2 = ydirmove-(moveymove2*Math.abs(self.ymove)/self.ymove) || 0;
                                         var max2 = Math.max(Math.abs(remainingxmove2), Math.abs(remainingymove2), Math.abs(remainingxknockback2), Math.abs(remainingyknockback2));
                                         xdirmove2 = remainingxmove2/Math.ceil(Math.abs(max2)) || 0;
                                         ydirmove2 = remainingymove2/Math.ceil(Math.abs(max2)) || 0;
@@ -695,12 +695,11 @@ Rig = function() {
                                     remainingyknockback2 -= ydirknockback2;
                                     self.gridx = Math.floor(self.x/64);
                                     self.gridy = Math.floor(self.y/64);
-                                    // if (self.doPointCollision()) break;
-                                    self.doPointCollision();
+                                    if (self.doPointCollision()) break;
                                     self.checkLayer();
                                     self.checkSlowdown();
                                 }
-                                // if (self.checkPointCollision()) break;
+                                if (self.checkPointCollision()) break;
                             }
                         }
                     }
@@ -1020,7 +1019,7 @@ Rig = function() {
         return self.ai.path;
     };
     self.ai.pathIdle = function() {
-        self.ai.path = [];
+        // self.ai.path = [];
         if (self.ai.idleMove == 'waypoints') {
             try {
                 if (self.ai.idleWaypoints.lastPathEnd >= seconds(self.ai.idleWaypoints.waitTime)*Math.random()) {
@@ -1071,7 +1070,7 @@ Rig = function() {
                         }
                     }
                 }
-                if (self.gridx == self.ai.idleWaypoints.pos.x && self.gridy == self.ai.idleWaypoints.pos.y) self.ai.idleWaypoints.walking = false;
+                if (self.x == self.ai.idleWaypoints.pos.x*64+32 && self.y == self.ai.idleWaypoints.pos.y*64+32) self.ai.idleWaypoints.walking = false;
                 if (!self.ai.idleWaypoints.walking) {
                     self.ai.idleWaypoints.lastPathEnd += seconds(0.1);
                     self.ai.path = [];
@@ -1164,35 +1163,37 @@ Rig = function() {
         else new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
     };
     self.onDeath = function(entity, type) {
-        var oldhp = self.hp;
-        self.hp = 0;
-        self.alive = false;
-        if (self.hp != oldhp) {
-            new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
-        }
-        for (var i = 0; i < 20; i++) {
-            new Particle(self.map, self.x, self.y, self.layer, 'death');
-        }
-        switch (type) {
-            case 'killed':
-                insertChat(self.name + ' was killed by ' + entity.name + '.', 'death');
-                break;
-            case 'explosion':
-                insertChat(self.name + ' blew up.', 'death');
-                break;
-            case 'cherrybomb':
-                var rand = 0.5+Math.random();
-                var angle = Math.atan2(self.y-entity.y, self.x-entity.x);
-                self.xknockback += angle*rand*40;
-                self.yknockback += angle*rand*40;
-                insertChat(self.name + ' blew up.', 'death');
-                break;
-            case 'debug':
-                insertChat(self.name + ' was debugged.', 'death');
-                break;
-            default:
-                insertChat(self.name + ' died.', 'death');
-                break;
+        if (!self.invincible) {
+            var oldhp = self.hp;
+            self.hp = 0;
+            self.alive = false;
+            if (self.hp != oldhp) {
+                new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
+            }
+            for (var i = 0; i < 20; i++) {
+                new Particle(self.map, self.x, self.y, self.layer, 'death');
+            }
+            switch (type) {
+                case 'killed':
+                    insertChat(self.name + ' was killed by ' + entity.name + '.', 'death');
+                    break;
+                case 'explosion':
+                    insertChat(self.name + ' blew up.', 'death');
+                    break;
+                case 'cherrybomb':
+                    var rand = 0.5+Math.random();
+                    var angle = Math.atan2(self.y-entity.y, self.x-entity.x);
+                    self.xknockback += angle*rand*40;
+                    self.yknockback += angle*rand*40;
+                    insertChat(self.name + ' blew up.', 'death');
+                    break;
+                case 'debug':
+                    insertChat(self.name + ' was debugged.', 'death');
+                    break;
+                default:
+                    insertChat(self.name + ' died.', 'death');
+                    break;
+            }
         }
     };
     self.onRegionChange = function() {};
@@ -1272,6 +1273,7 @@ Npc = function(id, x, y, map) {
     for (var i in tempnpc.data) {
         self[i] = tempnpc.data[i];
     }
+    self.aiControlled = true;
     self.collisionBoxSize = Math.max(self.width, self.height);
 
     self.update = function() {
@@ -1889,48 +1891,50 @@ Player = function(socket) {
         }
     };
     self.onDeath = function(entity, type) {
-        var oldhp = self.hp;
-        self.hp = 0;
-        self.alive = false;
-        socket.emit('playerDied');
-        self.keys = {
-            up: false,
-            down: false,
-            left: false,
-            right: false,
-            heal: false
-        };
-        self.attacking = false;
-        if (self.hp != oldhp) {
-            new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
-        }
-        for (var i = 0; i < 20; i++) {
-            new Particle(self.map, self.x, self.y, self.layer, 'playerdeath');
-        }
-        switch (type) {
-            case 'killed':
-                if (entity) insertChat(self.name + ' was killed by ' + entity.name, 'death');
-                else insertChat(self.name + ' died', 'death');
-                break;
-            case 'explosion':
-                insertChat(self.name + ' blew up.', 'death');
-                break;
-            case 'cherrybomb':
-                var rand = 0.5+Math.random();
-                var angle = Math.atan2(self.y-entity.y, self.x-entity.x);
-                self.xknockback += angle*rand*40;
-                self.yknockback += angle*rand*40;
-                insertChat(self.name + ' blew up.', 'death');
-                break;
-            case 'fire':
-                insertChat(self.name + ' went up in flames', 'death');
-                break;
-            case 'debug':
-                insertChat(self.name + ' was debugged', 'death');
-                break;
-            default:
-                insertChat(self.name + ' died', 'death');
-                break;
+        if (!self.invincible) {
+            var oldhp = self.hp;
+            self.hp = 0;
+            self.alive = false;
+            socket.emit('playerDied');
+            self.keys = {
+                up: false,
+                down: false,
+                left: false,
+                right: false,
+                heal: false
+            };
+            self.attacking = false;
+            if (self.hp != oldhp) {
+                new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
+            }
+            for (var i = 0; i < 20; i++) {
+                new Particle(self.map, self.x, self.y, self.layer, 'playerdeath');
+            }
+            switch (type) {
+                case 'killed':
+                    if (entity) insertChat(self.name + ' was killed by ' + entity.name, 'death');
+                    else insertChat(self.name + ' died', 'death');
+                    break;
+                case 'explosion':
+                    insertChat(self.name + ' blew up.', 'death');
+                    break;
+                case 'cherrybomb':
+                    var rand = 0.5+Math.random();
+                    var angle = Math.atan2(self.y-entity.y, self.x-entity.x);
+                    self.xknockback += angle*rand*40;
+                    self.yknockback += angle*rand*40;
+                    insertChat(self.name + ' blew up.', 'death');
+                    break;
+                case 'fire':
+                    insertChat(self.name + ' went up in flames', 'death');
+                    break;
+                case 'debug':
+                    insertChat(self.name + ' was debugged', 'death');
+                    break;
+                default:
+                    insertChat(self.name + ' died', 'death');
+                    break;
+            }
         }
     };
     self.respawn = function() {

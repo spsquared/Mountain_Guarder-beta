@@ -27,6 +27,7 @@
 
 /* crossHair */
 #crossHair {
+    display: none;
     position: absolute;
     top: -22px;
     left: -22px;
@@ -174,7 +175,7 @@
     text-align: center;
 }
 
-/* footer/debug */
+/* version label */
 #version {
     position: absolute;
     bottom: 4px;
@@ -184,103 +185,60 @@
     cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
     z-index: 4;
 }
+
+/* debug */
+.debugOverlay {
+    color: white;
+    background-color: #00000055;
+    padding: 2px 4px;
+    padding-right: 2px;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
+    z-index: 4;
+}
+#debug {
+    display: none;
+}
 #fps {
     position: absolute;
     bottom: 20px;
     left: 16px;
-    background-color: #00000055;
-    padding: 2px 4px;
-    padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
-    z-index: 4;
 }
 #tps {
-    display: none;
     position: absolute;
     bottom: 46px;
     left: 16px;
-    background-color: #00000055;
-    padding: 2px 4px;
-    padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
-    z-index: 4;
 }
 #ping {
-    display: none;
     position: absolute;
     bottom: 72px;
     left: 16px;
-    background-color: #00000055;
-    padding: 2px 4px;
-    padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
-    z-index: 4;
 }
+#frameTimes {
+    position: absolute;
+    bottom: 102px;
+    left: 16px;
+}
+#tickTimes {
+    position: absolute;
+    bottom: 222px;
+    left: 16px;
+}
+
 #mousepos {
-    display: none;
     position: absolute;
     top: 16px;
     right: 16px;
-    background-color: #00000055;
-    padding: 2px 4px;
-    padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
-    z-index: 4;
 }
 #position {
-    display: none;
     position: absolute;
     top: 42px;
     right: 16px;
-    background-color: #00000055;
-    padding: 2px 4px;
-    padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
-    z-index: 4;
 }
-#enttotal {
-    display: none;
+#entCount {
     position: absolute;
     top: 72px;
     right: 16px;
-    background-color: #00000055;
-    padding: 2px 4px;
-    padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
-    z-index: 4;
-}
-#entmonst {
-    display: none;
-    position: absolute;
-    top: 98px;
-    right: 16px;
-    background-color: #00000055;
-    padding: 2px 4px;
-    padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
-    z-index: 4;
-}
-#entproj {
-    display: none;
-    position: absolute;
-    top: 124px;
-    right: 16px;
-    background-color: #00000055;
-    padding: 2px 4px;
-    padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
-    z-index: 4;
-}
-#entpart {
-    display: none;
-    position: absolute;
-    top: 150px;
-    right: 16px;
-    background-color: #00000055;
-    padding: 2px 4px;
-    padding-right: 2px;
-    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
-    z-index: 4;
+    text-align: right;
 }
 
 /* chat */
@@ -372,6 +330,8 @@
     position: absolute;
     top: 36px;
     left: 8px;
+    max-height: calc(100% - 44px);
+    overflow-y: auto;
 }
 .window .window-select {
     position: absolute;
@@ -588,7 +548,7 @@
 }
 #debugLog {
     width: 376px;
-    height: 524px;
+    height: 522px;
     margin-bottom: 8px;
     overflow-y: scroll;
     overflow-x: clip;
@@ -599,6 +559,22 @@
 }
 #debugConsoleSelect {
     display: none;
+}
+
+/* experimental tooltip */
+.experimental {
+    color: yellow;
+}
+.experimental::after {
+    content: 'Experimental!';
+    color: red;
+    background-color: black;
+    border-radius: 10px;
+    height: 20px;
+}
+.experimental:hover .experimental::after {
+    position: relative;
+    display: block;
 }
 
 /* spuhctator div */

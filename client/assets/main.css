@@ -18,6 +18,9 @@ img {
     image-rendering: pixelated;
     -webkit-user-drag: none;
 }
+canvas {
+    image-rendering: pixelated;
+}
 
 /* scrollbar */
 ::-webkit-scrollbar {

@@ -29,3 +29,5 @@ lock(global.Monster, ['update', 'getDebugData']);
 lock(global.Projectile, ['update', 'getDebugData']);
 lock(global.Particle, ['update']);
 lock(global.DroppedItem, ['update', 'getDebugData']);
+// misc
+lock(global, ['resetMaps']);

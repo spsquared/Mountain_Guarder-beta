@@ -426,7 +426,7 @@ function openSettings() {
     settingsWindow.show();
     toggleDropdown();
 };
-function toggleSetting() {
+function toggleSettings() {
     settingsWindow.toggle();
 };
 function openDebugConsole() {
@@ -481,8 +481,10 @@ function updateSetting(setting) {
         case 'pointerLock':
             if (settings.pointerLock) {
                 indicatorText = 'on';
+                document.getElementById('crossHair').style.display = 'block';
             } else {
                 indicatorText = 'off';
+                document.getElementById('crossHair').style.display = '';
                 if (pointerLocked) document.exitPointerLock();
             }
             break;
@@ -555,3 +557,53 @@ try {
     updateSetting('chatSize');
     updateSetting('highContrast');
 } catch {}
+
+// keybinds
+var changingKeyBind = false;
+function changeKeybind(keybind) {
+    changingKeyBind = keybind;
+};
+document.addEventListener('keydown', function(e) {
+    if (changingKeyBind) {
+        if (e.key == 'Escape') keybinds[changingKeyBind] = null;
+        else if (e.key.length = 1) keybinds[changingKeyBind] = e.key.toLowerCase();
+        else keybinds[changingKeyBind] = e.key;
+        e.preventDefault();
+        updateKeybind(changingKeyBind);
+        changingKeyBind = false;
+    }
+});
+document.addEventListener('mousedown', function(e) {
+    if (changingKeyBind) {
+        keybinds[changingKeyBind] = e.button;
+        e.preventDefault();
+        updateKeybind(changingKeyBind);
+        changingKeyBind = false;
+    }
+});
+function updateKeybind(keybind) {
+    var str = keybinds[keybind];
+    if (str) {
+        if (str == ' ') str = 'SPACE';
+        if (isFinite(str)) {
+            switch (str) {
+                case 0:
+                    str = 'LMB';
+                    break;
+                case 1:
+                    str = 'CMB';
+                    break;
+                case 2:
+                    str = 'RMB';
+                    break;
+                default:
+                    str = 'MB' + str;
+                    break;
+            }
+        }
+        str = str.toUpperCase();
+    } else {
+        str = '&emsp;';
+    }
+    document.getElementById('keybind_' + keybind).innerText = str;
+};

@@ -57,6 +57,7 @@ Entity.update = function(data) {
     DroppedItem.update(data.droppedItems);
 };
 Entity.draw = function() {
+    if (settings.debug) entStart = Date.now();
     var entities = [];
     for (var i in Player.list) {
         if (Player.list[i].map == player.map) entities.push(Player.list[i]);
@@ -93,6 +94,10 @@ Entity.draw = function() {
     LAYERS.eupper.restore();
     for (var i in LAYERS.elayers) {
         LAYERS.elayers[i].restore();
+    }
+    if (settings.debug) {
+        var current = Date.now();
+        entTimeCounter = current-entStart;
     }
 };
 
