@@ -22,7 +22,6 @@ const limiter = rateLimit({
 
 app.get('/', function(req, res) {
     res.sendFile(__dirname + '/client/index.html');
-    console.log(req.rawHeaders)
 });
 app.use('/client/',express.static(__dirname + '/client/'));
 app.use(limiter);
