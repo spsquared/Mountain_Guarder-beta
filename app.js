@@ -20,7 +20,10 @@ const limiter = rateLimit({
     handler: function(req, res, options) {}
 });
 
-app.get('/', function(req, res) {res.sendFile(__dirname + '/client/index.html');});
+app.get('/', function(req, res) {
+    res.sendFile(__dirname + '/client/index.html');
+    console.log(req, res)
+});
 app.use('/client/',express.static(__dirname + '/client/'));
 app.use(limiter);
 
