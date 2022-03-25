@@ -12,7 +12,7 @@ Inventory = {
         helmet: null,
         armor: null,
         boots: null,
-        offhand: null,
+        shield: null,
         key: null,
         crystal: null,
     },
@@ -54,9 +54,9 @@ Inventory.Slot = function() {
 
     self.refresh = function() {
         if (self.item) {
-            slot.innerHTML = '<img src="./client/img/item/' + self.item.id + '.png" class="invSlotImg noSelect"></img>';
+            slot.innerHTML = '<img src="/client/img/item/' + self.item.id + '.png" class="invSlotImg noSelect"></img>';
         } else {
-            slot.innerHTML = '<img src="./client/img/item/empty.png" class="invSlotImgNoGrab noSelect"></img>';
+            slot.innerHTML = '<img src="/client/img/item/empty.png" class="invSlotImgNoGrab noSelect"></img>';
         }
     };
     slot.onmouseover = function(e) {
@@ -90,9 +90,9 @@ Inventory.EquipSlot = function(equip) {
 
     self.refresh = function() {
         if (self.item) {
-            slot.innerHTML = '<img src="./client/img/item/' + self.item.id + '.png" class="invSlotImg noSelect"></img>';
+            slot.innerHTML = '<img src="/client/img/item/' + self.item.id + '.png" class="invSlotImg noSelect"></img>';
         } else {
-            slot.innerHTML = '<img src="./client/img/item/emptySlot' + self.slotId + '.png" class="invSlotImgNoGrab"></img>';
+            slot.innerHTML = '<img src="/client/img/item/emptySlot' + self.slotId + '.png" class="invSlotImgNoGrab"></img>';
         }
     };
     slot.onmouseover = function(e) {
@@ -144,16 +144,16 @@ Inventory.startDrag = function(slot) {
     Inventory.currentDrag = slot;
     document.getElementById('invDragImg').style.display = 'block';
     if (isFinite(slot)) {
-        document.getElementById('invDragImg').src = './client/img/item/' + Inventory.items[slot].item.id + '.png';
-        Inventory.items[slot].slot.innerHTML = '<img src="./client/img/item/empty.png" class="invSlotImgNoGrab"></img>'
+        document.getElementById('invDragImg').src = '/client/img/item/' + Inventory.items[slot].item.id + '.png';
+        Inventory.items[slot].slot.innerHTML = '<img src="/client/img/item/empty.png" class="invSlotImgNoGrab"></img>'
     } else {
-        document.getElementById('invDragImg').src = './client/img/item/' + Inventory.equips[slot].item.id + '.png';
-        Inventory.equips[slot].slot.innerHTML = '<img src="./client/img/item/emptySlot' + Inventory.equips[slot].slotId + '.png" class="invSlotImgNoGrab"></img>';
+        document.getElementById('invDragImg').src = '/client/img/item/' + Inventory.equips[slot].item.id + '.png';
+        Inventory.equips[slot].slot.innerHTML = '<img src="/client/img/item/emptySlot' + Inventory.equips[slot].slotId + '.png" class="invSlotImgNoGrab"></img>';
     }
 };
 Inventory.endDrag = function(slot) {
     document.getElementById('invDragImg').style.display = '';
-    document.getElementById('invDragImg').src = './client/img/item/empty.png';
+    document.getElementById('invDragImg').src = '/client/img/item/empty.png';
     socket.emit('item', {
         action: 'drag',
         data: {
@@ -165,7 +165,7 @@ Inventory.endDrag = function(slot) {
 };
 Inventory.drop = function() {
     document.getElementById('invDragImg').style.display = '';
-    document.getElementById('invDragImg').src = './client/img/item/empty.png';
+    document.getElementById('invDragImg').src = '/client/img/item/empty.png';
     socket.emit('item', {
         action: 'drop',
         data: {
@@ -426,36 +426,32 @@ function loadTooltip(slot) {
 Inventory.itemTypes = [];
 Inventory.itemImages = [];
 Inventory.itemHighlightImages = [];
-async function getInventoryData() {
+function getInventoryData() {
     totalassets++;
-    await new Promise(async function(resolve, reject) {
-        var request = new XMLHttpRequest();
-        request.open('GET', './client/item.json', true);
-        request.onload = async function() {
-            if (this.status >= 200 && this.status < 400) {
-                var json = JSON.parse(this.response);
-                Inventory.itemTypes = json;
-                loadedassets++;
-                for (var i in Inventory.itemTypes) {
-                    totalassets += 2;
-                    Inventory.itemImages[i] = new Image();
-                    Inventory.itemHighlightImages[i] = new Image();
-                }
-                totalassets++;
-                Inventory.itemImages['empty'] = new Image();
-                await sleep(Math.random()*10);
-                resolve();
-            } else {
-                console.error('Error: Server returned status ' + this.status);
-                await sleep(1000);
-                request.send();
+    var request = new XMLHttpRequest();
+    request.open('GET', '/client/item.json', false);
+    request.onload = async function() {
+        if (this.status >= 200 && this.status < 400) {
+            var json = JSON.parse(this.response);
+            Inventory.itemTypes = json;
+            loadedassets++;
+            for (var i in Inventory.itemTypes) {
+                totalassets += 2;
+                Inventory.itemImages[i] = new Image();
+                Inventory.itemHighlightImages[i] = new Image();
             }
-        };
-        request.onerror = function(){
-            console.error('There was a connection error. Please retry');
-        };
-        request.send();
-    });
+            totalassets++;
+            Inventory.itemImages['empty'] = new Image();
+        } else {
+            console.error('Error: Server returned status ' + this.status);
+            await sleep(1000);
+            request.send();
+        }
+    };
+    request.onerror = function(){
+        console.error('There was a connection error. Please retry');
+    };
+    request.send();
     for (var i in Inventory.equips) {
         Inventory.itemImages[i] = new Image();
         totalassets++;
@@ -468,13 +464,15 @@ async function loadInventoryData() {
                 loadedassets++;
                 resolve();
             };
-            Inventory.itemImages[i].src = './client/img/item/' + i + '.png';
+            Inventory.itemImages[i].src = '/client/img/item/' + i + '.png';
             Inventory.itemImages[i].className = 'invSlotImg noSelect';
+        });
+        await new Promise(function(resolve, reject) {
             Inventory.itemHighlightImages[i].onload = function() {
                 loadedassets++;
                 resolve();
             };
-            Inventory.itemHighlightImages[i].src = './client/img/item/highlighted/' + i + '.png';
+            Inventory.itemHighlightImages[i].src = '/client/img/item/highlighted/' + i + '.png';
             Inventory.itemHighlightImages[i].className = 'invSlotImg noSelect';
         });
     }
@@ -483,11 +481,11 @@ async function loadInventoryData() {
             loadedassets++;
             resolve();
         };
-        Inventory.itemImages['empty'].src = './client/img/item/empty.png';
+        Inventory.itemImages['empty'].src = '/client/img/item/empty.png';
         Inventory.itemImages['empty'].className = 'invSlotImgNoGrab noSelect';
     });
     for (var i in Inventory.equips) {
-        Inventory.itemImages[i].src = './client/img/item/emptySlot' + i + '.png';
+        Inventory.itemImages[i].src = '/client/img/item/emptySlot' + i + '.png';
         Inventory.itemImages[i].className = 'invSlotImgNoGrab noSelect';
         loadedassets++;
     }

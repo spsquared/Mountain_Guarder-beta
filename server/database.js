@@ -2,6 +2,8 @@
 
 const bcrypt = require('bcrypt');
 const salt = 10;
+const Cryptr = require('cryptr');
+const cryptr = new Cryptr('cachePasswordKey');
 const {Client} = require('pg');
 if (process.env.DATABASE_URL) {
     url = process.env.DATABASE_URL;
@@ -266,7 +268,7 @@ async function updatePassword(username, password) {
 async function getProgress(username, password) {
     var cred = await getCredentials(username);
     if (cred) {
-        if (bcrypt.compareSync(password, cred.password)) {
+        if (bcrypt.compareSync(cryptr.decrypt(password), cred.password)) {
             var data = await database.query('SELECT data FROM users WHERE username=$1;', [username]);
             if (data.rows[0]) {
                 return data.rows[0].data;
@@ -280,7 +282,7 @@ async function getProgress(username, password) {
 async function updateProgress(username, password, data) {
     var cred = await getCredentials(username);
     if (cred) {
-        if (bcrypt.compareSync(password, cred.password)) {
+        if (bcrypt.compareSync(cryptr.decrypt(password), cred.password)) {
             try {
                 await database.query('UPDATE users SET data=$2 WHERE username=$1;', [username, data]);
                 return true;

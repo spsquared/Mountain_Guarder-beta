@@ -9,16 +9,20 @@ Inventory = function(socket, player) {
             helmet: null,
             armor: null,
             boots: null,
-            offhand: null,
+            shield: null,
             key: null,
             crystal: null
         },
         maxItems: 30
     };
+    self.items.length = self.maxItems;
+    for (var i in self.items) {
+        self.items[i] = null;
+    }
 
     socket.on('item', function(data) {
         var valid = false;
-        if (typeof data == 'object') if (data.data && data.action) valid = true;
+        if (typeof data == 'object' && data != null) if (data.data != null && data.action != null) valid = true;
         if (valid) {
             switch (data.action) {
                 case 'drag':
@@ -32,14 +36,11 @@ Inventory = function(socket, player) {
                     break;
             }
         } else {
-            insertChat(player.name + ' was kicked for socket.emit', 'anticheat');
-            socket.emit('disconnected');
-            player.socket.onevent = function(packet) {};
-            player.socket.disconnect();
+            player.socketKick();
         }
     });
     self.addItem = function(id) {
-        if (self.items.length < self.maxItems) {
+        if (!self.full()) {
             var slot = new Inventory.Item(id, self.items).slot;
             self.refreshItem(slot);
         } else {
@@ -52,7 +53,7 @@ Inventory = function(socket, player) {
         return slot;
     };
     self.removeItem = function(slot) {
-        if (isFinite(slot)) {
+        if (typeof slot == 'number') {
             delete self.items[slot];
         } else {
             delete self.equips[slot];
@@ -60,10 +61,13 @@ Inventory = function(socket, player) {
         self.refreshItem(slot);
     };
     self.refresh = function() {
+        for (var i = 0; i < self.maxItems; i++) {
+            self.refreshItem(parseInt(i));
+            if (self.items[i] == null) self.items[i] = null;
+        }
         for (var i in self.items) {
-            self.refreshItem(i);
-            if (i > self.maxItems) {
-                // drop the item
+            if (i >= self.maxItems) {
+                self.dropItem(parseInt(i));
             }
         }
         for (var i in self.equips) {
@@ -71,11 +75,13 @@ Inventory = function(socket, player) {
         }
     };
     self.full = function() {
-        if (self.items.length < self.maxItems) return false;
+        for (var i = 0; i < self.maxItems; i++) {
+            if (self.items[i] == null) return false;
+        }
         return true;
     };
     self.refreshItem = function(slot) {
-        if (isFinite(slot)) {
+        if (typeof slot == 'number') {
             if (self.items[slot]) {
                 self.items[slot].refresh();
                 socket.emit('item', {
@@ -109,7 +115,7 @@ Inventory = function(socket, player) {
         }
     };
     self.enchantItem = function(slot, enchantment) {
-        if (isFinite(slot)) {
+        if (typeof slot == 'number') {
             self.items[slot].enchant(enchantment);
         } else {
             self.equips[slot].enchant(enchantment);
@@ -119,8 +125,8 @@ Inventory = function(socket, player) {
     self.dragItem = function(slot, newslot) {
         var item1, item2;
         var slot1 = false, slot2 = false;
-        if (isFinite(slot)) slot1 = true;
-        if (isFinite(newslot)) slot2 = true;
+        if (typeof slot == 'number') slot1 = true;
+        if (typeof newslot == 'number') slot2 = true;
         if (slot1) {
             item1 = self.items[slot];
         } else {
@@ -163,7 +169,7 @@ Inventory = function(socket, player) {
     };
     self.dropItem = function(slot) {
         var item;
-        if (isFinite(slot)) {
+        if (typeof slot == 'number') {
             item = self.items[slot];
         } else {
             item = self.equips[slot];
@@ -197,7 +203,7 @@ Inventory = function(socket, player) {
                         var bound2top = collisions[i][j].y-(collisions[i][j].height/2);
                         var bound2bottom = collisions[i][j].y+(collisions[i][j].height/2);
                         if (bound1left < bound2right && bound1right > bound2left && bound1top < bound2bottom && bound1bottom > bound2top) {
-                            colliding = true;;
+                            colliding = true;
                         }
                     }
                 }
@@ -240,36 +246,39 @@ Inventory = function(socket, player) {
                     });
                 }
             }
-            return JSON.stringify(pack);
+            return pack;
         } catch (err) {
             console.error(err);
         }
     };
-    self.loadSaveData = function(data) {
-        if (data) {
+    self.loadSaveData = function(items) {
+        if (items) {
             try {
-                var items = JSON.parse(data);
                 socket.emit('item', {
                     action: 'maxItems',
                     slots: self.maxItems
                 });
                 for (var i in items.items) {
                     var localitem = items.items[i];
-                    var newitem = new Inventory.Item(localitem.id, []);
-                    newitem.slot = localitem.slot;
-                    for (var j in localitem.enchantments) {
-                        newitem.enchant(localitem.enchantments[j]);
+                    if (localitem) {
+                        var newitem = new Inventory.Item(localitem.id, []);
+                        newitem.slot = parseInt(localitem.slot);
+                        for (var j in localitem.enchantments) {
+                            newitem.enchant(localitem.enchantments[j]);
+                        }
+                        self.items[localitem.slot] = newitem;
                     }
-                    self.items[localitem.slot] = newitem;
                 }
                 for (var i in items.equips) {
                     var localitem = items.equips[i];
-                    var newitem = new Inventory.Item(localitem.id, []);
-                    newitem.slot = localitem.slot;
-                    for (var j in localitem.enchantments) {
-                        newitem.enchant(localitem.enchantments[j]);
+                    if (localitem) {
+                        var newitem = new Inventory.Item(localitem.id, []);
+                        newitem.slot = localitem.slot;
+                        for (var j in localitem.enchantments) {
+                            newitem.enchant(localitem.enchantments[j]);
+                        }
+                        self.equips[localitem.slot] = newitem;
                     }
-                    self.equips[localitem.slot] = newitem;
                 }
                 self.refresh();
             } catch(err) {

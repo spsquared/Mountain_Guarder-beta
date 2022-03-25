@@ -1,6 +1,6 @@
 // Copyright (C) 2022 Radioactive64
 
-const version = 'v0.9.0';
+const version = 'v0.10.0 Alpha 01';
 var firstload = false;
 // canvas
 CTXRAW = document.getElementById('ctx');
@@ -46,7 +46,9 @@ settings = {
     renderDistance: 1,
     renderQuality: 100,
     particles: true,
+    dialogueSpeed: 5,
     pointerLock: false,
+    useController: false,
     chatBackground: false,
     chatSize: 2,
     highContrast: false,
@@ -137,6 +139,7 @@ document.getElementById('ctx').addEventListener('contextmenu', function(e) {e.pr
 document.getElementById('fade').addEventListener('contextmenu', function(e) {e.preventDefault()});
 document.getElementById('deathScreen').addEventListener('contextmenu', function(e) {e.preventDefault()});
 document.getElementById('regionName').addEventListener('contextmenu', function(e) {e.preventDefault()});
+document.getElementById('promptContainer').addEventListener('contextmenu', function(e) {e.preventDefault()});
 document.getElementById('stats').addEventListener('contextmenu', function(e) {e.preventDefault()});
 document.getElementById('chatText').addEventListener('contextmenu', function(e) {e.preventDefault()});
 document.getElementById('dropdownMenu').addEventListener('contextmenu', function(e) {e.preventDefault()});
@@ -146,6 +149,7 @@ document.getElementById('ctx').addEventListener('dblclick', function(e) {e.preve
 document.getElementById('fade').addEventListener('dblclick', function(e) {e.preventDefault()});
 document.getElementById('deathScreen').addEventListener('dblclick', function(e) {e.preventDefault()});
 document.getElementById('regionName').addEventListener('dblclick', function(e) {e.preventDefault()});
+document.getElementById('promptContainer').addEventListener('dblclick', function(e) {e.preventDefault()});
 document.getElementById('stats').addEventListener('dblclick', function(e) {e.preventDefault()});
 document.getElementById('chatText').addEventListener('dblclick', function(e) {e.preventDefault()});
 document.getElementById('dropdownMenu').addEventListener('dblclick', function(e) {e.preventDefault()});
@@ -193,11 +197,15 @@ socket.on('disconnected', function() {
 // pointer lock
 var pointerLocked = false;
 setInterval(function() {
-    if (document.pointerLockElement == document.body) pointerLocked = true;
-    else {
-        pointerLocked = false;
-        document.getElementById('crossHair').style.top = '-11px';
-        document.getElementById('crossHair').style.left = '-11px';
+    if (loaded) {
+        if (document.pointerLockElement == document.body) pointerLocked = true;
+        else {
+            pointerLocked = false;
+            if (!controllerConnected) {
+                document.getElementById('crossHair').style.top = '-22px';
+                document.getElementById('crossHair').style.left = '-22px';
+            }
+        }
     }
 }, 50);
 
@@ -245,5 +253,5 @@ setInterval(function() {
 
 // important sleep function
 function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise(function(resolve, reject) {setTimeout(resolve, ms)});
 };

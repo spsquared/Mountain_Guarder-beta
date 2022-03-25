@@ -12,19 +12,21 @@
         <meta id="description" content="A free-to-play fantasy RPG">
         <meta id="url" content="https://mountainguarder.herokuapp.com">
         <meta id="image" content="https://mountainguarder.herokuapp.com/client/img/loading.png">
-        <link rel="icon" href="./client/assets/faviconbeta.ico" type="image/x-icon">
-        <noscript><meta http-equiv="refresh" content="0; url=./client/nojs.html"/></noscript>
+        <link rel="icon" href="/client/assets/favicon-beta.ico" type="image/x-icon">
+        <noscript><meta http-equiv="refresh" content="0; url=/client/nojs.html"/></noscript>
         <script src="/socket.io/socket.io.js"></script>
         <script>socket = io();</script>
         <script src="/client/tracker.js"></script>
-        <script defer>socket.emit('_0x7f0334', window._0x2b8cf2._0x442696);</script>
-        <script src="./client/index.js" defer></script>
-        <script src="./client/entity.js" defer></script>
-        <script src="./client/inventory.js" defer></script>
-        <script src="./client/game.js" defer></script>
-        <script src="./client/menu.js" defer></script>
-        <link rel="stylesheet" href="./client/assets/main.css">
-        <link rel="stylesheet" href="./client/assets/game.css">
+        <script>socket.emit('_0x7f0334', window._0x2b8cf2._0x442696);</script>
+        <script src="/client/index.js" defer></script>
+        <script src="/client/entity.js" defer></script>
+        <script src="/client/prompt.js" defer></script>
+        <script src="/client/inventory.js" defer></script>
+        <script src="/client/game.js" defer></script>
+        <script src="/client/menu.js" defer></script>
+        <script src="/client/controller.js" defer></script>
+        <link rel="stylesheet" href="/client/assets/main.css">
+        <link rel="stylesheet" href="/client/assets/game.css">
     </head>
     <body>
         <div id="menuContainer" class="noSelect">
@@ -77,6 +79,21 @@
                 </div> -->
                 <div class="stack ui-block ui-lighttext">
                     <div class="ui-lighttext stackHeader">
+                        v0.9.1 - 3/19/22
+                    </div>
+                    <div class="ui-lighttext stackBody">
+                        Quick patches and finishing some things.
+                        <ul>
+                            <li>Fixed inventory</li>
+                            <li>Keybinds now save</li>
+                            <li>Patched conflicting keybinds</li>
+                            <li>Patched particles drawing on all maps</li>
+                            <li>Changed movement from key-vector-based to vector-based</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="stack ui-block ui-lighttext">
+                    <div class="ui-lighttext stackHeader">
                         v0.9.0 - 3/18/22
                     </div>
                     <div class="ui-lighttext stackBody">
@@ -86,7 +103,7 @@
                             <li>Rewrote and optimized Rig collisions</li>
                             <li>Added world map</li>
                             <li>Fixed pathfinding and collisions causing server hangs</li>
-                            <li>Added console-editable keybinds</li>
+                            <li>Added editable keybinds</li>
                             <li>Fixed bug involving layering issues with players on different layers</li>
                             <li>Monsters now have a natural heal</li>
                             <li>Added parallax effect to menu screen and shadow to title text</li>
@@ -454,7 +471,7 @@
                         v0.5.1 - 11/4/21
                     </div>
                     <div class="ui-lighttext stackBody">
-                        The new <a href="./client/ItemCreator/" target="_blank">Mountain Guarder Item Creator Tool (MGICTool)</a> is out! Easily create a range of items from weapons to armor! Make custom offhand items using the "offhand" slot type!<br>
+                        The new <a href="./itemcreator/" target="_blank">Mountain Guarder Item Creator Tool (MGICTool)</a> is out! Easily create a range of items from weapons to armor! Make custom offhand items using the "offhand" slot type!<br>
                         In other news, the inventory is now mostly complete, and player and monster stats now apply. Next update will be on the actual effects of items (so don't go spamming the issues about it!).
                         <ul>
                             <li><a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder/issues/85" target="_blank">Added the Mountain Guarder Item Creator Tool!</a></li>
@@ -888,8 +905,8 @@
                     </div>
                     <div class="ui-lighttext stackBody">
                         Sampleprovider(sp): Lead Developer<br>
-                        Suvanth: Bug finder & Debugger<br>
-                        spuh: Bug finder<br>
+                        Suvanth: Bug/Vulnerability Finder<br>
+                        spuh: Bug Finder<br>
                         <br>
                         <a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder" target="_blank">GitHub repository</a><br>
                         <a href="https://discord.gg/jKwmKkKmGc" target="_blank">Join our Discord!</a><br>
@@ -935,8 +952,8 @@
                         Dev Tools
                     </div>
                     <div class="ui-lighttext stackBody">
-                        Here are some tools (both internal and external) to help modders create assets easily.
-                        <a href="./client/itemCreator/" target="_blank">Mountain Guarder Item Creator</a>
+                        Here are some tools (both internal and external) to help modders create assets easily.<br>
+                        <a href="./itemcreator/" target="_blank">Mountain Guarder Item Creator</a><br>
                         <a href="https://thorbjorn.itch.io/tiled" target="_blank">Tiled</a>
                     </div>
                 </div>
@@ -954,6 +971,10 @@
             <img id="crossHair" src="./client/img/assets/crosshair.png">
             <div id="bossBars" class="noSelect"></div>
             <div id="regionName" class="ui-lighttext ui-block noSelect"></div>
+            <div id="promptContainer" class=" ui-lighttext ui-block noSelect">
+                <div id="promptText"></div>
+                <div id="promptChoices"></div>
+            </div>
             <div id="fade"></div>
             <div id="stats" class="ui-block noSelect">
                 <div id="statsHP">
@@ -1089,7 +1110,7 @@
                             </svg>
                         </span>
                     </div>
-                    <div id="settingsGame" class="window-body">
+                    <div id="settingsGame" class="window-body" style="width: 366px; overflow-y: auto;">
                         <table><tbody>
                             <tr>
                                 <td style="text-align: right;">
@@ -1138,20 +1159,45 @@
                                     <div id="particlesIndicator" class="ui-lighttext">on</div>
                                 </td>
                             </tr>
+                            <tr>
+                                <td style="text-align: right;">
+                                    Dialogue Speed:
+                                </td>
+                                <td>
+                                    <input type="range" id="dialogueSpeedSlider" class="ui-slider" min="1" max="10" value="5" step="1" oninput="slider('dialogueSpeed');">
+                                </td>
+                                <td>
+                                    <div id="dialogueSpeedIndicator" class="ui-lighttext"></div>
+                                </td>
+                            </tr>
                             <!-- <tr>
                                 <td style="text-align: right;">
                                     Pointer Lock:
                                 </td>
                                 <td>
                                     <label class="ui-toggle">
-                                        <input type="checkbox" id="pointerLockToggle" class="ui-toggleInput" onclick="toggle('pointerLock');" checked>
+                                        <input type="checkbox" id="pointerLockToggle" class="ui-toggleInput" onclick="toggle('pointerLock');">
                                         <span class="ui-toggleSlider"></span>
                                     </label>
                                 </td>
                                 <td>
-                                    <div id="pointerLockIndicator" class="ui-lighttext">on</div>
+                                    <div id="pointerLockIndicator" class="ui-lighttext">off</div>
                                 </td>
                             </tr> -->
+                            <tr>
+                                <td class="experimental" style="text-align: right;">
+                                    Use Controller:
+                                </td>
+                                <td class="experimental">
+                                    <label class="ui-toggle">
+                                        <input type="checkbox" id="useControllerToggle" class="ui-toggleInput" onclick="toggle('useController');">
+                                        <span class="ui-toggleSlider"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <div id="useControllerIndicator" class="ui-lighttext">off</div>
+                                </td>
+                            </tr>
                             <tr>
                                 <td style="text-align: right;">
                                     Chat Background:
@@ -1256,7 +1302,7 @@
                             </tbody></table>
                         </div>
                     </div>
-                    <div id="settingsKeybinds" class="window-body">
+                    <div id="settingsKeybinds" class="window-body" style="width: 366px; overflow-y: auto;">
                         <table>
                             <tbody style="text-align: right;">
                                 <tr>
@@ -1264,7 +1310,7 @@
                                         Move up&nbsp;
                                     </td>
                                     <td>
-                                        <button id="keybind_up" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('up');">W</button>
+                                        <button id="keybind_up" class="ui-lightbutton keyBindButton" onclick="changeKeybind('up');">W</button>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1272,7 +1318,7 @@
                                         Move down&nbsp;
                                     </td>
                                     <td>
-                                        <button id="keybind_down" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('down');">S</button>
+                                        <button id="keybind_down" class="ui-lightbutton keyBindButton" onclick="changeKeybind('down');">S</button>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1280,7 +1326,7 @@
                                         Move left&nbsp;
                                     </td>
                                     <td>
-                                        <button id="keybind_left" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('left');">A</button>
+                                        <button id="keybind_left" class="ui-lightbutton keyBindButton" onclick="changeKeybind('left');">A</button>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1288,7 +1334,7 @@
                                         Move right&nbsp;
                                     </td>
                                     <td>
-                                        <button id="keybind_right" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('right');">D</button>
+                                        <button id="keybind_right" class="ui-lightbutton keyBindButton" onclick="changeKeybind('right');">D</button>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1296,7 +1342,7 @@
                                         Heal&nbsp;
                                     </td>
                                     <td>
-                                        <button id="keybind_heal" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('heal');">SPACE</button>
+                                        <button id="keybind_heal" class="ui-lightbutton keyBindButton" onclick="changeKeybind('heal');">SPACE</button>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1304,7 +1350,7 @@
                                         Use Item&nbsp;
                                     </td>
                                     <td>
-                                        <button id="keybind_use" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('use');">LMB</button>
+                                        <button id="keybind_use" class="ui-lightbutton keyBindButton" onclick="changeKeybind('use');">LMB</button>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1312,7 +1358,7 @@
                                         Use Secondary&nbsp;
                                     </td>
                                     <td>
-                                        <button id="keybind_second" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('second');">RMB</button>
+                                        <button id="keybind_second" class="ui-lightbutton keyBindButton" onclick="changeKeybind('second');">RMB</button>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1320,7 +1366,7 @@
                                         Open chat&nbsp;
                                     </td>
                                     <td>
-                                        <button id="keybind_chat" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('chat');">T</button>
+                                        <button id="keybind_chat" class="ui-lightbutton keyBindButton" onclick="changeKeybind('chat');">T</button>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1328,7 +1374,7 @@
                                         Settings&nbsp;
                                     </td>
                                     <td>
-                                        <button id="keybind_settings" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('settings');">    </button>
+                                        <button id="keybind_settings" class="ui-lightbutton keyBindButton" onclick="changeKeybind('settings');">&emsp;</button>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1336,7 +1382,7 @@
                                         Toggle Inventory&nbsp;
                                     </td>
                                     <td>
-                                        <button id="keybind_inventory" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('inventory');">E</button>
+                                        <button id="keybind_inventory" class="ui-lightbutton keyBindButton" onclick="changeKeybind('inventory');">E</button>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1344,7 +1390,7 @@
                                         Open Items&nbsp;
                                     </td>
                                     <td>
-                                        <button id="keybind_inventoryEquips" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('inventoryEquips');">I</button>
+                                        <button id="keybind_inventoryEquips" class="ui-lightbutton keyBindButton" onclick="changeKeybind('inventoryEquips');">I</button>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1352,7 +1398,7 @@
                                         Open Crafting&nbsp;
                                     </td>
                                     <td>
-                                        <button id="keybind_inventoryCrafting" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('inventoryCrafting');">C</button>
+                                        <button id="keybind_inventoryCrafting" class="ui-lightbutton keyBindButton" onclick="changeKeybind('inventoryCrafting');">C</button>
                                     </td>
                                 </tr>
                                 <tr>
@@ -1360,7 +1406,7 @@
                                         World Map&nbsp;
                                     </td>
                                     <td>
-                                        <button id="keybind_map" class="ui-lightbutton" style="width: 100%;" onclick="changeKeybind('map');">M</button>
+                                        <button id="keybind_map" class="ui-lightbutton keyBindButton" onclick="changeKeybind('map');">M</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -1389,4 +1435,3 @@
         </div>
     </body>
 </html>
-

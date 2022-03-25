@@ -21,17 +21,18 @@ tileset.onload = function() {
 function load(data) {
     document.getElementById('loadingContainer').style.animationName = 'fadeIn';
     document.getElementById('loadingContainer').style.display = 'block';
-    totalassets = 2;
+    totalassets = 3;
     for (var i in data.maps) {
         totalassets++;
     }
     setTimeout(async function() {
-        await getEntityData();
-        await getInventoryData();
+        getEntityData();
+        getNpcDialogues();
+        getInventoryData();
         document.getElementById('loadingBar').style.display = 'block';
-        tileset.src = './client/maps/roguelikeSheet.png';
+        tileset.src = '/client/maps/roguelikeSheet.png';
         var updateLoadBar = setInterval(function() {
-            var percent = Math.round(loadedassets/totalassets*100) + '%';
+            var percent = ~~(loadedassets/totalassets*100) + '%';
             document.getElementById('loadingBarText').innerText = loadedassets + '/' + totalassets + ' (' + percent + ')';
             document.getElementById('loadingBarInner').style.width = percent;
             if (loadedassets >= totalassets) {
@@ -57,86 +58,82 @@ function load(data) {
         loadedassets++;
     }, 500);
 };
-function loadMap(name) {
-    return new Promise(async function(resolve, reject) {
-        if (tilesetloaded) {
-            var request = new XMLHttpRequest();
-            request.open('GET', './client/maps/' + name + '.json', true);
-            request.onload = async function() {
-                if (this.status >= 200 && this.status < 400) {
-                    var json = JSON.parse(this.response);
-                    MAPS[name] = {
-                        width: 0,
-                        height: 0,
-                        offsetX: 0,
-                        offsetY: 0,
-                        chunkwidth: 0,
-                        chunkheight: 0,
-                        chunks: [],
-                        chunkJSON: [],
-                        layerCount: 0
-                    };
-                    for (var i in json.layers) {
-                        if (json.layers[i].visible) {
-                            if (json.layers[i].name == 'Ground Terrain') {
-                                MAPS[name].width = json.layers[i].width;
-                                MAPS[name].height = json.layers[i].height;
-                                MAPS[name].chunkwidth = json.layers[i].width;
-                                MAPS[name].chunkheight = json.layers[i].height;
-                                if (json.layers[i].chunks) {
-                                    for (var j in json.layers[i].chunks) {
-                                        var rawchunk = json.layers[i].chunks[j];
-                                        MAPS[name].chunkwidth = rawchunk.width;
-                                        MAPS[name].chunkheight = rawchunk.height;
-                                        MAPS[name].offsetX = Math.min(rawchunk.x*64, MAPS[name].offsetX);
-                                        MAPS[name].offsetY = Math.min(rawchunk.y*64, MAPS[name].offsetY);
-                                    }
-                                }
-                            }
+async function loadMap(name) {
+    if (tilesetloaded) {
+        var request = new XMLHttpRequest();
+        request.open('GET', '/client/maps/' + name + '.json', false);
+        request.onload = function() {
+            if (this.status >= 200 && this.status < 400) {
+                var json = JSON.parse(this.response);
+                MAPS[name] = {
+                    width: 0,
+                    height: 0,
+                    offsetX: 0,
+                    offsetY: 0,
+                    chunkwidth: 0,
+                    chunkheight: 0,
+                    chunks: [],
+                    chunkJSON: [],
+                    layerCount: 0
+                };
+                for (var i in json.layers) {
+                    if (json.layers[i].visible) {
+                        if (json.layers[i].name == 'Ground Terrain') {
+                            MAPS[name].width = json.layers[i].width;
+                            MAPS[name].height = json.layers[i].height;
+                            MAPS[name].chunkwidth = json.layers[i].width;
+                            MAPS[name].chunkheight = json.layers[i].height;
                             if (json.layers[i].chunks) {
                                 for (var j in json.layers[i].chunks) {
                                     var rawchunk = json.layers[i].chunks[j];
-                                    if (MAPS[name].chunkJSON[rawchunk.y/rawchunk.width] == null) {
-                                        MAPS[name].chunkJSON[rawchunk.y/rawchunk.width] = [];
-                                    }
-                                    if (MAPS[name].chunkJSON[rawchunk.y/rawchunk.width][rawchunk.x/rawchunk.height] == null) {
-                                        MAPS[name].chunkJSON[rawchunk.y/rawchunk.width][rawchunk.x/rawchunk.height] = [];
-                                    }
-                                    MAPS[name].chunkJSON[rawchunk.y/rawchunk.width][rawchunk.x/rawchunk.width][json.layers[i].name] = rawchunk.data;
-                                    MAPS[name].chunkJSON[rawchunk.y/rawchunk.width][rawchunk.x/rawchunk.width][json.layers[i].name].offsetX = 0;
-                                    MAPS[name].chunkJSON[rawchunk.y/rawchunk.width][rawchunk.x/rawchunk.width][json.layers[i].name].offsetY = 0;
-                                    if (json.layers[i].offsetx) MAPS[name].chunkJSON[rawchunk.y/rawchunk.width][rawchunk.x/rawchunk.width][json.layers[i].name].offsetX = json.layers[i].offsetx;
-                                    if (json.layers[i].offsety) MAPS[name].chunkJSON[rawchunk.y/rawchunk.width][rawchunk.x/rawchunk.width][json.layers[i].name].offsetY = json.layers[i].offsety;
+                                    MAPS[name].chunkwidth = rawchunk.width;
+                                    MAPS[name].chunkheight = rawchunk.height;
+                                    MAPS[name].offsetX = Math.min(rawchunk.x*64, MAPS[name].offsetX);
+                                    MAPS[name].offsetY = Math.min(rawchunk.y*64, MAPS[name].offsetY);
                                 }
-                            } else {
-                                if (MAPS[name].chunkJSON[0] == null) {
-                                    MAPS[name].chunkJSON[0] = [[]];
-                                }
-                                MAPS[name].chunkJSON[0][0][json.layers[i].name] = json.layers[i].data;
-                                MAPS[name].chunkJSON[0][0][json.layers[i].name].offsetX = 0;
-                                MAPS[name].chunkJSON[0][0][json.layers[i].name].offsetY = 0;
-                                if (json.layers[i].offsetx) MAPS[name].chunkJSON[0][0][json.layers[i].name].offsetX = json.layers[i].offsetx;
-                                if (json.layers[i].offsety) MAPS[name].chunkJSON[0][0][json.layers[i].name].offsetY = json.layers[i].offsety;
                             }
-                            if (json.layers[i].name.includes('Variable')) MAPS[name].layerCount++;
                         }
+                        if (json.layers[i].chunks) {
+                            for (var j in json.layers[i].chunks) {
+                                var rawchunk = json.layers[i].chunks[j];
+                                if (MAPS[name].chunkJSON[rawchunk.y/rawchunk.width] == null) {
+                                    MAPS[name].chunkJSON[rawchunk.y/rawchunk.width] = [];
+                                }
+                                if (MAPS[name].chunkJSON[rawchunk.y/rawchunk.width][rawchunk.x/rawchunk.height] == null) {
+                                    MAPS[name].chunkJSON[rawchunk.y/rawchunk.width][rawchunk.x/rawchunk.height] = [];
+                                }
+                                MAPS[name].chunkJSON[rawchunk.y/rawchunk.width][rawchunk.x/rawchunk.width][json.layers[i].name] = rawchunk.data;
+                                MAPS[name].chunkJSON[rawchunk.y/rawchunk.width][rawchunk.x/rawchunk.width][json.layers[i].name].offsetX = 0;
+                                MAPS[name].chunkJSON[rawchunk.y/rawchunk.width][rawchunk.x/rawchunk.width][json.layers[i].name].offsetY = 0;
+                                if (json.layers[i].offsetx) MAPS[name].chunkJSON[rawchunk.y/rawchunk.width][rawchunk.x/rawchunk.width][json.layers[i].name].offsetX = json.layers[i].offsetx;
+                                if (json.layers[i].offsety) MAPS[name].chunkJSON[rawchunk.y/rawchunk.width][rawchunk.x/rawchunk.width][json.layers[i].name].offsetY = json.layers[i].offsety;
+                            }
+                        } else {
+                            if (MAPS[name].chunkJSON[0] == null) {
+                                MAPS[name].chunkJSON[0] = [[]];
+                            }
+                            MAPS[name].chunkJSON[0][0][json.layers[i].name] = json.layers[i].data;
+                            MAPS[name].chunkJSON[0][0][json.layers[i].name].offsetX = 0;
+                            MAPS[name].chunkJSON[0][0][json.layers[i].name].offsetY = 0;
+                            if (json.layers[i].offsetx) MAPS[name].chunkJSON[0][0][json.layers[i].name].offsetX = json.layers[i].offsetx;
+                            if (json.layers[i].offsety) MAPS[name].chunkJSON[0][0][json.layers[i].name].offsetY = json.layers[i].offsety;
+                        }
+                        if (json.layers[i].name.includes('Variable')) MAPS[name].layerCount++;
                     }
-                    loadedassets++;
-                    resolve();
-                } else {
-                    console.error('Error: Server returned status ' + this.status);
                 }
-            };
-            request.onerror = function(){
-                console.error('There was a connection error. Please retry');
-                reject();
-            };
-            request.send();
-        } else {
-            await sleep(100);
-            await loadMap(name);
-        }
-    });
+                loadedassets++;
+            } else {
+                console.error('Error: Server returned status ' + this.status);
+            }
+        };
+        request.onerror = function(){
+            console.error('There was a connection error. Please retry');
+        };
+        request.send();
+    } else {
+        await sleep(100);
+        await loadMap(name);
+    }
 };
 function MGHC() {};
 
@@ -239,12 +236,12 @@ function drawMap() {
         mapTimeCounter = current-mapStart;
     }
 };
-async function resetRenderedChunks() {
+function resetRenderedChunks() {
     if (player) {
-        MAPS[player.map].chunks = [];
-        LAYERS.mapvariables = [];
-        LAYERS.mvariables = [];
-        await updateRenderedChunks();
+        MAPS[player.map].chunks.length = 0;
+        LAYERS.mapvariables.length = 0;
+        LAYERS.mvariables.length = 0;
+        updateRenderedChunks();
     }
 };
 async function updateRenderedChunks() {
@@ -299,11 +296,11 @@ function renderChunk(x, y, map) {
                 var dx = (j % MAPS[map].chunkwidth)*16+MAPS[player.map].chunkJSON[y][x][i].offsetX;
                 var dy = ~~(j / MAPS[map].chunkwidth)*16+MAPS[player.map].chunkJSON[y][x][i].offsetY;
                 if (above) {
-                    tupper.drawImage(tileset, Math.round(imgx), Math.round(imgy), 16, 16, Math.round(dx*4), Math.round(dy*4), 64, 64);
+                    tupper.drawImage(tileset, imgx, imgy, 16, 16, dx*4, dy*4, 64, 64);
                 } else if (variable != -1) {
-                    tvariables[vindex].drawImage(tileset, Math.round(imgx), Math.round(imgy), 16, 16, Math.round(dx*4), Math.round(dy*4), 64, 64);
+                    tvariables[vindex].drawImage(tileset, imgx, imgy, 16, 16, dx*4, dy*4, 64, 64);
                 } else {
-                    tlower.drawImage(tileset, Math.round(imgx), Math.round(imgy), 16, 16, Math.round(dx*4), Math.round(dy*4), 64, 64);
+                    tlower.drawImage(tileset, imgx, imgy, 16, 16, dx*4, dy*4, 64, 64);
                 }
             }
         }
@@ -346,26 +343,16 @@ function drawDebug() {
         for (var i in debugData.players) {
             var localplayer = debugData.players[i];
             if (localplayer.map == player.map && getManhattanDistance(localplayer) < settings.renderDistance*2*MAPS[player.map].chunkwidth*64) {
-                // keys
+                // control vectors
                 tempctx.beginPath();
                 tempctx.strokeStyle = '#000000';
                 tempctx.lineWidth = 2;
-                if (localplayer.keys.left) {
-                    tempctx.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
-                    tempctx.lineTo(localplayer.x-localplayer.width/2+OFFSETX, localplayer.y+OFFSETY);
-                }
-                if (localplayer.keys.right) {
-                    tempctx.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
-                    tempctx.lineTo(localplayer.x+localplayer.width/2+OFFSETX, localplayer.y+OFFSETY);
-                }
-                if (localplayer.keys.up) {
-                    tempctx.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
-                    tempctx.lineTo(localplayer.x+OFFSETX, localplayer.y-localplayer.height/2+OFFSETY);
-                }
-                if (localplayer.keys.down) {
-                    tempctx.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
-                    tempctx.lineTo(localplayer.x+OFFSETX, localplayer.y+localplayer.height/2+OFFSETY);
-                }
+                tempctx.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
+                tempctx.lineTo(localplayer.x+localplayer.controls.x*20+OFFSETX, localplayer.y+OFFSETY);
+                tempctx.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
+                tempctx.lineTo(localplayer.x+OFFSETX, localplayer.y+localplayer.controls.y*20+OFFSETY);
+                tempctx.moveTo(localplayer.x+OFFSETX, localplayer.y+OFFSETY);
+                tempctx.lineTo(localplayer.x+localplayer.controls.x*20+OFFSETX, localplayer.y+localplayer.controls.y*20+OFFSETY);
                 tempctx.stroke();
                 // hitbox
                 tempctx.beginPath();
@@ -447,22 +434,12 @@ function drawDebug() {
                 tempctx.beginPath();
                 tempctx.strokeStyle = '#000000';
                 tempctx.lineWidth = 2;
-                if (localmonster.keys.left) {
-                    tempctx.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
-                    tempctx.lineTo(localmonster.x-localmonster.width/2+OFFSETX, localmonster.y+OFFSETY);
-                }
-                if (localmonster.keys.right) {
-                    tempctx.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
-                    tempctx.lineTo(localmonster.x+localmonster.width/2+OFFSETX, localmonster.y+OFFSETY);
-                }
-                if (localmonster.keys.up) {
-                    tempctx.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
-                    tempctx.lineTo(localmonster.x+OFFSETX, localmonster.y-localmonster.height/2+OFFSETY);
-                }
-                if (localmonster.keys.down) {
-                    tempctx.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
-                    tempctx.lineTo(localmonster.x+OFFSETX, localmonster.y+localmonster.height/2+OFFSETY);
-                }
+                tempctx.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
+                tempctx.lineTo(localmonster.x+localmonster.controls.x*20+OFFSETX, localmonster.y+OFFSETY);
+                tempctx.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
+                tempctx.lineTo(localmonster.x+OFFSETX, localmonster.y+localmonster.controls.y*20+OFFSETY);
+                tempctx.moveTo(localmonster.x+OFFSETX, localmonster.y+OFFSETY);
+                tempctx.lineTo(localmonster.x+localmonster.controls.x*20+OFFSETX, localmonster.y+localmonster.controls.y*20+OFFSETY);
                 tempctx.stroke();
                 // hitbox
                 tempctx.beginPath();
@@ -570,6 +547,7 @@ function resetFPS() {
     drawLoop = setInterval(function() {
         window.requestAnimationFrame(function() {
             drawFrame();
+            if (settings.useController) updateControllers();
             fpsCounter++;
         });
     }, 1000/settings.fps);
@@ -582,6 +560,7 @@ socket.on('updateTick', function(data) {
         Entity.update(data);
         player = Player.list[playerid];
         updateRenderedChunks();
+        if (settings.useController) sendControllers();
     }
 });
 socket.on('debugTick', function(debug) {
@@ -593,7 +572,7 @@ document.onkeydown = function(e) {
     if (loaded) {
         if (!e.isTrusted) {
             socket.emit('timeout');
-        } else if (!inchat && !indebug) {
+        } else if (!inchat && !indebug && !changingKeyBind) {
             var key = e.key.toLowerCase();
             if (key == keybinds.up) {
                 socket.emit('keyPress', {key:'up', state:true});
@@ -630,6 +609,12 @@ document.onkeydown = function(e) {
                 socket.emit('keyPress', {key:'heal', state:false});
                 socket.emit('click', {button: 'left', x: mouseX, y: mouseY, state: false});
                 socket.emit('click', {button: 'right', x: mouseX, y: mouseY, state: false});
+                socket.emit('controllerAxes', {
+                    movex: 0,
+                    movey: 0,
+                    aimx: 0,
+                    aimy: 0
+                });
             }
         }
     }
@@ -668,7 +653,7 @@ document.onmousedown = function(e) {
             mouseX = e.clientX-window.innerWidth/2;
             mouseY = e.clientY-window.innerHeight/2;
         }
-        if (!document.getElementById('chat').contains(e.target) && !document.getElementById('dropdownMenu').contains(e.target) && !document.getElementById('windows').contains(e.target) && !document.getElementById('deathScreen').contains(e.target)) {
+        if (!changingKeyBind && !document.getElementById('chat').contains(e.target) && !document.getElementById('dropdownMenu').contains(e.target) && !document.getElementById('windows').contains(e.target) && !document.getElementById('deathScreen').contains(e.target)) {
             switch (e.button) {
                 case keybinds.use:
                     socket.emit('click', {button: 'left', x: mouseX-OFFSETX, y: mouseY-OFFSETY, state: true});
@@ -718,7 +703,7 @@ document.onmousemove = function(e) {
             mouseX = e.clientX-window.innerWidth/2;
             mouseY = e.clientY-window.innerHeight/2;
         }
-        socket.emit('mouseMove', {x: mouseX-OFFSETX, y: mouseY-OFFSETY});
+        if (!controllerConnected) socket.emit('mouseMove', {x: mouseX-OFFSETX, y: mouseY-OFFSETY});
         DroppedItem.updateHighlight();
     }
 };
@@ -772,6 +757,7 @@ socket.on('teleport2', function(pos) {
 socket.on('playerDied', function() {
     document.getElementById('respawnButton').style.display = 'none';
     document.getElementById('deathScreen').style.display = 'block';
+    if (controllerConnected) document.getElementById('respawnButton').innerText = 'Press A to Respawn';
     var time = 5;
     document.getElementById('respawnTimer').innerText = time;
     var timer = setInterval(function() {
@@ -787,16 +773,23 @@ function respawn() {
     socket.emit('respawn');
     document.getElementById('respawnButton').style.display = 'none';
     document.getElementById('deathScreen').style.display = 'none';
+    if (controllerConnected) document.getElementById('respawnButton').innerText = 'Respawn';
 };
 
 // automove prevention
-document.addEventListener("visibilitychange", function() {
+document.onvisibilitychange = function() {
     socket.emit('keyPress', {key:'up', state:false});
     socket.emit('keyPress', {key:'down', state:false});
     socket.emit('keyPress', {key:'left', state:false});
     socket.emit('keyPress', {key:'right', state:false});
     socket.emit('keyPress', {key:'heal', state:false});
-});
+    socket.emit('controllerAxes', {
+        movex: 0,
+        movey: 0,
+        aimx: 0,
+        aimy: 0
+    });
+};
 
 // chat
 var inchat = false;

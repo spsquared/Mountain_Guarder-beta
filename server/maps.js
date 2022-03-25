@@ -266,13 +266,13 @@ loadAll();
 resetMaps = function() {
     insertChat('[!] Reloading all maps [!]', 'server');
     logColor('Reloading all maps', '\x1b[33m', 'error');
-    Monster.list = [];
-    Collision.grid = [];
-    Layer.grid = [];
-    Slowdown.grid = [];
-    Spawner.list = [];
-    Region.grid = [];
-    Teleporter.grid = [];
+    Monster.list.length = 0;
+    Collision.grid.length = 0;
+    Layer.grid.length = 0;
+    Slowdown.grid.length = 0;
+    Spawner.list.length = 0;
+    Region.grid.length = 0;
+    Teleporter.grid.length = 0;
     loadAll();
 };
 

@@ -1,6 +1,8 @@
 // Copyright (C) 2022 Radioactive64
 
 const PF = require('pathfinding');
+const Cryptr = require('cryptr');
+const cryptr = new Cryptr('cachePasswordKey');
 
 // entities
 Entity = function() {
@@ -377,11 +379,15 @@ Rig = function() {
     var self = new Entity();
     self.width = 32;
     self.height = 32;
-    self.keys = {
+    self.controls = {
         up: false,
         down: false,
         left: false,
         right: false,
+        xaxis: 0,
+        yaxis: 0,
+        x: 0,
+        y: 0,
         heal: false
     };
     self.xmove = 0;
@@ -391,7 +397,7 @@ Rig = function() {
     self.animationStage = 0;
     self.animationLength = 0;
     self.lastFrameUpdate = 0;
-    self.animationSpeed = 100;
+    self.animationSpeed = 150;
     self.animationDirection = 'facing';
     self.facingDirection = 'down';
     self.moveSpeed = 15;
@@ -414,6 +420,7 @@ Rig = function() {
     self.lastAutoHeal = 0;
     self.xp = 0;
     self.maxXP = 0;
+    self.xpLevel = 0;
     self.mana = 200;
     self.maxMana = 200;
     self.lastManaUse = 0;
@@ -479,7 +486,7 @@ Rig = function() {
             self.hp = Math.min(self.hp+1, self.maxHP);
             self.lastAutoHeal = 0;
         }
-        if (self.keys.heal && self.hp < self.maxHP && self.lastHeal >= seconds(0.5) && self.mana >= 10) {
+        if (self.controls.heal && self.hp < self.maxHP && self.lastHeal >= seconds(0.5) && self.mana >= 10) {
             var oldhp = self.hp;
             self.lastHeal = 0;
             self.hp = Math.min(self.hp+20, self.maxHP);
@@ -507,23 +514,29 @@ Rig = function() {
                 if (self.ai.entityTarget) self.ai.pathtoEntity();
                 else if (self.ai.posTarget.x) self.ai.pathtoPos();
                 else if (self.ai.idleMove != 'none') self.ai.pathIdle();
-                else self.ai.path = [];
+                else self.ai.path.length = 0;
             }
-            self.keys = {
+            self.controls = {
                 up: false,
                 down: false,
                 left: false,
                 right: false,
+                xaxis: 0,
+                yaxis: 0,
+                x: 0,
+                y: 0,
                 heal: false
             };
         } else {
             if (self.slowedDown) self.moveSpeed *= 0.5;
-            self.xmove = 0;
-            self.ymove = 0;
-            if (self.keys.up) self.ymove = -self.moveSpeed;
-            if (self.keys.down) self.ymove = self.moveSpeed;
-            if (self.keys.left) self.xmove = -self.moveSpeed;
-            if (self.keys.right) self.xmove = self.moveSpeed;
+            self.controls.x = self.controls.xaxis;
+            self.controls.y = self.controls.yaxis;
+            if (self.controls.up) self.controls.y = Math.max(-1, Math.min(self.controls.y-1, 1));
+            if (self.controls.down) self.controls.y = Math.max(-1, Math.min(self.controls.y+1, 1));
+            if (self.controls.left) self.controls.x = Math.max(-1, Math.min(self.controls.x-1, 1));
+            if (self.controls.right) self.controls.x = Math.max(-1, Math.min(self.controls.x+1, 1));
+            self.xmove = self.controls.x*self.moveSpeed;
+            self.ymove = self.controls.y*self.moveSpeed;
             if (self.slowedDown) self.moveSpeed *= 2;
         }
         self.xspeed = Math.round(self.xmove+self.xknockback);
@@ -534,17 +547,36 @@ Rig = function() {
         if (0-Math.abs(self.xknockback) > -0.5) self.xknockback = 0;
         if (0-Math.abs(self.yknockback) > -0.5) self.yknockback = 0;
         self.animationDirection = 'facing';
-        if (self.keys.up) self.animationDirection = 'up';
-        if (self.keys.down) self.animationDirection = 'down';
-        if (self.keys.left) {
-            if (self.keys.down) self.animationDirection = 'downleft';
-            else if (self.keys.up) self.animationDirection = 'upleft';
-            else self.animationDirection = 'left';
-        }
-        if (self.keys.right) {
-            if (self.keys.down) self.animationDirection = 'downright';
-            else if (self.keys.up) self.animationDirection = 'upright';
-            else self.animationDirection = 'right';
+        if (self.controls.x || self.controls.y) {
+            var dir = Math.round(radians(Math.atan2(self.controls.y, self.controls.x))/45);
+            if (dir <= 0) dir = 8-Math.abs(dir);
+            if (dir == 8) dir = 0;
+            switch (dir) {
+                case 0:
+                    self.animationDirection = 'right';
+                    break;
+                case 1:
+                    self.animationDirection = 'downright';
+                    break;
+                case 2:
+                    self.animationDirection = 'down';
+                    break;
+                case 3:
+                    self.animationDirection = 'downleft';
+                    break;
+                case 4:
+                    self.animationDirection = 'left';
+                    break;
+                case 5:
+                    self.animationDirection = 'upleft';
+                    break;
+                case 6:
+                    self.animationDirection = 'up';
+                    break;
+                case 7:
+                    self.animationDirection = 'upright';
+                    break;
+            }
         }
         if (self.animationDirection != 'facing') self.facingDirection = self.animationDirection;
         var foundregion = false;
@@ -722,130 +754,136 @@ Rig = function() {
         }
     };
     self.aiControl = function() {
-        var oldkeys = self.keys;
-        self.keys = {
+        var oldcontrols = self.controls;
+        self.controls = {
             up: false,
             down: false,
             left: false,
             right: false,
+            xaxis: 0,
+            yaxis: 0,
+            x: 0,
+            y: 0,
             heal: false
         };
         self.xmove = 0;
         self.ymove = 0;
         if (self.ai.path[0]) {
-            if (self.ai.path[0][0]*64+32 < self.x) self.keys.left = true;
-            if (self.ai.path[0][0]*64+32 > self.x) self.keys.right = true;
-            if (self.ai.path[0][1]*64+32 < self.y) self.keys.up = true;
-            if (self.ai.path[0][1]*64+32 > self.y) self.keys.down = true;
+            // var angle = Math.atan2(self.ai.path[0][1]*64+32-self.y, self.ai.path[0][0]*64+32-self.x);
+            // self.controls.xaxis = Math.cos(angle);
+            // self.controls.yaxis = Math.sin(angle);
+            if (self.ai.path[0][0]*64+32 < self.x) self.controls.left = true;
+            else if (self.ai.path[0][0]*64+32 > self.x) self.controls.right = true;
+            if (self.ai.path[0][1]*64+32 < self.y) self.controls.up = true;
+            else if (self.ai.path[0][1]*64+32 > self.y) self.controls.down = true;
             if (Math.round(self.x) == self.ai.path[0][0]*64+32 && Math.round(self.y) == self.ai.path[0][1]*64+32) {
                 self.ai.path.shift();
             }
             if (self.slowedDown) self.moveSpeed *= 0.5;
-            if (self.keys.up) self.ymove = -self.moveSpeed;
-            if (self.keys.down) self.ymove = self.moveSpeed;
-            if (self.keys.left) self.xmove = -self.moveSpeed;
-            if (self.keys.right) self.xmove = self.moveSpeed;
+            self.controls.x = self.controls.xaxis;
+            self.controls.y = self.controls.yaxis;
+            if (self.controls.up) self.controls.y = Math.max(-1, Math.min(self.controls.y-1, 1));
+            if (self.controls.down) self.controls.y = Math.max(-1, Math.min(self.controls.y+1, 1));
+            if (self.controls.left) self.controls.x = Math.max(-1, Math.min(self.controls.x-1, 1));
+            if (self.controls.right) self.controls.x = Math.max(-1, Math.min(self.controls.x+1, 1));
+            self.xmove = self.controls.x*self.moveSpeed;
+            self.ymove = self.controls.y*self.moveSpeed;
             if (self.slowedDown) self.moveSpeed *= 2;
             self.xspeed = Math.round(self.xmove+self.xknockback);
             self.yspeed = Math.round(self.ymove+self.yknockback);
         }
-        for (var i in self.keys) {
-            if (self.keys[i] != oldkeys[i]) return true;
+        for (var i in self.controls) {
+            if (self.controls[i] != oldcontrols[i]) return true;
         }
         return false;
     };
     self.updateAnimation = function() {
         self.lastFrameUpdate++;
-        if (self.lastFrameUpdate >= seconds(self.animationSpeed/1000)) {
-            self.lastFrameUpdate = 0;
-            switch (self.animationDirection) {
-                case 'none':
-                    self.animationStage = 0;
-                    break;
-                case 'loop':
-                    self.animationStage++;
-                    if (self.animationStage > self.animationLength) self.animationStage = 0;
-                    break;
-                case 'facing':
-                    switch (self.facingDirection) {
-                        case 'up':
-                            self.animationStage = 24;
-                            break;
-                        case 'down':
-                            self.animationStage = 0;
-                            break;
-                        case 'left':
-                            self.animationStage = 36;
-                            break;
-                        case 'right':
-                            self.animationStage = 12;
-                            break;
-                        case 'upleft':
-                            self.animationStage = 30;
-                            break;
-                        case 'downleft':
-                            self.animationStage = 42;
-                            break;
-                        case 'upright':
-                            self.animationStage = 18;
-                            break;
-                        case 'downright':
-                            self.animationStage = 6;
-                            break;
-                        default:
-                            error('Invalid facingDirection ' + self.facingDirection);
-                            break;
-                    }
-                    break;
+        if (self.animationDirection == 'none') {
+            self.animationStage = 0;
+        } else if (self.animationDirection == 'loop') {
+            if (self.lastFrameUpdate >= seconds(self.animationSpeed/1000)) {
+                self.lastFrameUpdate = 0;
+                self.animationStage++;
+                if (self.animationStage > self.animationLength) self.animationStage = 0;
+            }
+        } else if (self.animationDirection == 'facing') {
+            switch (self.facingDirection) {
                 case 'up':
-                    self.animationStage++;
-                    if (self.animationStage < 25) self.animationStage = 25;
-                    if (self.animationStage > 29) self.animationStage = 25;
+                    self.animationStage = 24;
                     break;
                 case 'down':
-                    self.animationStage++;
-                    if (self.animationStage < 1) self.animationStage = 1;
-                    if (self.animationStage > 5) self.animationStage = 1;
+                    self.animationStage = 0;
                     break;
-                case 'left':;
-                    self.animationStage++;
-                    if (self.animationStage < 37) self.animationStage = 37;
-                    if (self.animationStage > 41) self.animationStage = 37;
+                case 'left':
+                    self.animationStage = 36;
                     break;
                 case 'right':
-                    self.animationStage++;
-                    if (self.animationStage < 13) self.animationStage = 13;
-                    if (self.animationStage > 17) self.animationStage = 13;
+                    self.animationStage = 12;
                     break;
                 case 'upleft':
-                    self.animationStage++;
-                    if (self.animationStage < 31) self.animationStage = 31;
-                    if (self.animationStage > 35) self.animationStage = 31;
+                    self.animationStage = 30;
                     break;
                 case 'downleft':
-                    self.animationStage++;
-                    if (self.animationStage < 43) self.animationStage = 43;
-                    if (self.animationStage > 47) self.animationStage = 43;
+                    self.animationStage = 42;
                     break;
                 case 'upright':
-                    self.animationStage++;
-                    if (self.animationStage < 19) self.animationStage = 19;
-                    if (self.animationStage > 23) self.animationStage = 19;
+                    self.animationStage = 18;
                     break;
                 case 'downright':
-                    self.animationStage++;
-                    if (self.animationStage < 7) self.animationStage = 7;
-                    if (self.animationStage > 11) self.animationStage = 7;
+                    self.animationStage = 6;
                     break;
                 default:
-                    error('Invalid animationDirection ' + self.animationDirection);
+                    error('Invalid facingDirection ' + self.facingDirection);
                     break;
+            }
+        } else {
+            if (self.lastFrameUpdate >= seconds(self.animationSpeed/1000)) {
+                self.lastFrameUpdate = 0;
+                self.animationStage++;
+                switch (self.animationDirection) {
+                    case 'up':
+                        if (self.animationStage < 25) self.animationStage = 25;
+                        if (self.animationStage > 29) self.animationStage = 25;
+                        break;
+                    case 'down':
+                        if (self.animationStage < 1) self.animationStage = 1;
+                        if (self.animationStage > 5) self.animationStage = 1;
+                        break;
+                    case 'left':;
+                        if (self.animationStage < 37) self.animationStage = 37;
+                        if (self.animationStage > 41) self.animationStage = 37;
+                        break;
+                    case 'right':
+                        if (self.animationStage < 13) self.animationStage = 13;
+                        if (self.animationStage > 17) self.animationStage = 13;
+                        break;
+                    case 'upleft':
+                        if (self.animationStage < 31) self.animationStage = 31;
+                        if (self.animationStage > 35) self.animationStage = 31;
+                        break;
+                    case 'downleft':
+                        if (self.animationStage < 43) self.animationStage = 43;
+                        if (self.animationStage > 47) self.animationStage = 43;
+                        break;
+                    case 'upright':
+                        if (self.animationStage < 19) self.animationStage = 19;
+                        if (self.animationStage > 23) self.animationStage = 19;
+                        break;
+                    case 'downright':
+                        if (self.animationStage < 7) self.animationStage = 7;
+                        if (self.animationStage > 11) self.animationStage = 7;
+                        break;
+                    default:
+                        error('Invalid animationDirection ' + self.animationDirection);
+                        break;
+                }
             }
         }
     };
     self.ai.pathtoEntity = function() {
         if (self.ai.entityTarget) {
-            self.ai.path = [];
+            self.ai.path.length = 0;
             try {
                 var x = self.x;
                 var y = self.y;
@@ -984,7 +1022,7 @@ Rig = function() {
     };
     self.ai.pathtoPos = function() {
         if (self.ai.posTarget) {
-            self.ai.path = [];
+            self.ai.path.length = 0;
             try {
                 if (self.getSquareGridDistance(self.ai.posTarget) < self.ai.maxRange) {
                     var offsetx = self.gridx-self.ai.maxRange-1;
@@ -1019,7 +1057,7 @@ Rig = function() {
         return self.ai.path;
     };
     self.ai.pathIdle = function() {
-        // self.ai.path = [];
+        // self.ai.path.length = 0;
         if (self.ai.idleMove == 'waypoints') {
             try {
                 if (self.ai.idleWaypoints.lastPathEnd >= seconds(self.ai.idleWaypoints.waitTime)*Math.random()) {
@@ -1029,7 +1067,7 @@ Rig = function() {
                     if (waypoints) {
                         for (var i in waypoints) {
                             var waypoint = waypoints[i];
-                            if (waypoint.map != self.map) delete waypoints[i];
+                            if (waypoint.map != self.map) waypoints.splice(i, 1);
                             if (waypoint.x == self.gridx && waypoint.y == self.gridy && waypoint.map == self.map) {
                                 var alreadyExists = false;
                                 for (var j in lastWaypoints) {
@@ -1046,7 +1084,7 @@ Rig = function() {
                         for (var i in waypoints) {
                             var waypoint = waypoints[i];
                             for (var j in lastWaypoints) {
-                                if (waypoint.x == lastWaypoints[j].x && waypoint.y == lastWaypoints[j].y && waypoint.map == lastWaypoints[j].map) delete waypoints[i];
+                                if (waypoint.x == lastWaypoints[j].x && waypoint.y == lastWaypoints[j].y && waypoint.map == lastWaypoints[j].map) waypoints.splice(i, 1);
                             }
                         }
                         var lowest;
@@ -1073,7 +1111,7 @@ Rig = function() {
                 if (self.x == self.ai.idleWaypoints.pos.x*64+32 && self.y == self.ai.idleWaypoints.pos.y*64+32) self.ai.idleWaypoints.walking = false;
                 if (!self.ai.idleWaypoints.walking) {
                     self.ai.idleWaypoints.lastPathEnd += seconds(0.1);
-                    self.ai.path = [];
+                    self.ai.path.length = 0;
                 }
             } catch (err) {
                 error(err);
@@ -1117,7 +1155,7 @@ Rig = function() {
                 if (self.gridx == self.ai.idleWaypoints.pos.x && self.gridy == self.ai.idleWaypoints.pos.y) self.ai.idleRandom.walking = false;
                 if (!self.ai.idleRandom.walking) {
                     self.ai.idleRandom.lastPathEnd += seconds(0.1);
-                    self.ai.path = [];
+                    self.ai.path.length = 0;
                 }
             } catch (err) {
                 error(err);
@@ -1207,7 +1245,7 @@ Rig = function() {
             self.x = x*64+32;
             self.y = y*64+32;
             self.layer = layer;
-            self.ai.path = [];
+            self.ai.path.length = 0;
             self.ai.entityTarget = null;
             self.ai.posTarget = {
                 x: null,
@@ -1215,7 +1253,7 @@ Rig = function() {
             };
             self.ai.idleRandom.walking = false;
             self.ai.idleWaypoints.walking = false;
-            self.ai.idleWaypoints.lastWaypoints = [];
+            self.ai.idleWaypoints.lastWaypoints.length = 0;
             for (var i = 0; i < 20; i++) {
                 new Particle(self.map, self.x, self.y, self.layer, 'teleport');
             }
@@ -1270,14 +1308,17 @@ Npc = function(id, x, y, map) {
             error('Invalid npc type ' + tempnpc.type);
             break;
     }
+    self.rightClickEvent = new Function('return ' + tempnpc.rightClickEvent)();
     for (var i in tempnpc.data) {
         self[i] = tempnpc.data[i];
     }
+    delete tempnpc;
     self.aiControlled = true;
     self.collisionBoxSize = Math.max(self.width, self.height);
 
     self.update = function() {
         self.updatePos();
+        self.animationSpeed = 15/Math.sqrt(self.xmove**2+self.ymove**2)*100 || 100;
         self.updateAnimation();
     };
     self.onDeath = function() {};
@@ -1319,13 +1360,14 @@ Npc.getDebugData = function() {
             collisionBoxSize: localnpc.collisionBoxSize,
             path: localnpc.ai.path,
             idleWaypoints: localnpc.ai.idleWaypoints,
-            keys: localnpc.keys,
+            controls: localnpc.controls,
         });
     }
 
     return pack;
 };
 Npc.rawJson = require('./npc.json');
+Npc.dialogues = require('./../client/prompts.json');
 Npc.list = [];
 
 // players
@@ -1368,7 +1410,10 @@ Player = function(socket) {
         y: 0,
         layer: 0
     };
+    self.invincible = true;
     self.canMove = false;
+    self.talking = false;
+    self.currentConversation = null;
     self.alive = false;
     self.debugEnabled = false;
     self.creds = {
@@ -1394,7 +1439,7 @@ Player = function(socket) {
         maps.push(i);
     }
     socket.on('signIn', async function(cred) {
-        if (cred) if (typeof cred.username == 'string' && typeof cred.password == 'string') {
+        if (typeof cred == 'object' && cred != null) if (typeof cred.username == 'string' && typeof cred.password == 'string') {
             if (ENV.isBetaServer && (cred.state == 'deleteAccount' || cred.state == 'signUp')) {
                 socket.emit('signInState', 'disabled');
                 return;
@@ -1422,7 +1467,8 @@ Player = function(socket) {
                                         }
                                         if (!signedIn) {
                                             self.creds.username = cred.username;
-                                            self.creds.password = cred.password;
+                                            self.creds.password = cryptr.encrypt(cred.password);
+                                            Object.freeze(self.creds);
                                             socket.emit('mapData', {maps: maps, self: self.map});
                                             self.signedIn = true;
                                         } else {
@@ -1439,11 +1485,12 @@ Player = function(socket) {
                             }
                             break;
                         case 'loaded':
-                            if (cred.username == self.creds.username && cred.password == self.creds.password) {
+                            if (cred.username == self.creds.username && cred.password == cryptr.decrypt(self.creds.password)) {
                                 self.name = self.creds.username;
                                 await self.loadData();
                                 socket.emit('signInState', 'signedIn');
                                 insertChat(self.name + ' joined the game', 'server');
+                                self.invincible = false;
                                 self.canMove = true;
                                 self.alive = true;
                             } else {
@@ -1539,31 +1586,21 @@ Player = function(socket) {
                     break;
             }
         } else {
-            insertChat(self.name + ' was kicked for socket.emit', 'anticheat');
-            socket.emit('disconnected');
-            socket.onevent = function(packet) {};
-            socket.disconnect();
+            self.socketKick();
         }
     });
     socket.on('keyPress', async function(data) {
-        if (typeof data == 'object') {
+        if (typeof data == 'object' && data != null) {
             if (self.alive) {
-                if (data.key == 'up') self.keys.up = data.state;
-                if (data.key == 'down') self.keys.down = data.state;
-                if (data.key == 'left') self.keys.left = data.state;
-                if (data.key == 'right') self.keys.right = data.state;
-                if (data.key == 'heal') self.keys.heal = data.state;
+                self.controls[data.key] = data.state;
             }
         } else {
-            insertChat(self.name + ' was kicked for socket.emit', 'anticheat');
-            socket.emit('disconnected');
-            socket.onevent = function(packet) {};
-            socket.disconnect();
+            self.socketKick();
         }
     });
     socket.on('click', async function(data) {
-        if (typeof data == 'object') {
-            if (self.alive) {
+        if (typeof data == 'object' && data != null) {
+            if (self.alive && self.currentConversation == null) {
                 if (data.button == 'left') {
                     self.attacking = data.state;
                     self.mouseX = data.x;
@@ -1588,8 +1625,27 @@ Player = function(socket) {
                                             }
                                             delete DroppedItem.list[i];
                                         }
-                                        break;
+                                        return;
                                     }
+                                }
+                            }
+                        }
+                        for (var i in Npc.list) {
+                            var localnpc = Npc.list[i];
+                            if (self.getDistance(localnpc) < 512) {
+                                var x = self.x+data.x;
+                                var y = self.y+data.y;
+                                var left = localnpc.x-localnpc.width/2;
+                                var right = localnpc.x+localnpc.width/2;
+                                var top = localnpc.y-localnpc.height/2;
+                                var bottom = localnpc.y+localnpc.height/2;
+                                if (x >= left && x <= right && y >= top && y <= bottom) {
+                                    try {
+                                        localnpc.rightClickEvent(self, localnpc);
+                                    } catch (err) {
+                                        error(err);
+                                    }
+                                    return;
                                 }
                             }
                         }
@@ -1597,50 +1653,44 @@ Player = function(socket) {
                 }
             }
         } else {
-            insertChat(self.name + ' was kicked for socket.emit', 'anticheat');
-            socket.emit('disconnected');
-            socket.onevent = function(packet) {};
-            socket.disconnect();
+            self.socketKick();
         }
     });
     socket.on('mouseMove', async function(data) {
-        if (typeof data == 'object') {
+        if (typeof data == 'object' && data != null) {
             self.mouseX = data.x;
             self.mouseY = data.y;
         } else {
-            insertChat(self.name + ' was kicked for socket.emit', 'anticheat');
-            socket.emit('disconnected');
-            socket.onevent = function(packet) {};
-            socket.disconnect();
+            self.socketKick();
         }
     });
-    socket.on('respawn', function() {
-        if (self.alive) {
-            self.onDeath();
-            insertChat(self.name + ' respawn cheated.', 'anticheat');
-        } else self.respawn();
+    socket.on('controllerAxes', async function(axes) {
+        if (typeof axes == 'object' && axes != null) {
+            if (self.alive) {
+                self.controls.xaxis = Math.round(axes.movex*10)/10;
+                self.controls.yaxis = Math.round(axes.movey*10)/10;
+                if (Math.abs(self.controls.xaxis) == 0.1) self.controls.xaxis = 0;
+                if (Math.abs(self.controls.yaxis) == 0.1) self.controls.yaxis = 0;
+                self.mouseX = axes.aimx;
+                self.mouseY = axes.aimy;
+            }
+        } else {
+            self.socketKick();
+        }
     });
     socket.on('renderDistance', function(chunks) {
-        self.renderDistance = chunks;
-    });
-    socket.on('teleport', function() {
-        if (self.teleporting) {
-            for (var i = 0; i < 20; i++) {
-                new Particle(self.map, self.x, self.y, self.layer, 'teleport');
-            }
-            self.map = self.teleportLocation.map;
-            self.x = self.teleportLocation.x;
-            self.y = self.teleportLocation.y;
-            self.layer = self.teleportLocation.layer;
-            for (var i = 0; i < 20; i++) {
-                new Particle(self.map, self.x, self.y, self.layer, 'teleport');
-            }
-            socket.emit('teleport2', {map: self.map, x: self.x, y: self.y});
-            self.teleporting = false;
+        if (chunks != null) {
+            self.renderDistance = chunks;
+        } else {
+            self.socketKick();
         }
     });
-    socket.on('toggleDebug', function() {
-        self.debugEnabled = !self.debugEnabled;
+    socket.on('debug', function(state) {
+        if (state != null) {
+            self.debugEnabled = state;
+        } else {
+            self.socketKick();
+        }
     });
     var charCount = 0;
     var msgCount = 0;
@@ -1811,7 +1861,7 @@ Player = function(socket) {
             self.hp = Math.min(self.hp+1, self.maxHP);
             self.lastAutoHeal = 0;
         }
-        if (self.keys.heal && self.alive && self.hp < self.maxHP && self.lastHeal >= seconds(1) && self.mana >= 20) {
+        if (self.controls.heal && self.alive && self.hp < self.maxHP && self.lastHeal >= seconds(1) && self.mana >= 20) {
             var oldhp = self.hp;
             self.lastHeal = 0;
             self.hp = Math.min(self.hp+20, self.maxHP);
@@ -1829,9 +1879,10 @@ Player = function(socket) {
             self.mana = Math.min(self.mana+1, self.maxMana);
             self.lastManaRegen = 0;
         }
+        self.animationSpeed = 15/Math.sqrt(self.xmove**2+self.ymove**2)*100 || 50;
+        self.updateAnimation();
         var mouseangle = Math.atan2(self.mouseY, self.mouseX);
         self.heldItem.angle = mouseangle;
-        self.updateAnimation();
         var mouseddir = Math.round(radians(mouseangle)/45);
         if (mouseddir <= 0) mouseddir = 8-Math.abs(mouseddir);
         if (mouseddir == 8) mouseddir = 0;
@@ -1891,17 +1942,37 @@ Player = function(socket) {
             socket.emit('teleport1');
         }
     };
+    socket.on('teleport', function() {
+        if (self.teleporting) {
+            for (var i = 0; i < 20; i++) {
+                new Particle(self.map, self.x, self.y, self.layer, 'teleport');
+            }
+            self.map = self.teleportLocation.map;
+            self.x = self.teleportLocation.x;
+            self.y = self.teleportLocation.y;
+            self.layer = self.teleportLocation.layer;
+            for (var i = 0; i < 20; i++) {
+                new Particle(self.map, self.x, self.y, self.layer, 'teleport');
+            }
+            socket.emit('teleport2', {map: self.map, x: self.x, y: self.y});
+            self.teleporting = false;
+        }
+    });
     self.onDeath = function(entity, type) {
         if (!self.invincible) {
             var oldhp = self.hp;
             self.hp = 0;
             self.alive = false;
             socket.emit('playerDied');
-            self.keys = {
+            self.controls = {
                 up: false,
                 down: false,
                 left: false,
                 right: false,
+                xaxis: 0,
+                yaxis: 0,
+                x: 0,
+                y: 0,
                 heal: false
             };
             self.attacking = false;
@@ -1942,6 +2013,14 @@ Player = function(socket) {
         self.hp = self.maxHP;
         self.alive = true;
     };
+    socket.on('respawn', function() {
+        if (self.alive) {
+            self.onDeath();
+            insertChat(self.name + ' respawn cheated.', 'anticheat');
+            socket.emit('disconnected');
+            socket.onevent = function(packet) {};
+        } else self.respawn();
+    });
     self.updateStats = function() {
         self.stats = {
             damageType: null,
@@ -2024,13 +2103,71 @@ Player = function(socket) {
             }
         }
     };
+    self.prompt = function(id) {
+        self.attacking = false;
+        self.canMove = false;
+        self.invincible = true;
+        self.controls = {
+            up: false,
+            down: false,
+            left: false,
+            right: false,
+            xaxis: 0,
+            yaxis: 0,
+            x: 0,
+            y: 0,
+            heal: false
+        };
+        socket.emit('prompt', id);
+        self.currentConversation = id;
+    };
+    socket.on('promptChoose', function(option) {
+        var action = Npc.dialogues[self.currentConversation].options[option].action;
+        if (action) {
+            if (action.startsWith('close_')) {
+                self.canMove = true;
+                self.invincible = false;
+                self.currentConversation = null;
+            } else if (action.startsWith('prompt_')) {
+                var id = action.replace('prompt_', '');
+                self.prompt(id);
+            } else if (action.startsWith('quest')) {
+                self.canMove = true;
+                self.invincible = false;
+                self.currentConversation = null;
+            }
+        } else {
+            self.socketKick();
+        }
+    });
     self.saveData = async function() {
-        await ACCOUNTS.saveProgress(self.creds.username, self.creds.password, self.inventory.getSaveData());
+        var progress = {
+            inventory: self.inventory.getSaveData(),
+            characterStyle: self.characterStyle,
+            progress: {
+                level: self.xpLevel,
+                xp: self.xp
+            },
+            quests: null,
+            saveFormat: 1
+        };
+        var data = JSON.stringify(progress);
+        await ACCOUNTS.saveProgress(self.creds.username, self.creds.password, data);
     };
     self.loadData = async function() {
         var data = await ACCOUNTS.loadProgress(self.creds.username, self.creds.password);
-        if (data) self.inventory.loadSaveData(data);
-        else {
+        var progress = JSON.parse(data);
+        if (progress) {
+            if (progress.saveFormat == null) self.inventory.loadSaveData(JSON.parse(progress)); // support for accounts < v0.10.0
+            else if (progress.saveFormat == 1) {
+                self.inventory.loadSaveData(progress.inventory);
+                self.characterStyle = progress.characterStyle;
+                self.xpLevel = progress.progress.xpLevel;
+                self.xp = progress.progress.xp;
+            } else {
+                error('Invalid save data format ' + progress.saveFormat);
+            }
+        } else {
             socket.emit('item', {
                 action: 'maxItems',
                 slots: self.inventory.maxItems
@@ -2040,13 +2177,20 @@ Player = function(socket) {
         self.updateStats();
         var noWeapon = true;
         for (var i in self.inventory.items) {
-            if (self.inventory.items[i].slotType == 'weapon') noWeapon = false;
+            if (self.inventory.items[i]) if (self.inventory.items[i].slotType == 'weapon') noWeapon = false;
         }
         if (self.inventory.equips['weapon']) noWeapon = false;
         if (self.inventory.equips['weapon2']) noWeapon = false;
         if (noWeapon) {
             self.inventory.addItem('simplewoodenbow');
         }
+    };
+    self.socketKick = function() {
+        insertChat(self.name + ' was kicked for socket.emit', 'anticheat');
+        socket.emit('disconnected');
+        socket.onevent = function(packet) {};
+        socket.disconnect();
+        delete Player.list[self.id];
     };
 
     Player.list[self.id] = self;
@@ -2089,7 +2233,7 @@ Player.getDebugData = function() {
                 width: localplayer.width,
                 height: localplayer.height,
                 collisionBoxSize: localplayer.collisionBoxSize,
-                keys: localplayer.keys,
+                controls: localplayer.controls,
             });
         }
     }
@@ -2140,6 +2284,7 @@ Monster = function(type, x, y, map, layer) {
         self.xpDrop = tempmonster.xpDrop;
         self.drops = tempmonster.drops;
         self.animationLength = tempmonster.animationLength;
+        delete tempmonster;
     } catch (err) {
         error(err);
         return;
@@ -2173,7 +2318,7 @@ Monster = function(type, x, y, map, layer) {
         self.ai.lastPath++;
         if (self.ai.lastPath >= seconds(0.1)) {
             self.ai.lastPath = 0;
-            self.ai.path = [];
+            self.ai.path.length = 0;
             if (self.ai.inNomonsterRegion) {
                 var closest = {
                     x: null,
@@ -2281,7 +2426,7 @@ Monster = function(type, x, y, map, layer) {
             } else if (self.ai.idleMove != 'none') {
                 self.ai.pathIdle();
             } else {
-                self.ai.path = [];
+                self.ai.path.length = 0;
             }
         }
         self.xspeed = Math.round(self.xmove+self.xknockback);
@@ -2554,7 +2699,7 @@ Monster = function(type, x, y, map, layer) {
                             var bound2top = collisions[i][j].y-(collisions[i][j].height/2);
                             var bound2bottom = collisions[i][j].y+(collisions[i][j].height/2);
                             if (bound1left < bound2right && bound1right > bound2left && bound1top < bound2bottom && bound1bottom > bound2top) {
-                                colliding = true;;
+                                colliding = true;
                             }
                         }
                     }
@@ -2583,7 +2728,7 @@ Monster = function(type, x, y, map, layer) {
             self.ai.inNomonsterRegion = true;
             self.ai.entityTarget = null;
             self.ai.posTarget = null;
-            self.ai.path = [];
+            self.ai.path.length = 0;
         } else {
             self.ai.inNomonsterRegion = false;
         }
@@ -2629,7 +2774,7 @@ Monster.getDebugData = function() {
                     collisionBoxSize: localmonster.collisionBoxSize,
                     animationStage: localmonster.animationStage,
                     path: localmonster.ai.path,
-                    keys: localmonster.keys,
+                    controls: localmonster.controls,
                     aggroTarget: localmonster.ai.entityTarget.id,
                     aggroRange: localmonster.ai.maxRange
                 });
@@ -2642,7 +2787,7 @@ Monster.getDebugData = function() {
                     height: localmonster.height,
                     collisionBoxSize: localmonster.collisionBoxSize,
                     path: localmonster.ai.path,
-                    keys: localmonster.keys,
+                    controls: localmonster.controls,
                     aggroTarget: null,
                     aggroRange: localmonster.ai.maxRange
                 });
@@ -2670,6 +2815,7 @@ Projectile = function(type, angle, parentID) {
         self.maxRange = tempprojectile.range;
         self.knockback = tempprojectile.knockback;
         self.pattern = Projectile.patterns[tempprojectile.pattern];
+        delete tempprojectile;
     } catch (err) {
         error(err);
         return;
