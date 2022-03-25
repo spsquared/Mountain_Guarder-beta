@@ -2158,7 +2158,7 @@ Player = function(socket) {
         var data = await ACCOUNTS.loadProgress(self.creds.username, self.creds.password);
         var progress = JSON.parse(data);
         if (progress) {
-            if (progress.saveFormat == null) self.inventory.loadSaveData(JSON.parse(progress)); // support for accounts < v0.10.0
+            if (progress.saveFormat == null) self.inventory.loadSaveData(progress); // support for accounts < v0.10.0
             else if (progress.saveFormat == 1) {
                 self.inventory.loadSaveData(progress.inventory);
                 self.characterStyle = progress.characterStyle;
