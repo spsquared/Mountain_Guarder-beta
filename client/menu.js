@@ -479,7 +479,7 @@ function updateSetting(setting) {
             }
             break;
         case 'dialogueSpeed':
-            document.getElementById('promptContainer').style.setProperty('--transitionSpeed', ((11-settings.dialogueSpeed)*10) + 'ms');
+            document.getElementById('promptContainer').style.setProperty('--transitionSpeed', ((11-settings.dialogueSpeed)*5) + 'ms');
             break;
         case 'pointerLock':
             return;

@@ -23,7 +23,6 @@ function generateServerItem() {
     var item = {
         slotType: null,
         rarity: null,
-        dropChance: null
     };
     var slotType = document.getElementById('slotType').value;
     if (slotType == 'weapon' || slotType == 'crystal') {
@@ -79,7 +78,13 @@ function generateServerItem() {
     var temparray = {};
     temparray[document.getElementById('id').value] = item;
     var jsonStr = JSON.stringify(temparray, null, 4);
-    navigator.clipboard.writeText(jsonStr);
+    jsonStr = jsonStr.replace('{\n    ', '');
+    var modified = '';
+    for (var i = 0; i < jsonStr.length-2; i++) {
+        modified += jsonStr[i];
+    }
+    modified += ',';
+    navigator.clipboard.writeText(modified);
     window.alert('Copied to clipboard!');
 };
 function generateClientItem() {
@@ -129,6 +134,12 @@ function generateClientItem() {
     var temparray = {};
     temparray[document.getElementById('id').value] = item;
     var jsonStr = JSON.stringify(temparray, null, 4);
-    navigator.clipboard.writeText(jsonStr);
+    jsonStr = jsonStr.replace('{\n    ', '');
+    var modified = '';
+    for (var i = 0; i < jsonStr.length-2; i++) {
+        modified += jsonStr[i];
+    }
+    modified += ',';
+    navigator.clipboard.writeText(modified);
     window.alert('Copied to clipboard!');
 };

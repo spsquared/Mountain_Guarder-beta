@@ -623,6 +623,7 @@ Particle = function(map, x, y, layer, type, value) {
                 break;
             default:
                 console.error('invalid particle type ' + self.type);
+                delete Particle.list[self.id];
                 break;
         }
         if (self.opacity <= 0) {

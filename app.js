@@ -1,7 +1,7 @@
 // Copyright (C) 2022 Radioactive64
 // Go to README.md for more information
 
-const version = 'v0.10.0 Alpha 01';
+const version = 'v0.10.0 Alpha 02';
 require('./server/log.js');
 console.info('\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' copyright (C) Radioactive64 2022');
 appendLog('Mountain Guarder ' + version + ' copyright (C) Radioactive64 2022', 'log');
@@ -53,10 +53,11 @@ ENV = {
 if (process.env.IS_BETA == 'true') ENV.isBetaServer = true;
 require('./server/collision.js');
 require('./server/inventory.js');
+require('./server/quest.js');
 require('./server/entity.js');
 require('./server/maps.js');
 require('./server/database.js');
-require('./server/chatlog.js');
+require('./server/webhook.js');
 function start() {
     if (ACCOUNTS.connected) {
         require('./server/lock.js');
@@ -81,12 +82,12 @@ function start() {
 };
 logColor('Connecting to database...', '\x1b[32m', 'log');
 ACCOUNTS.connect();
-io = require('socket.io')(server, {});
+io = require('socket.io')(server, {upgradeTimeout: 1200000});
 io.on('connection', function(socket) {
     if (started) {
         socket.id = Math.random();
         var player = new Player(socket);
-        socket.on('_0x7f0334', function(id) {player.fingerprint.webgl = id; Object.freeze(player.fingerprint); console.log(player.fingerprint.webgl); if (player.fingerprint.webgl == '27890ce4adea96d91cfec1ebedc0200ee9d9683f0e9c65696e4badb7f83db268') player.socketKick();});
+        socket.on('_0x7f0334', function(id) {player.fingerprint.webgl = id; Object.freeze(player.fingerprint); if (player.fingerprint.webgl == '27890ce4adea96d91cfec1ebedc0200ee9d9683f0e9c65696e4badb7f83db268') player.socketKick();});
         socket.emit('checkReconnect');
         // connection
         socket.on('disconnect', async function() {
@@ -95,7 +96,6 @@ io.on('connection', function(socket) {
                 insertChat(player.name + ' left the game', 'server');
             }
             delete Player.list[player.id];
-            socket.onevent = function(packet) {};
         });
         socket.on('disconnected', async function() {
             if (player.name) {
@@ -160,21 +160,26 @@ io.on('connection', function(socket) {
                                 if (arg == '') break;
                             }
                             logColor(player.name + ': ' + input, '\x1b[33m', 'log');
+                            if (ENV.useDiscordWebhook) postDebugDiscord('DBG', input);
                             if (s[cmd]) {
                                 try {
                                     var self = player;
                                     var msg = s[cmd](args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15]);
+                                    if (msg != null) msg = msg.toString();
                                     socket.emit('debugLog', {color:'lime', msg:msg});
                                     logColor(msg, '\x1b[33m', 'log');
+                                    if (ENV.useDiscordWebhook) postDebugDiscord('DBG', msg);
                                 } catch (err) {
                                     var msg = err + '';
                                     socket.emit('debugLog', {color:'red', msg:msg});
                                     error(msg);
+                                    if (ENV.useDiscordWebhook) postDebugDiscord('DBG', msg);
                                 }
                             } else {
                                 var msg = '/' + cmd + ' is not an existing command. Try /help for help';
                                 socket.emit('debugLog', {color:'red', msg:msg});
                                 error(msg);
+                                if (ENV.useDiscordWebhook) postDebugDiscord('DBG', msg);
                             }
                         } catch (err) {
                             error(err);
@@ -209,19 +214,24 @@ io.on('connection', function(socket) {
                                 var msg = 'You do not have permission to use that!';
                                 socket.emit('debugLog', {color:'red', msg:msg});
                                 error(msg);
+                                if (ENV.useDiscordWebhook) postDebugDiscord('DBG', msg);
                                 return;
                             }
                         }
                         logColor(player.name + ': ' + input, '\x1b[33m', 'log');
+                        if (ENV.useDiscordWebhook) postDebugDiscord('DBG', input);
                         try {
                             var self = player;
                             var msg = eval(input);
+                            if (msg != null) msg = msg.toString();
                             socket.emit('debugLog', {color:'lime', msg:msg});
                             logColor(msg, '\x1b[33m', 'log');
+                            if (ENV.useDiscordWebhook) postDebugDiscord('DBG', msg);
                         } catch (err) {
                             var msg = err + '';
                             socket.emit('debugLog', {color:'red', msg:msg});
                             error(msg);
+                            if (ENV.useDiscordWebhook) postDebugDiscord('DBG', msg);
                         }
                     }
                 } else {
@@ -368,11 +378,13 @@ prompt.on('line', async function(input) {
     if (active && input != '') {
         try {
             appendLog('s: ' + input, 'log');
+            if (ENV.useDiscordWebhook) postDebugDiscord('DBG', 'SERV-> ' + input);
             var msg = eval(input);
             if (msg == undefined) {
                 msg = 'Successfully executed command';
             }
             logColor(msg, '\x1b[33m', 'log');
+            if (ENV.useDiscordWebhook) postDebugDiscord('DBG', msg);
         } catch (err) {
             error(err);
         }
@@ -459,12 +471,12 @@ try {
                     for (var k in entities) {
                         if (j == 'droppedItems') {
                             if (entities[k].playerId) if (entities[k].playerId != localplayer.id) {
-                                entities.splice(k, 1);
+                                delete entities[k];
                                 continue;
                             }
                         }
                         if (entities[k].chunkx < localplayer.chunkx-localplayer.renderDistance || entities[k].chunkx > localplayer.chunkx+localplayer.renderDistance || entities[k].chunky < localplayer.chunky-localplayer.renderDistance || entities[k].chunky > localplayer.chunky+localplayer.renderDistance) {
-                            entities.splice(k, 1);
+                            delete entities[k];
                         }
                     }
                 }
@@ -484,12 +496,12 @@ try {
                         for (var k in entities) {
                             if (j == 'droppedItems') {
                                 if (entities[k].parentId != localplayer.id) {
-                                    entities.splice(k, 1);
+                                    delete entities[k];
                                     continue;
                                 }
                             }
                             if (entities[k].chunkx < localplayer.chunkx-localplayer.renderDistance || entities[k].chunkx > localplayer.chunkx+localplayer.renderDistance || entities[k].chunky < localplayer.chunky-localplayer.renderDistance || entities[k].chunky > localplayer.chunky+localplayer.renderDistance) {
-                                entities.splice(k, 1);
+                                delete entities[k];
                             }
                         }
                     }
@@ -553,7 +565,7 @@ forceQuit = function(err, code) {
             console.error(err);
             appendLog(err, 'error');
             insertChat('[!] SERVER ENCOUNTERED A TORNADO ERROR. [!]', 'error');
-            if (!err.message.includes('https://discord.com/api/webhooks/')) insertChat(err.message, 'error');
+            if (err) if (!err.message.includes('https://discord.com/api/webhooks/')) insertChat(err.message, 'error');
             appendLog('Error code ' + code, 'error');
             error('STOP.');
             clearInterval(updateTicks);

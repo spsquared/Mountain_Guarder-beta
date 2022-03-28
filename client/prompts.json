@@ -3,7 +3,7 @@
         "text": "Hello! I'm Bob, nice to meet you! Welcome to the Snowy Outpost!",
         "options": [
             {
-                "text": "...",
+                "text": "Hi!",
                 "action": "prompt_bob2"
             },
             {
@@ -25,7 +25,7 @@
         "text": "But out here in the Outpost we kill those pesky monsters. They like to steal stuff, mostly by killing the owner and taking their belongings. You should go kill some, you'll get your money's worth for it. Maybe you'll even get some precious loot.",
         "options": [
             {
-                "text": "Start quest: <span class=\"\">Bird Squishing</span>",
+                "text": "Start quest: `Bird Squishing`;",
                 "action": "quest_5monsters"
             },
             {

@@ -20,7 +20,7 @@ insertChat = function(text, textcolor) {
     }
     logColor(text, '\x1b[36m', 'chat');
     io.emit('insertChat', {text:text, style:style});
-    if (!ENV.offlineMode) try {postDiscord(text);} catch (err) {error(err);}
+    if (!ENV.offlineMode && ENV.useDiscordWebhook) try {postDiscord(text);} catch (err) {error(err);};
 };
 insertSingleChat = function(text, textcolor, username, log) {
     var socket = null;
@@ -62,12 +62,15 @@ logColor = function(text, colorstring, type) {
 };
 log = function(text) {
     logColor(text, '', 'log');
+    if (!ENV.offlineMode && ENV.useDiscordWebhook) try {postDebugDiscord('LOG', text.toString());} catch (err) {error(err.toString());};
 };
 warn = function(text) {
     logColor(text, '\x1b[33m', 'warn');
+    if (!ENV.offlineMode && ENV.useDiscordWebhook) try {postDebugDiscord('!WN', text.toString());} catch (err) {error(err.toString());};
 };
 error = function(text) {
     logColor(text, '\x1b[31m', 'error');
+    if (!ENV.offlineMode && ENV.useDiscordWebhook) try {postDebugDiscord('ERR', text.toString());} catch (err) {console.error(err);};
 };
 appendLog = function(text, type) {
     var typestring = '--- ';

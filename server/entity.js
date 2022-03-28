@@ -7,6 +7,7 @@ const cryptr = new Cryptr('cachePasswordKey');
 // entities
 Entity = function() {
     var self = {
+        entType: 'entity',
         id: null,
         x: 0,
         y: 0,
@@ -377,6 +378,7 @@ Entity.getDebugData = function() {
 // rigs
 Rig = function() {
     var self = new Entity();
+    self.entType = 'Rig';
     self.width = 32;
     self.height = 32;
     self.controls = {
@@ -769,9 +771,9 @@ Rig = function() {
         self.xmove = 0;
         self.ymove = 0;
         if (self.ai.path[0]) {
-            // var angle = Math.atan2(self.ai.path[0][1]*64+32-self.y, self.ai.path[0][0]*64+32-self.x);
-            // self.controls.xaxis = Math.cos(angle);
-            // self.controls.yaxis = Math.sin(angle);
+            var angle = Math.atan2(self.ai.path[0][1]*64+32-self.y, self.ai.path[0][0]*64+32-self.x);
+            self.controls.xaxis = Math.cos(angle);
+            self.controls.yaxis = Math.sin(angle);
             if (self.ai.path[0][0]*64+32 < self.x) self.controls.left = true;
             else if (self.ai.path[0][0]*64+32 > self.x) self.controls.right = true;
             if (self.ai.path[0][1]*64+32 < self.y) self.controls.up = true;
@@ -1067,7 +1069,7 @@ Rig = function() {
                     if (waypoints) {
                         for (var i in waypoints) {
                             var waypoint = waypoints[i];
-                            if (waypoint.map != self.map) waypoints.splice(i, 1);
+                            if (waypoint.map != self.map) delete waypoints[i];
                             if (waypoint.x == self.gridx && waypoint.y == self.gridy && waypoint.map == self.map) {
                                 var alreadyExists = false;
                                 for (var j in lastWaypoints) {
@@ -1084,7 +1086,7 @@ Rig = function() {
                         for (var i in waypoints) {
                             var waypoint = waypoints[i];
                             for (var j in lastWaypoints) {
-                                if (waypoint.x == lastWaypoints[j].x && waypoint.y == lastWaypoints[j].y && waypoint.map == lastWaypoints[j].map) waypoints.splice(i, 1);
+                                if (waypoint.x == lastWaypoints[j].x && waypoint.y == lastWaypoints[j].y && waypoint.map == lastWaypoints[j].map) delete waypoints[i];
                             }
                         }
                         var lowest;
@@ -1199,12 +1201,16 @@ Rig = function() {
         }
         if (critHp) new Particle(self.map, self.x, self.y, self.layer, 'critdamage', self.hp-oldhp);
         else new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
+        if (parent) if (parent.entType == 'player') parent.trackedData.damageDealt += oldhp-self.hp;
     };
     self.onDeath = function(entity, type) {
         if (!self.invincible) {
             var oldhp = self.hp;
             self.hp = 0;
             self.alive = false;
+            if (entity) if (entity.entType == 'player') {
+                entity.trackedData.kills++;
+            }
             if (self.hp != oldhp) {
                 new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
             }
@@ -1213,7 +1219,8 @@ Rig = function() {
             }
             switch (type) {
                 case 'killed':
-                    insertChat(self.name + ' was killed by ' + entity.name + '.', 'death');
+                    if (entity) insertChat(self.name + ' was killed by ' + entity.name, 'death');
+                    else insertChat(self.name + ' died', 'death');
                     break;
                 case 'explosion':
                     insertChat(self.name + ' blew up.', 'death');
@@ -1225,13 +1232,17 @@ Rig = function() {
                     self.yknockback += angle*rand*40;
                     insertChat(self.name + ' blew up.', 'death');
                     break;
+                case 'fire':
+                    insertChat(self.name + ' went up in flames', 'death');
+                    break;
                 case 'debug':
-                    insertChat(self.name + ' was debugged.', 'death');
+                    insertChat(self.name + ' was debugged', 'death');
                     break;
                 default:
-                    insertChat(self.name + ' died.', 'death');
+                    insertChat(self.name + ' died', 'death');
                     break;
             }
+            if (entity) if (entity.entType == 'player') entity.trackedData.damageDealt += oldhp-self.hp;
         }
     };
     self.onRegionChange = function() {};
@@ -1267,6 +1278,7 @@ Rig = function() {
 // npcs
 Npc = function(id, x, y, map) {
     var self = new Rig();
+    self.entType = 'npc';
     self.animationSpeed = 100;
     self.animationDirection = 'facing';
     self.facingDirection = 'down';
@@ -1312,7 +1324,7 @@ Npc = function(id, x, y, map) {
     for (var i in tempnpc.data) {
         self[i] = tempnpc.data[i];
     }
-    delete tempnpc;
+    tempnpc = null;
     self.aiControlled = true;
     self.collisionBoxSize = Math.max(self.width, self.height);
 
@@ -1373,6 +1385,7 @@ Npc.list = [];
 // players
 Player = function(socket) {
     var self = new Rig();
+    self.entType = 'player';
     self.socket = socket;
     self.ip = socket.handshake.headers['x-forwarded-for'];
     self.fingerprint = {webgl: Math.random()};
@@ -1414,6 +1427,42 @@ Player = function(socket) {
     self.canMove = false;
     self.talking = false;
     self.currentConversation = null;
+    self.quests = new QuestHandler(socket, self);
+    self.trackedData = {
+        monstersKilled: [],
+        kills: 0,
+        deaths: 0,
+        damageDealt: 0,
+        damageTaken: 0,
+        dps: 0,
+        maxDPS: 0,
+        bossesSlain: 0,
+        last: {},
+        updateTrackers: function() {
+            var delta = {
+                monstersKilled: [],
+                kills: self.trackedData.kills-self.trackedData.last.kills,
+                deaths: self.trackedData.kills-self.trackedData.last.kills,
+                damageDealt: self.trackedData.kills-self.trackedData.last.kills,
+                damageTaken: self.trackedData.kills-self.trackedData.last.kills,
+                dps: self.trackedData.kills-self.trackedData.last.kills,
+                maxDPS: self.trackedData.kills-self.trackedData.last.kills,
+                bossesSlain: self.trackedData.kills-self.trackedData.last.kills,
+            };
+            for (var i in self.trackedData.monstersKilled) {
+                if (self.trackedData.last.monstersKilled[i] == null) delta.monstersKilled[i] = self.trackedData.monstersKilled[i];
+                else delta.monstersKilled[i] = self.trackedData.monstersKilled[i]-self.trackedData.last.monstersKilled[i];
+            }
+            var data = {
+                trackedData: delta,
+                aqquiredItems: [],
+            }
+            self.quests.updateQuestRequirements(data);
+            self.trackedData.last = {};
+            self.trackedData.last = Object.create(self.trackedData);
+        }
+    };
+    self.trackedData.last = self.trackedData;
     self.alive = false;
     self.debugEnabled = false;
     self.creds = {
@@ -1619,10 +1668,7 @@ Player = function(socket) {
                                     var bottom = localdroppeditem.y+localdroppeditem.height/2;
                                     if (x >= left && x <= right && y >= top && y <= bottom) {
                                         if (!self.inventory.full()) {
-                                            var slot = self.inventory.addItem(localdroppeditem.itemId);
-                                            for (var j in localdroppeditem.enchants) {
-                                                self.inventory.enchantItem(slot, localdroppeditem.enchants[j]);
-                                            }
+                                            self.inventory.addItem(localdroppeditem.itemId, localdroppeditem.stackSize, localdroppeditem.enchantments);
                                             delete DroppedItem.list[i];
                                         }
                                         return;
@@ -1915,6 +1961,7 @@ Player = function(socket) {
         }
         self.facingDirection = dir;
         self.updateClient();
+        self.trackedData.updateTrackers();
         if (self.gridx == 3 && self.gridy == 9 && self.map == 'World' && self.alive) self.onDeath(self, 'fire');
     };
     self.updateClient = function() {
@@ -1958,11 +2005,16 @@ Player = function(socket) {
             self.teleporting = false;
         }
     });
+    const onHit = self.onHit;
+    self.onHit = function(entity, type) {
+        var oldhp = self.hp;
+        onHit(entity, type);
+        self.trackedData.damageTaken += oldhp-self.hp;
+    };
+    const onDeath = self.onDeath;
     self.onDeath = function(entity, type) {
+        onDeath(entity, type);
         if (!self.invincible) {
-            var oldhp = self.hp;
-            self.hp = 0;
-            self.alive = false;
             socket.emit('playerDied');
             self.controls = {
                 up: false,
@@ -1976,37 +2028,7 @@ Player = function(socket) {
                 heal: false
             };
             self.attacking = false;
-            if (self.hp != oldhp) {
-                new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
-            }
-            for (var i = 0; i < 20; i++) {
-                new Particle(self.map, self.x, self.y, self.layer, 'playerdeath');
-            }
-            switch (type) {
-                case 'killed':
-                    if (entity) insertChat(self.name + ' was killed by ' + entity.name, 'death');
-                    else insertChat(self.name + ' died', 'death');
-                    break;
-                case 'explosion':
-                    insertChat(self.name + ' blew up.', 'death');
-                    break;
-                case 'cherrybomb':
-                    var rand = 0.5+Math.random();
-                    var angle = Math.atan2(self.y-entity.y, self.x-entity.x);
-                    self.xknockback += angle*rand*40;
-                    self.yknockback += angle*rand*40;
-                    insertChat(self.name + ' blew up.', 'death');
-                    break;
-                case 'fire':
-                    insertChat(self.name + ' went up in flames', 'death');
-                    break;
-                case 'debug':
-                    insertChat(self.name + ' was debugged', 'death');
-                    break;
-                default:
-                    insertChat(self.name + ' died', 'death');
-                    break;
-            }
+            self.trackedData.deaths++;
         }
     };
     self.respawn = function() {
@@ -2122,8 +2144,9 @@ Player = function(socket) {
         self.currentConversation = id;
     };
     socket.on('promptChoose', function(option) {
-        var action = Npc.dialogues[self.currentConversation].options[option].action;
-        if (action) {
+        var option = Npc.dialogues[self.currentConversation].options[option];
+        if (option) {
+            var action = option.action;
             if (action.startsWith('close_')) {
                 self.canMove = true;
                 self.invincible = false;
@@ -2135,12 +2158,15 @@ Player = function(socket) {
                 self.canMove = true;
                 self.invincible = false;
                 self.currentConversation = null;
+                var id = action.replace('quest_', '');
+                self.quests.startQuest(id);
             }
         } else {
             self.socketKick();
         }
     });
     self.saveData = async function() {
+        var trackedData = Object.create(self.trackedData);
         var progress = {
             inventory: self.inventory.getSaveData(),
             characterStyle: self.characterStyle,
@@ -2148,7 +2174,8 @@ Player = function(socket) {
                 level: self.xpLevel,
                 xp: self.xp
             },
-            quests: null,
+            quests: self.quests.getSaveData(),
+            trackedData: trackedData,
             saveFormat: 1
         };
         var data = JSON.stringify(progress);
@@ -2158,12 +2185,22 @@ Player = function(socket) {
         var data = await ACCOUNTS.loadProgress(self.creds.username, self.creds.password);
         var progress = JSON.parse(data);
         if (progress) {
-            if (progress.saveFormat == null) self.inventory.loadSaveData(progress); // support for accounts < v0.10.0
-            else if (progress.saveFormat == 1) {
+            if (progress.saveFormat == null) { // support for accounts < v0.10.0
+                self.inventory.loadSaveData(progress);
+                self.inventory.refresh();
+            } else if (progress.saveFormat == 1) {
                 self.inventory.loadSaveData(progress.inventory);
+                self.inventory.refresh();
                 self.characterStyle = progress.characterStyle;
                 self.xpLevel = progress.progress.xpLevel;
                 self.xp = progress.progress.xp;
+                self.quests.loadSaveData(progress.quests);
+                console.log(progress.trackedData)
+                for (var i in progress.trackedData) {
+                    if (self.trackedData[i] != null && progress.trackedData[i] != null) self.trackedData[i] = progress.trackedData[i];
+                }
+                self.trackedData.last = self.trackedData;
+                self.trackedData.updateTrackers();
             } else {
                 error('Invalid save data format ' + progress.saveFormat);
             }
@@ -2185,11 +2222,11 @@ Player = function(socket) {
             self.inventory.addItem('simplewoodenbow');
         }
     };
-    self.socketKick = function() {
-        insertChat(self.name + ' was kicked for socket.emit', 'anticheat');
+    self.socketKick = function() { 
+        if (self.name) insertChat(self.name + ' was kicked for socket.emit', 'anticheat');
         socket.emit('disconnected');
         socket.onevent = function(packet) {};
-        socket.disconnect();
+        socket.disconnect(true);
         delete Player.list[self.id];
     };
 
@@ -2245,6 +2282,7 @@ Player.list = [];
 // monsters
 Monster = function(type, x, y, map, layer) {
     var self = new Rig();
+    self.entType = 'monster';
     self.x = x;
     self.y = y;
     self.map = map;
@@ -2283,8 +2321,9 @@ Monster = function(type, x, y, map, layer) {
         self.maxHP = tempmonster.hp;
         self.xpDrop = tempmonster.xpDrop;
         self.drops = tempmonster.drops;
+        self.coinDrops = tempmonster.coinDrops;
         self.animationLength = tempmonster.animationLength;
-        delete tempmonster;
+        tempmonster = null
     } catch (err) {
         error(err);
         return;
@@ -2645,12 +2684,17 @@ Monster = function(type, x, y, map, layer) {
         if (critHp) new Particle(self.map, self.x, self.y, self.layer, 'critdamage', self.hp-oldhp);
         else new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
         if (self.hp < self.ai.fleeThreshold) self.ai.fleeing = true;
+        if (parent) if (parent.entType == 'player') parent.trackedData.damageDealt += oldhp-self.hp;
     };
     self.onDeath = function(entity, type) {
         var oldhp = self.hp;
         self.hp = 0;
         self.alive = false;
-        if (entity) entity.xp += self.xpDrop;
+        if (entity) if (entity.entType == 'player') {
+            entity.xp += self.xpDrop;
+            if (entity.trackedData.monstersKilled[self.type] == null) entity.trackedData.monstersKilled[self.type] = 0;
+            entity.trackedData.monstersKilled[self.type]++;
+        }
         try {
             var multiplier = 0;
             for (var i in self.drops) {
@@ -2659,58 +2703,66 @@ Monster = function(type, x, y, map, layer) {
             var random = Math.random()*multiplier;
             var min = 0;
             var max = 0;
-            var item;
+            var items = [];
             for (var i in self.drops) {
                 max += self.drops[i];
                 if (random >= min && random <= max) {
-                    item = i;
+                    items[i] = 1;
                     break;
                 }
                 min += self.drops[i];
             }
+            if (items['coins']) {
+                items = [];
+                for (var i in self.coinDrops) {
+                    items[i] = Math.round(Math.random()*self.coinDrops[i]);
+                }
+            }
             var id;
             if (entity) id = entity.id;
-            if (item != 'nothing') {
-                var attempts = 0;
-                var dropx, dropy;
-                while (attempts < 100) {
-                    var angle = Math.random()*2*Math.PI;
-                    var distance = Math.random()*32;
-                    var x = self.x+Math.cos(angle)*distance;
-                    var y = self.y+Math.sin(angle)*distance;
-                    var collisions = [];
-                    if (Collision.grid[self.map]) {
-                        for (var checkx = self.gridx-1; checkx <= self.gridx+1; checkx++) {
-                            for (var checky = self.gridy-1; checky <= self.gridy+1; checky++) {
-                                if (Collision.grid[self.map][checky]) if (Collision.grid[self.map][checky][checkx])
-                                collisions.push(Collision.getColEntity(self.map, checkx, checky));
+            for (var i in items) {
+                if (i != 'nothing' && items[i] != 0) {
+                    var attempts = 0;
+                    var dropx, dropy;
+                    while (attempts < 100) {
+                        var angle = Math.random()*2*Math.PI;
+                        var distance = Math.random()*32;
+                        var x = self.x+Math.cos(angle)*distance;
+                        var y = self.y+Math.sin(angle)*distance;
+                        var collisions = [];
+                        if (Collision.grid[self.map]) {
+                            for (var checkx = self.gridx-1; checkx <= self.gridx+1; checkx++) {
+                                for (var checky = self.gridy-1; checky <= self.gridy+1; checky++) {
+                                    if (Collision.grid[self.map][checky]) if (Collision.grid[self.map][checky][checkx])
+                                    collisions.push(Collision.getColEntity(self.map, checkx, checky));
+                                }
                             }
                         }
-                    }
-                    var colliding = false;
-                    for (var i in collisions) {
-                        for (var j in collisions[i]) {
-                            var bound1left = x-24;
-                            var bound1right = x+24;
-                            var bound1top = y-24;
-                            var bound1bottom = y+24;
-                            var bound2left = collisions[i][j].x-(collisions[i][j].width/2);
-                            var bound2right = collisions[i][j].x+(collisions[i][j].width/2);
-                            var bound2top = collisions[i][j].y-(collisions[i][j].height/2);
-                            var bound2bottom = collisions[i][j].y+(collisions[i][j].height/2);
-                            if (bound1left < bound2right && bound1right > bound2left && bound1top < bound2bottom && bound1bottom > bound2top) {
-                                colliding = true;
+                        var colliding = false;
+                        for (var i in collisions) {
+                            for (var j in collisions[i]) {
+                                var bound1left = x-24;
+                                var bound1right = x+24;
+                                var bound1top = y-24;
+                                var bound1bottom = y+24;
+                                var bound2left = collisions[i][j].x-(collisions[i][j].width/2);
+                                var bound2right = collisions[i][j].x+(collisions[i][j].width/2);
+                                var bound2top = collisions[i][j].y-(collisions[i][j].height/2);
+                                var bound2bottom = collisions[i][j].y+(collisions[i][j].height/2);
+                                if (bound1left < bound2right && bound1right > bound2left && bound1top < bound2bottom && bound1bottom > bound2top) {
+                                    colliding = true;
+                                }
                             }
                         }
+                        if (!colliding) {
+                            dropx = x;
+                            dropy = y;
+                            break;
+                        }
+                        attempts++;
                     }
-                    if (!colliding) {
-                        dropx = x;
-                        dropy = y;
-                        break;
-                    }
-                    attempts++;
+                    if (dropx) new DroppedItem(self.map, dropx, dropy, i, [], items[i], id);
                 }
-                if (dropx) new DroppedItem(self.map, dropx, dropy, item, [], id);
             }
         } catch (err) {
             error(err);
@@ -2721,6 +2773,7 @@ Monster = function(type, x, y, map, layer) {
         for (var i = 0; i < 20; i++) {
             new Particle(self.map, self.x+Math.random()*self.width*2-self.width, self.y+Math.random()*self.height*2-self.height, self.layer, 'death');
         }
+        if (entity) if (entity.entType == 'player') entity.trackedData.damageDealt += oldhp-self.hp;
         delete Monster.list[self.id];
     };
     self.onRegionChange = function() {
@@ -2803,6 +2856,7 @@ Monster.list = [];
 // projectiles
 Projectile = function(type, angle, parentID) {
     var self = new Entity();
+    self.entType = 'projectile';
     self.type = type;
     try {
         var tempprojectile = Projectile.types[type];
@@ -2815,7 +2869,7 @@ Projectile = function(type, angle, parentID) {
         self.maxRange = tempprojectile.range;
         self.knockback = tempprojectile.knockback;
         self.pattern = Projectile.patterns[tempprojectile.pattern];
-        delete tempprojectile;
+        tempprojectile = null;
     } catch (err) {
         error(err);
         return;
@@ -2847,6 +2901,13 @@ Projectile = function(type, angle, parentID) {
     self.cosAngle = Math.cos(self.angle);
     self.xspeed = self.cosAngle*self.moveSpeed;
     self.yspeed = self.sinAngle*self.moveSpeed;
+    try {
+        self.xspeed += parent.xspeed;
+        self.yspeed += parent.yspeed;
+    } catch (err) {
+        error(err);
+        return;
+    }
     self.vertices = [
         {x: ((self.width/2)*self.cosAngle)-((self.height/2)*self.sinAngle)+self.x, y: ((self.width/2)*self.sinAngle)+((self.height/2)*self.cosAngle)+self.y},
         {x: ((self.width/2)*self.cosAngle)-((-self.height/2)*self.sinAngle)+self.x, y: ((self.width/2)*self.sinAngle)+((-self.height/2)*self.cosAngle)+self.y},
@@ -3171,7 +3232,7 @@ Particle.update = function() {
 Particle.list = [];
 
 // dropped items
-DroppedItem = function(map, x, y, itemId, enchantments, playerId) {
+DroppedItem = function(map, x, y, itemId, enchantments, stackSize, playerId) {
     var self = {
         id: null,
         x: x,
@@ -3183,6 +3244,7 @@ DroppedItem = function(map, x, y, itemId, enchantments, playerId) {
         height: 48,
         itemId: itemId,
         enchantments: [],
+        stackSize: stackSize,
         playerId: playerId
     };
     self.id = Math.random();

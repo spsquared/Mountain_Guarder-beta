@@ -20,13 +20,14 @@ Inventory = {
     dragOffsetX: 0,
     dragOffsetY: 0,
     currentHover: null,
-    maxItems: 0
+    maxItems: 30
 };
-Inventory.Item = function(id, slot) {
+Inventory.Item = function(id, slot, amount, enchantments) {
     var self = Inventory.itemTypes[id];
     self.id = id;
     self.slot = slot;
-    self.enchantments = [];
+    self.stackSize = amount || 1;
+    self.enchantments = enchantments || [];
     self.refresh = function() {
         Inventory.items[self.slot].refresh();
     };
@@ -112,9 +113,8 @@ Inventory.EquipSlot = function(equip) {
     self.refresh();
     return self;
 };
-Inventory.addItem = function(id, slot, enchantments) {
-    var item = new Inventory.Item(id, slot);
-    item.enchant(enchantments);
+Inventory.addItem = function(id, slot, amount, enchantments) {
+    new Inventory.Item(id, slot, amount, enchantments);
     Inventory.refreshSlot(slot);
 };
 Inventory.removeItem = function(slot) {
@@ -179,6 +179,12 @@ Inventory.getRarityColor = function(rarity) {
     switch (rarity) {
         case 'missing':
             str = 'color: red;';
+            break;
+        case 'coin':
+            str = 'color: goldenrod;';
+            break;
+        case 'blucoin':
+            str = 'color: #3C70FF;'
             break;
         case -1:
             str = 'animation: christmas 2s infinite;';
@@ -328,7 +334,7 @@ Inventory.generateEffects = function(item) {
             str += '<br><span style="color: ' + color + '; font-size: 12px;">' + number + ' ' + effect + '</span>';
         }
     }
-    if (str == '') str = '<span style="font-size: 12px;">No Effects</span>';
+    if (str == '') str = '<br><span style="font-size: 12px;">No Effects</span>';
     return str;
 };
 document.addEventListener('mousedown', function(e) {
@@ -504,7 +510,7 @@ socket.on('item', function(data) {
             }
             break;
         case 'add':
-            Inventory.addItem(data.data.id, data.data.slot, data.data.enchantments);
+            Inventory.addItem(data.data.id, data.data.slot, data.data.stackSize, data.data.enchantments);
             break;
         case 'remove':
             Inventory.removeItem(data.data.slot);

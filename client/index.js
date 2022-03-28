@@ -1,6 +1,6 @@
 // Copyright (C) 2022 Radioactive64
 
-const version = 'v0.10.0 Alpha 01';
+const version = 'v0.10.0 Alpha 02';
 var firstload = false;
 // canvas
 CTXRAW = document.getElementById('ctx');
