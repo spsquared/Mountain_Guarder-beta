@@ -435,11 +435,20 @@
 /* inventory slot structure */
 .invSlot {
     display: inline-block;
+    position: relative;
+    top: 0px;
+    left: 0px;
     width: 70px;
     height: 70px;
     margin: 8px 8px;
     background-color: #362A1E;
     border: 1px solid black;
+}
+.invSlotStackSize {
+    position: absolute;
+    bottom: 0px;
+    right: 4px;
+    pointer-events: none;
 }
 .invSlotImg {
     position: relative;
@@ -472,14 +481,24 @@
     pointer-events: none;
     z-index: 7;
 }
-#invDragImg {
+#invDrag {
     display: none;
     position: absolute;
     top: 0px;
     left: 0px;
+    width: 64px;
+    height: 64px;
     cursor: grabbing;
     pointer-events: none;
     z-index: 7;
+}
+#invDragImg {
+    cursor: grabbing;
+    pointer-events: none;
+}
+#invDragStackSize {
+    cursor: grabbing;
+    pointer-events: none;
 }
 
 /* inventory equip slots */

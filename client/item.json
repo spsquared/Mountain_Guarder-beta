@@ -9,28 +9,28 @@
     "coppercoin": {
         "name": "Copper Coin",
         "description": "A coin minted from copper. Not the most valuable.",
-        "slotType": "none",
+        "slotType": "coin",
         "rarity": "coin",
         "effects": []
     },
     "silvercoin": {
         "name": "Silver Coin",
         "description": "A coin minted from silver. Holds a little value.",
-        "slotType": "none",
+        "slotType": "coin",
         "rarity": "coin",
         "effects": []
     },
     "goldcoin": {
         "name": "Gold Coin",
         "description": "A coin minted from gold. Worth a lot.",
-        "slotType": "none",
+        "slotType": "coin",
         "rarity": "coin",
         "effects": []
     },
     "blucoin": {
         "name": "BluCoin",
         "description": "A special coin made from ultra-rare Montan Blu. Worth a huge amount.",
-        "slotType": "none",
+        "slotType": "coin",
         "rarity": "blucoin",
         "effects": []
     },

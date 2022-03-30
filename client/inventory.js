@@ -2,6 +2,8 @@
 
 var inventoryItems = document.getElementById('inventoryItemsBody');
 var inventoryEquips = document.getElementById('inventoryEquipsBody');
+var dragDiv = document.getElementById('invDrag');
+var tooltip = document.getElementById('invHoverTooltip');
 
 // inventory structure
 Inventory = {
@@ -35,7 +37,7 @@ Inventory.Item = function(id, slot, amount, enchantments) {
         // set enchant html string (<span style="color: #009900">Speed +10%</span>)
     };
 
-    if (isFinite(slot)) {
+    if (typeof slot == 'number') {
         Inventory.items[slot].item = self;
     } else {
         Inventory.equips[slot].item = self;
@@ -55,7 +57,8 @@ Inventory.Slot = function() {
 
     self.refresh = function() {
         if (self.item) {
-            slot.innerHTML = '<img src="/client/img/item/' + self.item.id + '.png" class="invSlotImg noSelect"></img>';
+            if (self.item.stackSize != 1) slot.innerHTML = '<img src="/client/img/item/' + self.item.id + '.png" class="invSlotImg noSelect"></img><div class="invSlotStackSize noSelect">' + self.item.stackSize + '</div>';
+            else slot.innerHTML = '<img src="/client/img/item/' + self.item.id + '.png" class="invSlotImg noSelect"></img>';
         } else {
             slot.innerHTML = '<img src="/client/img/item/empty.png" class="invSlotImgNoGrab noSelect"></img>';
         }
@@ -118,7 +121,8 @@ Inventory.addItem = function(id, slot, amount, enchantments) {
     Inventory.refreshSlot(slot);
 };
 Inventory.removeItem = function(slot) {
-    if (isFinite(slot)) {
+    console.log(slot)
+    if (typeof slot == 'number') {
         Inventory.items[slot].item = null;
     } else {
         Inventory.equips[slot].item = null;
@@ -126,14 +130,14 @@ Inventory.removeItem = function(slot) {
     Inventory.refreshSlot(slot);
 };
 Inventory.refreshSlot = function(slot) {
-    if (isFinite(slot)) {
+    if (typeof slot == 'number') {
         Inventory.items[slot].refresh();
     } else {
         Inventory.equips[slot].refresh();
     }
 };
 Inventory.enchantSlot = function(slot, enchantments) {
-    if (isFinite(slot)) {
+    if (typeof slot == 'number') {
         Inventory.items[slot].enchant(enchantments);
     } else {
         Inventory.equips[slot].enchant(enchantments);
@@ -142,18 +146,22 @@ Inventory.enchantSlot = function(slot, enchantments) {
 };
 Inventory.startDrag = function(slot) {
     Inventory.currentDrag = slot;
-    document.getElementById('invDragImg').style.display = 'block';
-    if (isFinite(slot)) {
+    dragDiv.style.display = 'block';
+    document.getElementById('invDragStackSize').innerText = '';
+    if (typeof slot == 'number') {
         document.getElementById('invDragImg').src = '/client/img/item/' + Inventory.items[slot].item.id + '.png';
-        Inventory.items[slot].slot.innerHTML = '<img src="/client/img/item/empty.png" class="invSlotImgNoGrab"></img>'
+        if (Inventory.items[slot].item.stackSize != 1) document.getElementById('invDragStackSize').innerText = Inventory.items[slot].item.stackSize;
+        Inventory.items[slot].slot.innerHTML = '<img src="/client/img/item/empty.png" class="invSlotImgNoGrab"></img>';
     } else {
         document.getElementById('invDragImg').src = '/client/img/item/' + Inventory.equips[slot].item.id + '.png';
+        if (Inventory.equips[slot].item.stackSize != 1) document.getElementById('invDragStackSize').innerText = Inventory.equips[slot].item.stackSize;
         Inventory.equips[slot].slot.innerHTML = '<img src="/client/img/item/emptySlot' + Inventory.equips[slot].slotId + '.png" class="invSlotImgNoGrab"></img>';
     }
 };
 Inventory.endDrag = function(slot) {
-    document.getElementById('invDragImg').style.display = '';
+    dragDiv.style.display = '';
     document.getElementById('invDragImg').src = '/client/img/item/empty.png';
+    document.getElementById('invDragStackSize').innerText = '';
     socket.emit('item', {
         action: 'drag',
         data: {
@@ -163,13 +171,15 @@ Inventory.endDrag = function(slot) {
     });
     Inventory.currentDrag = null;
 };
-Inventory.drop = function() {
-    document.getElementById('invDragImg').style.display = '';
+Inventory.drop = function(amount) {
+    dragDiv.style.display = '';
     document.getElementById('invDragImg').src = '/client/img/item/empty.png';
+    document.getElementById('invDragStackSize').innerText = '';
     socket.emit('item', {
         action: 'drop',
         data: {
-            slot: Inventory.currentDrag
+            slot: Inventory.currentDrag,
+            amount: amount || 1
         }
     });
     Inventory.currentDrag = null;
@@ -342,16 +352,16 @@ document.addEventListener('mousedown', function(e) {
         if (e.button == 0) {
             for (var i in Inventory.items) {
                 if (Inventory.items[i].mousedOver) {
-                    document.getElementById('invDragImg').style.left = e.clientX-32 + 'px';
-                    document.getElementById('invDragImg').style.top = e.clientY-32 + 'px';
+                    dragDiv.style.left = e.clientX-32 + 'px';
+                    dragDiv.style.top = e.clientY-32 + 'px';
                     if (Inventory.items[i].item) Inventory.startDrag(Inventory.items[i].slotId);
                     return;
                 }
             }
             for (var i in Inventory.equips) {
                 if (Inventory.equips[i].mousedOver) {
-                    document.getElementById('invDragImg').style.left = e.clientX-32 + 'px';
-                    document.getElementById('invDragImg').style.top = e.clientY-32 + 'px';
+                    dragDiv.style.left = e.clientX-32 + 'px';
+                    dragDiv.style.top = e.clientY-32 + 'px';
                     if (Inventory.equips[i].item) Inventory.startDrag(Inventory.equips[i].slotId);
                     return;
                 }
@@ -378,7 +388,8 @@ document.addEventListener('mouseup', function(e) {
                     }
                     Inventory.endDrag(Inventory.currentDrag);
                 } else {
-                    Inventory.drop();
+                    if (typeof Inventory.currentDrag == 'number') Inventory.drop(Inventory.items[Inventory.currentDrag].item.stackSize);
+                    else Inventory.drop(Inventory.equips[Inventory.currentDrag].item.stackSize);
                 }
             }
         }
@@ -387,15 +398,15 @@ document.addEventListener('mouseup', function(e) {
 document.addEventListener('mousemove', function(e) {
     if (loaded) {
         if (Inventory.currentDrag != null) {
-            document.getElementById('invDragImg').style.left = e.clientX-32 + 'px';
-            document.getElementById('invDragImg').style.top = e.clientY-32 + 'px';
+            dragDiv.style.left = e.clientX-32 + 'px';
+            dragDiv.style.top = e.clientY-32 + 'px';
         }
         if (Inventory.currentHover != null && Inventory.currentDrag == null) {
-            document.getElementById('invHoverTooltip').style.opacity = 1;
-            document.getElementById('invHoverTooltip').style.left = e.clientX + 'px';
-            document.getElementById('invHoverTooltip').style.top = e.clientY + 'px';
+            tooltip.style.opacity = 1;
+            tooltip.style.left = e.clientX + 'px';
+            tooltip.style.top = e.clientY + 'px';
         } else {
-            document.getElementById('invHoverTooltip').style.opacity = 0;
+            tooltip.style.opacity = 0;
         }
     }
 });
@@ -406,8 +417,9 @@ document.addEventListener('keydown', function(e) {
                 for (var i in Inventory.items) {
                     if (Inventory.items[i].mousedOver) {
                         Inventory.currentDrag = Inventory.items[i].slotId;
-                        Inventory.drop();
-                        document.getElementById('invHoverTooltip').style.opacity = 0;
+                        if (e.getModifierState('Control')) Inventory.drop(Inventory.items[i].item.stackSize);
+                        else Inventory.drop(1);
+                        tooltip.style.opacity = 0;
                         Inventory.currentHover = null;
                     }
                 }
@@ -415,7 +427,7 @@ document.addEventListener('keydown', function(e) {
                     if (Inventory.equips[i].mousedOver) {
                         Inventory.currentDrag = Inventory.equips[i].slotId;
                         Inventory.drop();
-                        document.getElementById('invHoverTooltip').style.opacity = 0;
+                        tooltip.style.opacity = 0;
                         Inventory.currentHover = null;
                     }
                 }
@@ -425,9 +437,9 @@ document.addEventListener('keydown', function(e) {
 })
 function loadTooltip(slot) {
     var item;
-    if (isFinite(slot)) item = Inventory.items[slot].item;
+    if (typeof slot == 'number') item = Inventory.items[slot].item;
     else item = Inventory.equips[slot].item;
-    document.getElementById('invHoverTooltip').innerHTML = '<span style="font-size: 16px; ' + Inventory.getRarityColor(item.rarity) + '">' + item.name + '</span><br><span style="font-size: 14px;">' + item.slotType + '</span><br><span style="font-size: 12px;">' + item.description + '</span>' + Inventory.generateEffects(item);
+    tooltip.innerHTML = '<span style="font-size: 16px; ' + Inventory.getRarityColor(item.rarity) + '">' + item.name + '</span><br><span style="font-size: 14px;">' + item.slotType.charAt(0).toUpperCase()+item.slotType.slice(1) + '</span><br><span style="font-size: 12px;">' + item.description + '</span>' + Inventory.generateEffects(item);
 };
 Inventory.itemTypes = [];
 Inventory.itemImages = [];

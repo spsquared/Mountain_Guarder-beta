@@ -2195,7 +2195,6 @@ Player = function(socket) {
                 self.xpLevel = progress.progress.xpLevel;
                 self.xp = progress.progress.xp;
                 self.quests.loadSaveData(progress.quests);
-                console.log(progress.trackedData)
                 for (var i in progress.trackedData) {
                     if (self.trackedData[i] != null && progress.trackedData[i] != null) self.trackedData[i] = progress.trackedData[i];
                 }
@@ -3281,6 +3280,7 @@ DroppedItem.update = function() {
             chunkx: localdroppeditem.chunkx,
             chunky: localdroppeditem.chunky,
             itemId: localdroppeditem.itemId,
+            stackSize: localdroppeditem.stackSize,
             playerId: localdroppeditem.playerId
         });
     }

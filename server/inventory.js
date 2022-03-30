@@ -29,7 +29,7 @@ Inventory = function(socket, player) {
                     self.dragItem(data.data.slot, data.data.newSlot);
                     break;
                 case 'drop':
-                    self.dropItem(data.data.slot);
+                    self.dropItem(data.data.slot, data.data.amount);
                     break;
                 default:
                     error('Invalid item action ' + data.action);
@@ -42,24 +42,24 @@ Inventory = function(socket, player) {
     self.addItem = function(id, amount, enchantments) {
         if (!self.full()) {
             var newitem = new Inventory.Item(id, self.items, amount || 1, enchantments);
-            if (typeof newitem == 'object') {
-                var slot = parseInt(newitem.slot);
-                self.refreshItem(slot);
-                return slot;
-            } else {
+            if (newitem.overflow) {
                 var angle = Math.random()*2*Math.PI;
                 var distance = Math.random()*32;
                 var x = player.x+Math.cos(angle)*distance;
                 var y = player.y+Math.sin(angle)*distance;
-                new DroppedItem(player.map, x, y, id, [], newitem);
-                return false;
+                new DroppedItem(player.map, x, y, id, enchantments, newitem.overflow);
             }
+            for (var i in newitem.modifiedSlots) {
+                self.refreshItem(newitem.modifiedSlots[i]);
+            }
+            if (newitem.overflow) return newitem.overflow;
+            return newitem.modifiedSlots[newitem.modifiedSlots.length-1];
         } else {
             var angle = Math.random()*2*Math.PI;
             var distance = Math.random()*32;
             var x = player.x+Math.cos(angle)*distance;
             var y = player.y+Math.sin(angle)*distance;
-            new DroppedItem(player.map, x, y, id, [], amount);
+            new DroppedItem(player.map, x, y, id, enchantments, amount);
             return false;
         }
     };
@@ -78,7 +78,6 @@ Inventory = function(socket, player) {
         self.refreshItem(slot);
     };
     self.refresh = function() {
-        console.log(self.items)
         for (var i = 0; i < self.maxItems; i++) {
             self.refreshItem(parseInt(i));
             if (self.items[i] == null) self.items[i] = null;
@@ -142,51 +141,79 @@ Inventory = function(socket, player) {
         self.refreshItem(slot);
     };
     self.dragItem = function(slot, newslot) {
-        var item1, item2;
-        var slot1 = false, slot2 = false;
-        if (typeof slot == 'number') slot1 = true;
-        if (typeof newslot == 'number') slot2 = true;
-        if (slot1) {
-            item1 = self.items[slot];
-        } else {
-            item1 = self.equips[slot];
-        }
-        if (slot2) {
-            item2 = self.items[newslot];
-        } else {
-            item2 = self.equips[newslot];
-        }
-        var valid = true;
-        if (slot1 == false && item2) {
-            var dragslot = slot;
-            if (slot == 'weapon2') dragslot = 'weapon';
-            if (item2.slotType != dragslot) valid = false;
-        }
-        if (slot2 == false && item1) {
-            var dragslot = newslot;
-            if (newslot == 'weapon2') dragslot = 'weapon';
-            if (item1.slotType != dragslot) valid = false;
-        }
-        if (valid) {
-            if (item1) item1.slot = newslot;
-            if (item2) item2.slot = slot;
+        if (slot != newslot) {
+            var item1, item2;
+            var slot1 = false, slot2 = false;
+            if (typeof slot == 'number') slot1 = true;
+            if (typeof newslot == 'number') slot2 = true;
             if (slot1) {
-                self.items[slot] = item2;
+                item1 = self.items[slot];
             } else {
-                self.equips[slot] = item2;
-                player.updateStats();
+                item1 = self.equips[slot];
             }
             if (slot2) {
-                self.items[newslot] = item1;
+                item2 = self.items[newslot];
             } else {
-                self.equips[newslot] = item1;
-                player.updateStats();
+                item2 = self.equips[newslot];
             }
+            var valid = true;
+            if (slot1 == false && item2) {
+                var dragslot = slot;
+                if (slot == 'weapon2') dragslot = 'weapon';
+                if (item2.slotType != dragslot) valid = false;
+            }
+            if (slot2 == false && item1) {
+                var dragslot = newslot;
+                if (newslot == 'weapon2') dragslot = 'weapon';
+                if (item1.slotType != dragslot) valid = false;
+            }
+            if (valid) {
+                var switchItems = true;
+                if (item1 && item2) if (item1.id == item2.id && item1.stackSize < item1.maxStackSize) {
+                    var enchantsSame = true;
+                    for (var j in item1.enchantments) {
+                        var enchantfound = false;
+                        for (var k in item2.enchantments) {
+                            if (item1.enchantments[j].id == item2.enchantments[k].id) if (item1.enchantments[j].level == item2.enchantments[k].level) enchantfound = true;
+                        }
+                        if (enchantfound == false) enchantsSame = false;
+                    }
+                    if (enchantsSame) {
+                        var size = item2.stackSize;
+                        item2.stackSize = Math.min(item2.maxStackSize, item2.stackSize+item1.stackSize);
+                        item1.stackSize = Math.max(0, item1.stackSize-(item2.stackSize-size));
+                        if (item1.stackSize <= 0) {
+                            if (slot1) {
+                                self.items[slot] = null;
+                            } else {
+                                self.equips[slot] = null;
+                            }
+                            switchItems = false;
+                        }
+                    }
+                }
+                if (switchItems) {
+                    if (item1) item1.slot = newslot;
+                    if (item2) item2.slot = slot;
+                    if (slot1) {
+                        self.items[slot] = item2;
+                    } else {
+                        self.equips[slot] = item2;
+                        player.updateStats();
+                    }
+                    if (slot2) {
+                        self.items[newslot] = item1;
+                    } else {
+                        self.equips[newslot] = item1;
+                        player.updateStats();
+                    }
+                }
+            }
+            self.refreshItem(slot);
         }
-        self.refreshItem(slot);
         self.refreshItem(newslot);
     };
-    self.dropItem = function(slot) {
+    self.dropItem = function(slot, amount) {
         var item;
         if (typeof slot == 'number') {
             item = self.items[slot];
@@ -234,8 +261,8 @@ Inventory = function(socket, player) {
                 attempts++;
             }
             if (dropx) {
-                new DroppedItem(player.map, dropx, dropy, item.id, item.enchantments, item.stackSize);
-                self.removeItem(item.slot, item.stackSize);
+                new DroppedItem(player.map, dropx, dropy, item.id, item.enchantments, amount);
+                self.removeItem(item.slot, amount);
             }
         }
     };
@@ -310,6 +337,7 @@ Inventory.Item = function(id, list, amount, enchantments) {
         if (list[self.slot] == null) break;
         self.slot++;
     }
+    self.modifiedSlots = [];
     for (var i in list) {
         if (list[i]) if (list[i].id == self.id && list[i].stackSize < list[i].maxStackSize) {
             var enchantsSame = true;
@@ -323,12 +351,23 @@ Inventory.Item = function(id, list, amount, enchantments) {
             if (enchantsSame) {
                 var size = list[i].stackSize;
                 list[i].stackSize = Math.min(list[i].maxStackSize, list[i].stackSize+self.overflow);
-                self.overflow = Math.max(0, self.overflow-list[i].stackSize-size);
-                if (self.overflow == 0) return false;
+                self.overflow = Math.max(0, self.overflow-(list[i].stackSize-size));
+                self.modifiedSlots.push(parseInt(i));
+                if (self.overflow == 0) return {
+                    modifiedSlots: self.modifiedSlots
+                };
             }
         }
     }
+    self.modifiedSlots.push(self.slot);
+    if (self.slot >= list.length) {
+        return {
+            overflow: self.overflow,
+            modifiedSlots: self.modifiedSlots
+        };
+    }
     self.stackSize = self.overflow;
+    self.overflow = 0;
     self.enchantments = enchantments || [];
 
     self.getData = function() {

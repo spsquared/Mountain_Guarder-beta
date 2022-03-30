@@ -642,7 +642,7 @@ Particle.update = function(data) {
 Particle.list = [];
 
 // dropped items
-DroppedItem = function(id, map, x, y, itemId) {
+DroppedItem = function(id, map, x, y, itemId, stackSize) {
     var self = {
         id: null,
         map: map,
@@ -652,6 +652,7 @@ DroppedItem = function(id, map, x, y, itemId) {
         width: 48,
         height: 48,
         itemId: 'missing',
+        stackSize: stackSize,
         updated: false
     };
     self.id = id;
@@ -660,6 +661,12 @@ DroppedItem = function(id, map, x, y, itemId) {
 
     self.draw = function() {
         LAYERS.elayers[self.layer].drawImage(self.animationImage, self.x-self.width/2+OFFSETX, self.y-self.height/2+OFFSETY, self.width, self.height);
+        if (self.stackSize != 1) {
+            LAYERS.elayers[self.layer].textAlign = 'right';
+            LAYERS.elayers[self.layer].font = '14px Pixel';
+            LAYERS.elayers[self.layer].fillStyle = '#FFFF00';
+            LAYERS.elayers[self.layer].fillText(self.stackSize, self.x+self.width/2+OFFSETX-4, self.y+self.height/2+OFFSETY-4);
+        }
     };
 
     DroppedItem.list[self.id] = self;
@@ -675,7 +682,7 @@ DroppedItem.update = function(data) {
                 DroppedItem.list[data[i].id].updated = true;
             } else {
                 try {
-                    new DroppedItem(data[i].id, data[i].map, data[i].x, data[i].y, data[i].itemId);
+                    new DroppedItem(data[i].id, data[i].map, data[i].x, data[i].y, data[i].itemId, data[i].stackSize);
                     DroppedItem.list[data[i].id].updated = true;
                 } catch (err) {
                     console.error(err);

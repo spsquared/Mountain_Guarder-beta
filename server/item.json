@@ -2,7 +2,7 @@
     "missing": {
         "slotType": "none",
         "rarity": "missing",
-        "maxStackSize": 1,
+        "maxStackSize": 1000000,
         "effects": [],
         "enchantments": []
     },
