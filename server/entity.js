@@ -2189,17 +2189,22 @@ Player = function(socket) {
                 self.inventory.loadSaveData(progress);
                 self.inventory.refresh();
             } else if (progress.saveFormat == 1) {
-                self.inventory.loadSaveData(progress.inventory);
-                self.inventory.refresh();
-                self.characterStyle = progress.characterStyle;
-                self.xpLevel = progress.progress.xpLevel;
-                self.xp = progress.progress.xp;
-                self.quests.loadSaveData(progress.quests);
-                for (var i in progress.trackedData) {
-                    if (self.trackedData[i] != null && progress.trackedData[i] != null) self.trackedData[i] = progress.trackedData[i];
+                try {
+                    self.inventory.loadSaveData(progress.inventory);
+                    self.inventory.refresh();
+                    self.characterStyle = progress.characterStyle;
+                    self.xpLevel = progress.progress.xpLevel;
+                    self.xp = progress.progress.xp;
+                    self.quests.loadSaveData(progress.quests);
+                    for (var i in progress.trackedData) {
+                        if (self.trackedData[i] != null && progress.trackedData[i] != null) self.trackedData[i] = progress.trackedData[i];
+                    }
+                    self.trackedData.last = self.trackedData;
+                    self.trackedData.updateTrackers();
+                } catch (err) {
+                    error(err);
+                    console.error(err);
                 }
-                self.trackedData.last = self.trackedData;
-                self.trackedData.updateTrackers();
             } else {
                 error('Invalid save data format ' + progress.saveFormat);
             }
