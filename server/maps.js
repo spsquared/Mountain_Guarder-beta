@@ -266,7 +266,9 @@ loadAll();
 resetMaps = function() {
     insertChat('[!] Reloading all maps [!]', 'server');
     logColor('Reloading all maps', '\x1b[33m', 'error');
+    Npc.list.length = 0;
     Monster.list.length = 0;
+    Projectile.list.length = 0;
     Collision.grid.length = 0;
     Layer.grid.length = 0;
     Slowdown.grid.length = 0;

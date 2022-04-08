@@ -30,7 +30,7 @@ function load(data) {
         getNpcDialogues();
         getInventoryData();
         document.getElementById('loadingBar').style.display = 'block';
-        tileset.src = '/client/maps/roguelikeSheet.png';
+        tileset.src = '/client/maps/tiles.png';
         var updateLoadBar = setInterval(function() {
             var percent = ~~(loadedassets/totalassets*100) + '%';
             document.getElementById('loadingBarText').innerText = loadedassets + '/' + totalassets + ' (' + percent + ')';
@@ -157,8 +157,9 @@ function drawFrame() {
         OFFSETY = 0;
         if (MAPS[player.map].width*64 > window.innerWidth) OFFSETX = -Math.max((window.innerWidth/2) - (player.x - MAPS[player.map].offsetX), Math.min((MAPS[player.map].offsetX + (MAPS[player.map].width*64)) - player.x - (window.innerWidth/2), 0));
         if (MAPS[player.map].height*64 > window.innerHeight) OFFSETY = -Math.max((window.innerHeight/2) - (player.y - MAPS[player.map].offsetY), Math.min((MAPS[player.map].offsetY + (MAPS[player.map].height*64)) - player.y - (window.innerHeight/2), 0));
-        // OFFSETX += Math.random()*200-100;
-        // OFFSETY += Math.random()*200-100;
+        OFFSETX += lsdX;
+        OFFSETY += lsdY;
+        updateCameraShake();
         drawMap();
         Entity.draw();
         CTX.drawImage(LAYERS.map0, 0, 0, window.innerWidth, window.innerHeight);
@@ -545,7 +546,7 @@ function drawDebug() {
 function resetFPS() {
     clearInterval(drawLoop);
     drawLoop = setInterval(function() {
-        window.requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
             drawFrame();
             if (settings.useController) updateControllers();
             fpsCounter++;
@@ -855,6 +856,36 @@ function getNpcDialogues() {
 };
 async function loadNpcDialogues() {};
 
+// camera shake
+var cameraShake = {
+    intensity: 0,
+    x: 0,
+    y: 0,
+    xspeed: 0,
+    yspeed: 0
+}
+function startCameraShake(intensity) {
+    cameraShake.intensity = intensity;
+    var shake = setInterval(function() {
+        cameraShake.xspeed = ((Math.random()*(2*cameraShake.intensity)-cameraShake.intensity)-cameraShake.x)/(settings.fps/40);
+        cameraShake.yspeed = ((Math.random()*(2*cameraShake.intensity)-cameraShake.intensity)-cameraShake.y)/(settings.fps/40);
+        cameraShake.intensity *= 0.9;
+        if (cameraShake.intensity < 0.1) {
+            cameraShake.x = 0;
+            cameraShake.y = 0;
+            cameraShake.xspeed = 0;
+            cameraShake.yspeed = 0;
+            clearInterval(shake);
+        }
+    }, 25);
+};
+function updateCameraShake() {
+    cameraShake.x += cameraShake.xspeed;
+    cameraShake.y += cameraShake.yspeed;
+    OFFSETX += cameraShake.x;
+    OFFSETY += cameraShake.y;
+};
+
 // chat
 var inchat = false;
 var chatInput = document.getElementById('chatInput');
@@ -959,7 +990,7 @@ var debugStart = 0;
 var tickTime = 0;
 var entTime = 0;
 var packetTime = 0;
-setInterval(async function() {
+setInterval(function() {
     if (loaded) {
         document.getElementById('fps').innerText = 'FPS: ' + fpsCounter;
         document.getElementById('tps').innerText = 'TPS: ' + tpsCounter;

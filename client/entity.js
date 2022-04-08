@@ -833,6 +833,7 @@ async function loadEntityData() {
 AnimatedTile = function(map, x, y, id, above) {
     var self = {
         id: id,
+        index: 0,
         map: map,
         x: x*64,
         y: y*64,
@@ -844,4 +845,78 @@ AnimatedTile = function(map, x, y, id, above) {
 
     return self;
 };
-AnimatedTile.ids = [570, 619, 656, 702, 705, 742, 828, 914, 3202, 3288];
+AnimatedTile.animations = [];
+
+// load data
+function getAnimatedTileData() {
+    totalassets++;
+    var request = new XMLHttpRequest();
+    request.open('GET', '/client/maps/tiles.tsx', false);
+    request.onload = async function() {
+        if (this.status >= 200 && this.status < 400) {
+            var parser = new DOMParser();
+            var raw = parser.parseFromString(this.response, 'text/xml');
+            for (var i in raw) {
+                if (raw[i])
+                for (var j in raw) {
+                    if (raw[i][j])console.log(raw[i][j])
+                }
+            }
+        } else {
+            console.error('Error: Server returned status ' + this.status);
+            await sleep(1000);
+            request.send();
+        }
+    };
+    request.onerror = function(){
+        console.error('There was a connection error. Please retry');
+    };
+    request.send();
+};
+async function loadEntityData() {
+    // health bars
+    Rig.healthBarG.src = '/client/img/player/healthbar_green.png';
+    Rig.healthBarR.src = '/client/img/monster/healthbar_red.png';
+    // players
+    for (var i in Player.animations) {
+        if (i == 'hair') {
+            for (var j in Player.animations[i]) {
+                await new Promise(function(resolve, reject) {
+                    Player.animations[i][j].onload = function() {
+                        loadedassets++;
+                        resolve();
+                    };
+                    Player.animations[i][j].src = '/client/img/player/playermap_' + i + j + '.png';
+                });
+            }
+        } else {
+            await new Promise(function(resolve, reject) {
+                Player.animations[i].onload = function() {
+                    loadedassets++;
+                    resolve();
+                };
+                Player.animations[i].src = '/client/img/player/playermap_' + i + '.png';
+            });
+        }
+    }
+    // monsters
+    for (var i in Monster.types) {
+        await new Promise(function(resolve, reject) {
+            Monster.images[i].onload = function() {
+                loadedassets++;
+                resolve();
+            };
+            Monster.images[i].src = '/client/img/monster/' + i + '.png';
+        });
+    }
+    // projectiles
+    for (var i in Projectile.types) {
+        await new Promise(function(resolve, reject) {
+            Projectile.images[i].onload = function() {
+                loadedassets++;
+                resolve();
+            };
+            Projectile.images[i].src = '/client/img/projectile/' + i + '.png';
+        });
+    }
+};

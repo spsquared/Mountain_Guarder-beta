@@ -20,8 +20,49 @@ QuestHandler = function(socket, player) {
             error('Invalid quest id ' + id);
         }
     };
-    self.updateQuestRequirements = function() {
-
+    self.updateQuestRequirements = function(data) {
+        for (var i in self.current) {
+            var objectives = self.current[i].objectivesComplete;
+            for (var j in objectives) {
+                switch (j) {
+                    case 'obtain':
+                        for (var k in data.aqquiredItems) {
+                            for (var l in objectives[j]) {
+                                if (k == l) objectives[j][l] += data.aqquiredItems[k];
+                            }
+                        }
+                        break;
+                    case 'area':
+                        if (Math.sqrt((data.pos.x-self.current[i].objectives[j].x)**2+(data.pos.x-self.current[i].objectives[j].x)**2) < self.current[i].objectives[j].r) {
+                            objectives[j] = true;
+                        }
+                        break;
+                    case 'killPlayer':
+                        objectives[j] += data.trackedData.playerKills;
+                        break;
+                    case 'killMonster':
+                        for (var k in data.monstersKilled) {
+                            console.log(data.monstersKilled[k].id)
+                            for (var l in objectives[j]) {
+                                if (l == 'any') objectives[j][l] += data.monstersKilled[k].count;
+                                if (l == 'bird' && data.monstersKilled[k].id.includes('bird')) objectives[j][l] += data.monstersKilled[k].count;
+                                if (l == data.monstersKilled[k].id) objectives[j][l] += data.monstersKilled[k].count;
+                            }
+                        }
+                        // console.log(objectives[j])
+                        break;
+                    case 'dealDamage':
+                        objectives[j] += data.trackedData.damageDealt;
+                        break;
+                    case 'dps':
+                        objectives[j] = data.trackedData.dps;
+                        break;
+                    default:
+                        error('Invalid quest objective ' + j);
+                        break;
+                }
+            }
+        }
     };
     self.qualifiesFor = function(id) {
         var quest = QuestData.quests[id];
@@ -61,6 +102,7 @@ QuestData = function(id) {
             for (var j in self.objectivesComplete[i]) {
                 self.objectivesComplete[i][j] = 0;
             }
+            if (i == 'area') self.objectivesComplete[i] = false;
         } else {
             self.objectivesComplete[i] = 0;
         }

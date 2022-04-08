@@ -21,7 +21,7 @@
             "dealDamage": 1,
             "dps": 1
         },
-        "reward": {
+        "rewards": {
             "xp": 0,
             "items": {
                 "missing": 1
@@ -38,7 +38,7 @@
                 "bird": 5
             }
         },
-        "reward": {
+        "rewards": {
             "xp": 100
         }
     }

@@ -24,13 +24,12 @@ ACCOUNTS = {
         if (!ACCOUNTS.connected) {
             if (ENV.offlineMode) {
                 ACCOUNTS.connected = true;
-                warn('');
                 warn('!!! Offline Mode is enabled! Accounts and progress will not load or save! !!!');
-                warn('');
             } else {
                 try {
                     await database.connect();
                     ACCOUNTS.connected = true;
+                    database.query('ALTER TABLE users ALTER COLUMN data TYPE varchar(1048576)');
                 } catch (err) {
                     forceQuit(err, 2);
                 }
@@ -139,7 +138,7 @@ ACCOUNTS = {
         }
     },
     loadProgress: async function(username, password) {
-        if (ENV.offlineMode) return {};
+        if (ENV.offlineMode) return '{}';
         var progress = await getProgress(username, password);
         if (progress != false) {
             return progress;

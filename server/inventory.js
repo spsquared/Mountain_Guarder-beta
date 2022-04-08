@@ -41,13 +41,13 @@ Inventory = function(socket, player) {
     });
     self.addItem = function(id, amount, enchantments) {
         if (!self.full()) {
-            var newitem = new Inventory.Item(id, self.items, amount || 1, enchantments);
+            var newitem = new Inventory.Item(id, self.items, amount || 1, enchantments || []);
             if (newitem.overflow) {
                 var angle = Math.random()*2*Math.PI;
                 var distance = Math.random()*32;
                 var x = player.x+Math.cos(angle)*distance;
                 var y = player.y+Math.sin(angle)*distance;
-                new DroppedItem(player.map, x, y, id, enchantments, newitem.overflow);
+                new DroppedItem(player.map, x, y, id, enchantments || [], newitem.overflow);
             }
             for (var i in newitem.modifiedSlots) {
                 self.refreshItem(newitem.modifiedSlots[i]);
@@ -59,8 +59,7 @@ Inventory = function(socket, player) {
             var distance = Math.random()*32;
             var x = player.x+Math.cos(angle)*distance;
             var y = player.y+Math.sin(angle)*distance;
-            new DroppedItem(player.map, x, y, id, enchantments, amount);
-            return false;
+            return new DroppedItem(player.map, x, y, id, enchantments || [], amount);
         }
     };
     self.removeItem = function(slot, amount) {
@@ -359,15 +358,29 @@ Inventory.Item = function(id, list, amount, enchantments) {
             }
         }
     }
-    self.modifiedSlots.push(self.slot);
     if (self.slot >= list.length) {
         return {
             overflow: self.overflow,
             modifiedSlots: self.modifiedSlots
         };
     }
-    self.stackSize = self.overflow;
-    self.overflow = 0;
+    self.modifiedSlots.push(self.slot);
+    self.stackSize = Math.min(self.overflow, self.maxStackSize);
+    self.overflow -= Math.min(self.overflow, self.maxStackSize);
+    if (self.overflow) {
+        try {
+            list[self.slot] = self;
+            var newitem = new Inventory.Item(id, list, self.overflow, enchantments);
+            self.modifiedSlots = self.modifiedSlots.concat(newitem.modifiedSlots);
+            self.overflow = newitem.overflow;
+        } catch (err) {
+            error(err);
+            return {
+                overflow: self.overflow,
+                modifiedSlots: self.modifiedSlots
+            };
+        }
+    }
     self.enchantments = enchantments || [];
 
     self.getData = function() {

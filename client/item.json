@@ -350,6 +350,31 @@
         "heldDistance": 64,
         "effects": []
     },
+    "raresteak": {
+        "name": "Rare Steak",
+        "description": "Oh wait it's just raw",
+        "slotType": "weapon",
+        "rarity": 2,
+        "damage": 18,
+        "damageType": "melee",
+        "critChance": 0.2,
+        "critPower": 0.3,
+        "knockback": 1.5,
+        "useTime": 5,
+        "manaCost": 0,
+        "heldAngle": 45,
+        "heldDistance": 56,
+        "effects": [
+            {
+                "id": "health",
+                "value": 0.9
+            },
+            {
+                "id": "speed",
+                "value": 0.8
+            }
+        ]
+    },
     "christmas2021": {
         "name": "Season's Yeetings",
         "description": "Merry Christmas from the Mountain Guarder devs! - Yeetmas 2021",

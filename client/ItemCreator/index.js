@@ -23,6 +23,7 @@ function generateServerItem() {
     var item = {
         slotType: null,
         rarity: null,
+        maxStackSize: 1
     };
     var slotType = document.getElementById('slotType').value;
     if (slotType == 'weapon' || slotType == 'crystal') {
@@ -33,7 +34,7 @@ function generateServerItem() {
         item.damage = null;
         item.damageType = null;
         item.critChance = null;
-        item.critDamage = null;
+        item.critPower = null;
         item.knockback = null;
         item.useTime = null;
         item.manaCost = null;
@@ -55,7 +56,7 @@ function generateServerItem() {
         if (isNaN(value*2) == false) value = parseFloat(value);
         item[i] = value;
     }
-    var effects = ['health', 'damage', 'rangedDamage', 'meleeDamage', 'magicDamage', 'critChance', 'critDamage', 'damageReduction', 'defense'];
+    var effects = ['health', 'damage', 'rangedDamage', 'meleeDamage', 'magicDamage', 'critChance', 'critDamage', 'damageReduction', 'defense', 'speed'];
     item.effects = [];
     for (var i in effects) {
         var value = document.getElementById('effect' + effects[i]).value;
@@ -99,7 +100,7 @@ function generateClientItem() {
         item.damage = null;
         item.damageType = null;
         item.critChance = null;
-        item.critDamage = null;
+        item.critPower = null;
         item.knockback = null;
         item.useTime = null;
         item.manaCost = null;
@@ -119,7 +120,7 @@ function generateClientItem() {
         if (isNaN(value*2) == false) value = parseFloat(value);
         item[i] = value;
     }
-    var effects = ['health', 'damage', 'rangedDamage', 'meleeDamage', 'magicDamage', 'critChance', 'critDamage', 'damageReduction', 'defense'];
+    var effects = ['health', 'damage', 'rangedDamage', 'meleeDamage', 'magicDamage', 'critChance', 'critDamage', 'damageReduction', 'defense', 'speed'];
     item.effects = [];
     for (var i in effects) {
         var value = document.getElementById('effect' + effects[i]).value;

@@ -494,7 +494,7 @@ Rig = function() {
             self.hp = Math.min(self.hp+20, self.maxHP);
             self.mana -= 10;
             self.lastManaUse = 0;
-            new Particle(self.map, self.x, self.y, self.layer, self.layer, 'heal', '+' + self.hp-oldhp);
+            new Particle(self.map, self.x, self.y, self.layer, 'heal', '+' + self.hp-oldhp);
         }
         self.lastManaRegen++;
         self.lastManaUse++;
@@ -771,9 +771,9 @@ Rig = function() {
         self.xmove = 0;
         self.ymove = 0;
         if (self.ai.path[0]) {
-            var angle = Math.atan2(self.ai.path[0][1]*64+32-self.y, self.ai.path[0][0]*64+32-self.x);
-            self.controls.xaxis = Math.cos(angle);
-            self.controls.yaxis = Math.sin(angle);
+            // var angle = Math.atan2(self.ai.path[0][1]*64+32-self.y, self.ai.path[0][0]*64+32-self.x);
+            // self.controls.xaxis = Math.cos(angle);
+            // self.controls.yaxis = Math.sin(angle);
             if (self.ai.path[0][0]*64+32 < self.x) self.controls.left = true;
             else if (self.ai.path[0][0]*64+32 > self.x) self.controls.right = true;
             if (self.ai.path[0][1]*64+32 < self.y) self.controls.up = true;
@@ -1441,28 +1441,42 @@ Player = function(socket) {
         updateTrackers: function() {
             var delta = {
                 monstersKilled: [],
+                playerKills: 0,
                 kills: self.trackedData.kills-self.trackedData.last.kills,
-                deaths: self.trackedData.kills-self.trackedData.last.kills,
-                damageDealt: self.trackedData.kills-self.trackedData.last.kills,
-                damageTaken: self.trackedData.kills-self.trackedData.last.kills,
-                dps: self.trackedData.kills-self.trackedData.last.kills,
-                maxDPS: self.trackedData.kills-self.trackedData.last.kills,
-                bossesSlain: self.trackedData.kills-self.trackedData.last.kills,
+                deaths: self.trackedData.deaths-self.trackedData.last.deaths,
+                damageDealt: self.trackedData.damageDealt-self.trackedData.last.damageDealt,
+                damageTaken: self.trackedData.damageTaken-self.trackedData.last.damageTaken,
+                dps: self.trackedData.dps,
+                maxDPS: self.trackedData.maxDPS,
+                bossesSlain: self.trackedData.bossesSlain-self.trackedData.last.bossesSlain,
             };
             for (var i in self.trackedData.monstersKilled) {
-                if (self.trackedData.last.monstersKilled[i] == null) delta.monstersKilled[i] = self.trackedData.monstersKilled[i];
-                else delta.monstersKilled[i] = self.trackedData.monstersKilled[i]-self.trackedData.last.monstersKilled[i];
+                var temp = self.trackedData.monstersKilled[i];
+                for (var j in self.trackedData.last.monstersKilled) {
+                    var temp2 = self.trackedData.last.monstersKilled[j];
+                    if (temp.id == temp2.id) {
+                        delta.monstersKilled.push({
+                            id: temp.id,
+                            count: temp.count-temp2.count
+                        });
+                    }
+                }
             }
+            if (delta.monstersKilled[0]) console.log(delta.monstersKilled)
             var data = {
                 trackedData: delta,
                 aqquiredItems: [],
-            }
+                pos: {
+                    x: self.gridx,
+                    y: self.gridy
+                }
+            };
             self.quests.updateQuestRequirements(data);
             self.trackedData.last = {};
             self.trackedData.last = Object.create(self.trackedData);
         }
     };
-    self.trackedData.last = self.trackedData;
+    self.trackedData.last = Object.create(self.trackedData);
     self.alive = false;
     self.debugEnabled = false;
     self.creds = {
@@ -1668,8 +1682,10 @@ Player = function(socket) {
                                     var bottom = localdroppeditem.y+localdroppeditem.height/2;
                                     if (x >= left && x <= right && y >= top && y <= bottom) {
                                         if (!self.inventory.full()) {
-                                            self.inventory.addItem(localdroppeditem.itemId, localdroppeditem.stackSize, localdroppeditem.enchantments);
-                                            delete DroppedItem.list[i];
+                                            var res = self.inventory.addItem(localdroppeditem.itemId, localdroppeditem.stackSize, localdroppeditem.enchantments);
+                                            if (typeof res == 'number') {
+                                                delete DroppedItem.list[i];
+                                            }
                                         }
                                         return;
                                     }
@@ -2065,6 +2081,7 @@ Player = function(socket) {
         };
         self.heldItem.id = null;
         self.maxHP = 100;
+        self.moveSpeed = 15;
         if (self.inventory.equips.weapon) {
             var item = self.inventory.equips.weapon;
             self.stats.damageType = item.damageType;
@@ -2086,8 +2103,8 @@ Player = function(socket) {
                     var effect = localitem.effects[j];
                     switch (effect.id) {
                         case 'health':
-                            self.maxHP *= effect.value;
-                            self.maxHP = Math.round(self.maxHP);
+                            self.maxHP = Math.round(self.maxHP*effect.value);
+                            self.hp = Math.min(self.maxHP, self.hp);
                             break;
                         case 'damage':
                             self.stats.attack *= effect.value;
@@ -2117,6 +2134,9 @@ Player = function(socket) {
                             self.stats.defense += effect.value;
                             self.stats.defense = Math.min(self.stats.defense, 1);
                             break;
+                        case 'speed':
+                            self.moveSpeed = Math.round(self.moveSpeed*effect.value);
+                            break;
                         default:
                             error('Invalid item effect ' + effect.id);
                             break;
@@ -2144,29 +2164,33 @@ Player = function(socket) {
         self.currentConversation = id;
     };
     socket.on('promptChoose', function(option) {
-        var option = Npc.dialogues[self.currentConversation].options[option];
-        if (option) {
-            var action = option.action;
-            if (action.startsWith('close_')) {
-                self.canMove = true;
-                self.invincible = false;
-                self.currentConversation = null;
-            } else if (action.startsWith('prompt_')) {
-                var id = action.replace('prompt_', '');
-                self.prompt(id);
-            } else if (action.startsWith('quest')) {
-                self.canMove = true;
-                self.invincible = false;
-                self.currentConversation = null;
-                var id = action.replace('quest_', '');
-                self.quests.startQuest(id);
+        if (self.currentConversation) {
+            var option = Npc.dialogues[self.currentConversation].options[option];
+            if (option) {
+                var action = option.action;
+                if (action.startsWith('close_')) {
+                    self.canMove = true;
+                    self.invincible = false;
+                    self.currentConversation = null;
+                } else if (action.startsWith('prompt_')) {
+                    var id = action.replace('prompt_', '');
+                    self.prompt(id);
+                } else if (action.startsWith('quest')) {
+                    self.canMove = true;
+                    self.invincible = false;
+                    self.currentConversation = null;
+                    var id = action.replace('quest_', '');
+                    self.quests.startQuest(id);
+                }
+            } else {
+                self.socketKick();
             }
-        } else {
-            self.socketKick();
         }
     });
     self.saveData = async function() {
-        var trackedData = Object.create(self.trackedData);
+        var trackedData = Object.assign({}, self.trackedData);
+        delete trackedData.last;
+        delete trackedData.updateTrackers;
         var progress = {
             inventory: self.inventory.getSaveData(),
             characterStyle: self.characterStyle,
@@ -2197,13 +2221,14 @@ Player = function(socket) {
                     self.xp = progress.progress.xp;
                     self.quests.loadSaveData(progress.quests);
                     for (var i in progress.trackedData) {
-                        if (self.trackedData[i] != null && progress.trackedData[i] != null) self.trackedData[i] = progress.trackedData[i];
+                        self.trackedData[i] = progress.trackedData[i];
                     }
-                    self.trackedData.last = self.trackedData;
+                    self.trackedData.monstersKilled = Array.from(self.trackedData.monstersKilled);
+                    self.trackedData.last = {};
+                    self.trackedData.last = Object.create(self.trackedData);
                     self.trackedData.updateTrackers();
                 } catch (err) {
                     error(err);
-                    console.error(err);
                 }
             } else {
                 error('Invalid save data format ' + progress.saveFormat);
@@ -2696,8 +2721,19 @@ Monster = function(type, x, y, map, layer) {
         self.alive = false;
         if (entity) if (entity.entType == 'player') {
             entity.xp += self.xpDrop;
-            if (entity.trackedData.monstersKilled[self.type] == null) entity.trackedData.monstersKilled[self.type] = 0;
-            entity.trackedData.monstersKilled[self.type]++;
+            var found = false;
+            for (var i in entity.trackedData.monstersKilled) {
+                if (entity.trackedData.monstersKilled[i].id == self.type) {
+                    entity.trackedData.monstersKilled[i].count++;
+                    found = true;
+                }
+            }
+            if (!found) {
+                entity.trackedData.monstersKilled.push({
+                    id: self.type,
+                    count: 1
+                });
+            }
         }
         try {
             var multiplier = 0;
@@ -3247,7 +3283,7 @@ DroppedItem = function(map, x, y, itemId, enchantments, stackSize, playerId) {
         width: 48,
         height: 48,
         itemId: itemId,
-        enchantments: [],
+        enchantments: enchantments,
         stackSize: stackSize,
         playerId: playerId
     };
@@ -3260,7 +3296,6 @@ DroppedItem = function(map, x, y, itemId, enchantments, stackSize, playerId) {
         }
     }
     if (!valid) self.itemId = 'missing';
-    self.enchantments = enchantments;
     self.time = 0;
 
     self.update = function() {

@@ -1,10 +1,10 @@
 // Copyright (C) 2022 Radioactive64
 // Go to README.md for more information
 
-const version = 'v0.10.0 Alpha 03';
+const version = 'v0.10.0 Alpha 04';
 require('./server/log.js');
-console.info('\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' copyright (C) Radioactive64 2022');
-appendLog('Mountain Guarder ' + version + ' copyright (C) Radioactive64 2022', 'log');
+console.info('\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022');
+appendLog('Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022', 'log');
 logColor('Starting server...', '\x1b[32m', 'log');
 const express = require('express');
 const app = express();
@@ -32,11 +32,7 @@ var started = false;
 ENV = {
     offlineMode: require('./config.json').offlineMode,
     useDiscordWebhook: require('./config.json').useDiscordWebhook,
-    ops: [
-        'Sampleprovider(sp)',
-        'suvanth',
-        'spuhh'
-    ],
+    ops: require('./config.json').ops,
     devs: [
         'Sampleprovider(sp)'
     ],
@@ -92,6 +88,7 @@ io.on('connection', function(socket) {
         // connection
         socket.on('disconnect', async function() {
             if (player.name) {
+                player.name == null;
                 await player.saveData();
                 insertChat(player.name + ' left the game', 'server');
             }
@@ -99,6 +96,7 @@ io.on('connection', function(socket) {
         });
         socket.on('disconnected', async function() {
             if (player.name) {
+                player.name == null;
                 await player.saveData();
                 insertChat(player.name + ' left the game', 'server');
             }
@@ -107,6 +105,7 @@ io.on('connection', function(socket) {
         });
         socket.on('timeout', async function() {
             if (player.name) {
+                player.name == null;
                 await player.saveData();
                 insertChat(player.name + ' left the game', 'server');
             }
@@ -115,6 +114,7 @@ io.on('connection', function(socket) {
         });
         socket.on('error', async function() {
             if (player.name) {
+                player.name == null;
                 await player.saveData();
                 insertChat(player.name + ' left the game', 'server');
             }
@@ -399,6 +399,7 @@ prompt.on('close', async function() {
         for (var i in Player.list) {
             var player = Player.list[i];
             if (player.name) {
+                player.name == null;
                 await player.saveData();
                 insertChat(player.name + ' left the game', 'server');
             }

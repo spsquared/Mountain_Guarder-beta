@@ -432,6 +432,36 @@
             "focus"
         ]
     },
+    "raresteak": {
+        "slotType": "weapon",
+        "rarity": 2,
+        "projectile": "meleedamage",
+        "projectilePattern": "ring",
+        "projectileSpeed": 1,
+        "projectileRange": 0.2,
+        "damage": 18,
+        "damageType": "melee",
+        "critChance": 0.2,
+        "critPower": 0.3,
+        "knockback": 1.5,
+        "useTime": 5,
+        "manaCost": 0,
+        "maxStackSize": 1,
+        "effects": [
+            {
+                "id": "health",
+                "value": 0.9
+            },
+            {
+                "id": "speed",
+                "value": 0.8
+            }
+        ],
+        "enchantments": [
+            "speed",
+            "sweepingedge"
+        ]
+    },
     "christmas2021": {
         "slotType": "weapon",
         "rarity": -1,

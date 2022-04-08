@@ -25,7 +25,7 @@ Inventory = {
     maxItems: 30
 };
 Inventory.Item = function(id, slot, amount, enchantments) {
-    var self = Inventory.itemTypes[id];
+    var self = Object.create(Inventory.itemTypes[id]);
     self.id = id;
     self.slot = slot;
     self.stackSize = amount || 1;
@@ -121,13 +121,14 @@ Inventory.addItem = function(id, slot, amount, enchantments) {
     Inventory.refreshSlot(slot);
 };
 Inventory.removeItem = function(slot) {
-    console.log(slot)
-    if (typeof slot == 'number') {
-        Inventory.items[slot].item = null;
-    } else {
-        Inventory.equips[slot].item = null;
+    if (slot != null) {
+        if (typeof slot == 'number') {
+            Inventory.items[slot].item = null;
+        } else {
+            Inventory.equips[slot].item = null;
+        }
+        Inventory.refreshSlot(slot);
     }
-    Inventory.refreshSlot(slot);
 };
 Inventory.refreshSlot = function(slot) {
     if (typeof slot == 'number') {
@@ -218,20 +219,23 @@ Inventory.generateEffects = function(item) {
             var damageType = 'Damage';
             switch (item.damageType) {
                 case 'ranged':
-                    damageType = ' Ranged Damage';
+                    damageType = ' Ranged damage';
                     break;
                 case 'melee':
-                    damageType = ' Melee Damage';
+                    damageType = ' Melee damage';
                     break;
                 case 'magic':
-                    damageType = ' Purple Damage';
+                    damageType = ' Purple damage';
                     break;
                 default:
                     break;
             }
             str += '<br><span style="color: lime; font-size: 12px;">' + item.damage + damageType + '</span>';
             if (item.critChance != 0) {
-                str += '<br><span style="color: lime; font-size: 12px;">' + Math.round(item.critChance*100) + '% Critical Strike chance</span>';
+                str += '<br><span style="color: lime; font-size: 12px;">' + Math.round(item.critChance*100) + '% Critical hit chance</span>';
+            }
+            if (item.critPower != 0) {
+                str += '<br><span style="color: lime; font-size: 12px;">' + Math.round(item.critPower*100) + '% Critical hit power</span>';
             }
         }
         for (var i in item.effects) {
@@ -249,7 +253,7 @@ Inventory.generateEffects = function(item) {
             switch (localeffect.id) {
                 case 'health':
                     effect = 'HP';
-                    if (localeffect.value < 0) {
+                    if (localeffect.value-1 < 0) {
                         color = 'red';
                         number = Math.round(localeffect.value*100-100) + '%';
                     } else {
@@ -337,6 +341,16 @@ Inventory.generateEffects = function(item) {
                         number = '+' + localeffect.value*100 + '%';
                     }
                     break;
+                case 'speed':
+                    effect = 'Move speed';
+                    if (localeffect.value-1 < 0) {
+                        color = 'red';
+                        number = Math.round(localeffect.value*100-100) + '%';
+                    } else {
+                        color = 'lime';
+                        number = '+' + Math.round(localeffect.value*100-100) + '%';
+                    }
+                    break;
                 default:
                     console.error('Invalid effect id ' + localeffect.id);
                     break;
@@ -415,7 +429,7 @@ document.addEventListener('keydown', function(e) {
         if (!inchat && !indebug) {
             if (e.key == 'q' || e.key == 'Q') {
                 for (var i in Inventory.items) {
-                    if (Inventory.items[i].mousedOver) {
+                    if (Inventory.items[i].item) if (Inventory.items[i].mousedOver) {
                         Inventory.currentDrag = Inventory.items[i].slotId;
                         if (e.getModifierState('Control')) Inventory.drop(Inventory.items[i].item.stackSize);
                         else Inventory.drop(1);
@@ -424,7 +438,7 @@ document.addEventListener('keydown', function(e) {
                     }
                 }
                 for (var i in Inventory.equips) {
-                    if (Inventory.equips[i].mousedOver) {
+                    if (Inventory.equips[i].item) if (Inventory.equips[i].mousedOver) {
                         Inventory.currentDrag = Inventory.equips[i].slotId;
                         Inventory.drop();
                         tooltip.style.opacity = 0;
