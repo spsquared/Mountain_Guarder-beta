@@ -1462,7 +1462,6 @@ Player = function(socket) {
                     }
                 }
             }
-            if (delta.monstersKilled[0]) console.log(delta.monstersKilled)
             var data = {
                 trackedData: delta,
                 aqquiredItems: [],
