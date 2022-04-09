@@ -25,7 +25,7 @@ Inventory = {
     maxItems: 30
 };
 Inventory.Item = function(id, slot, amount, enchantments) {
-    var self = Object.create(Inventory.itemTypes[id]);
+    var self = Object.assign({}, Inventory.itemTypes[id]);
     self.id = id;
     self.slot = slot;
     self.stackSize = amount || 1;

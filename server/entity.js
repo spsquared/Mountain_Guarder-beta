@@ -1452,15 +1452,21 @@ Player = function(socket) {
             };
             for (var i in self.trackedData.monstersKilled) {
                 var temp = self.trackedData.monstersKilled[i];
+                var found = false;
                 for (var j in self.trackedData.last.monstersKilled) {
                     var temp2 = self.trackedData.last.monstersKilled[j];
                     if (temp.id == temp2.id) {
-                        delta.monstersKilled.push({
+                        if (temp.count != temp2.count) delta.monstersKilled.push({
                             id: temp.id,
                             count: temp.count-temp2.count
                         });
+                        found = true;
                     }
                 }
+                if (!found) delta.monstersKilled.push({
+                    id: temp.id,
+                    count: temp.count
+                });
             }
             var data = {
                 trackedData: delta,
@@ -1472,10 +1478,12 @@ Player = function(socket) {
             };
             self.quests.updateQuestRequirements(data);
             self.trackedData.last = {};
-            self.trackedData.last = Object.create(self.trackedData);
+            self.trackedData.last = Object.assign({}, self.trackedData);
+            self.trackedData.last.monstersKilled = Array.from(self.trackedData.monstersKilled);
         }
     };
-    self.trackedData.last = Object.create(self.trackedData);
+    self.trackedData.last = Object.assign({}, self.trackedData);
+    self.trackedData.last.monstersKilled = Array.from(self.trackedData.monstersKilled);
     self.alive = false;
     self.debugEnabled = false;
     self.creds = {
@@ -1817,15 +1825,6 @@ Player = function(socket) {
                                 break;
                             case 'waypoint':
                                 insertSingleChat('No waypoints unlocked yet.', 'error', self.name, false);
-                                break;
-                            case 'error':
-                                insertSingleChat('FATAL ERROR', 'anticheat', self.name, false);
-                                insertSingleChat('FATAL ERROR', 'anticheat', self.name, false);
-                                insertSingleChat('FATAL ERROR', 'anticheat', self.name, false);
-                                insertSingleChat('FATAL ERROR', 'anticheat', self.name, false);
-                                insertSingleChat('FATAL ERROR', 'anticheat', self.name, false);
-                                insertSingleChat('FATAL ERROR', 'anticheat', self.name, false);
-                                insertSingleChat('FATAL ERROR', 'anticheat', self.name, false);
                                 break;
                             default:
                                 insertSingleChat('Command not found ' + cmd, 'error', self.name, false);
@@ -2224,7 +2223,8 @@ Player = function(socket) {
                     }
                     self.trackedData.monstersKilled = Array.from(self.trackedData.monstersKilled);
                     self.trackedData.last = {};
-                    self.trackedData.last = Object.create(self.trackedData);
+                    self.trackedData.last = Object.assign({}, self.trackedData);
+                    self.trackedData.last.monstersKilled = Array.from(self.trackedData.monstersKilled);
                     self.trackedData.updateTrackers();
                 } catch (err) {
                     error(err);
@@ -2940,13 +2940,6 @@ Projectile = function(type, angle, parentID) {
     self.cosAngle = Math.cos(self.angle);
     self.xspeed = self.cosAngle*self.moveSpeed;
     self.yspeed = self.sinAngle*self.moveSpeed;
-    try {
-        self.xspeed += parent.xspeed;
-        self.yspeed += parent.yspeed;
-    } catch (err) {
-        error(err);
-        return;
-    }
     self.vertices = [
         {x: ((self.width/2)*self.cosAngle)-((self.height/2)*self.sinAngle)+self.x, y: ((self.width/2)*self.sinAngle)+((self.height/2)*self.cosAngle)+self.y},
         {x: ((self.width/2)*self.cosAngle)-((-self.height/2)*self.sinAngle)+self.x, y: ((self.width/2)*self.sinAngle)+((-self.height/2)*self.cosAngle)+self.y},

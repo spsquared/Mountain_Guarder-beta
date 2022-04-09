@@ -1,7 +1,7 @@
 // Copyright (C) 2022 Radioactive64
 // Go to README.md for more information
 
-const version = 'v0.10.0 Alpha 04';
+const version = 'v0.10.0 Alpha 05';
 require('./server/log.js');
 console.info('\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022');
 appendLog('Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022', 'log');
@@ -278,14 +278,17 @@ io.on('connection', function(socket) {
             packetCount++;
         };
         setInterval(function() {
-            packetCount = Math.max(packetCount-100, 0);
+            packetCount = Math.max(packetCount-200, 0);
             if (packetCount > 0) {
                 if (player.name) {
                     insertChat(player.name + ' was kicked for socket.io DOS', 'anticheat');
                 }
-                player.socketKick();
+                socket.emit('disconnected');
+                socket.onevent = function(packet) {};
+                socket.disconnect(true);
+                delete Player.list[player.id];
             }
-        }, 100);
+        }, 1000);
     } else {
         socket.emit('disconnected');
         socket.onevent = function(packet) {};

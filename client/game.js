@@ -161,6 +161,7 @@ function drawFrame() {
         OFFSETY += lsdY;
         updateCameraShake();
         drawMap();
+        DroppedItem.updateHighlight();
         Entity.draw();
         CTX.drawImage(LAYERS.map0, 0, 0, window.innerWidth, window.innerHeight);
         for (var i = 0; i < MAPS[player.map].layerCount+1; i++) {
@@ -174,6 +175,7 @@ function drawFrame() {
             var current = Date.now();
             frameTimeCounter = current-frameStart;
         }
+        if (!controllerConnected) socket.emit('mouseMove', {x: mouseX-OFFSETX, y: mouseY-OFFSETY});
     }
 };
 function drawMap() {
@@ -704,16 +706,8 @@ document.onmousemove = function(e) {
             mouseX = e.clientX-window.innerWidth/2;
             mouseY = e.clientY-window.innerHeight/2;
         }
-        if (!controllerConnected) socket.emit('mouseMove', {x: mouseX-OFFSETX, y: mouseY-OFFSETY});
-        DroppedItem.updateHighlight();
     }
 };
-setInterval(function() {
-    if (loaded) {
-        socket.emit('mouseMove', {x: mouseX-OFFSETX, y: mouseY-OFFSETY});
-        DroppedItem.updateHighlight();
-    }
-}, 500);
 socket.on('updateSelf', function(data) {
     playerid = data.id;
     document.getElementById('statsHPvalue').style.width = (data.hp/data.maxHP)*100 + '%';

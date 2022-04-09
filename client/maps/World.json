@@ -594,7 +594,7 @@
                 }],
          "height":48,
          "id":11,
-         "name":"Spawner:0:greenbird,bluebird,snowball,",
+         "name":"Spawner:0:greenbird,bluebird,",
          "opacity":1,
          "startx":-16,
          "starty":-16,
@@ -2927,7 +2927,7 @@
  "tilesets":[
         {
          "firstgid":1,
-         "source":"roguelikeSheet.tsx"
+         "source":"tiles.tsx"
         }],
  "tilewidth":16,
  "type":"map",

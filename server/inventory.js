@@ -22,7 +22,7 @@ Inventory = function(socket, player) {
 
     socket.on('item', function(data) {
         var valid = false;
-        if (typeof data == 'object' && data != null) if (data.data != null && data.action != null) valid = true;
+        if (typeof data == 'object' && data != null) if (typeof data.data == 'object' && data.data != null && data.action != null) valid = true;
         if (valid) {
             switch (data.action) {
                 case 'drag':
@@ -327,7 +327,7 @@ Inventory.Item = function(id, list, amount, enchantments) {
     if (Inventory.items[id] == null) {
         id = 'missing';
     }
-    var self = Object.create(Inventory.items[id]);
+    var self = Object.assign(Inventory.items[id]);
     self.id = id;
     self.slot = 0;
     self.stackSize = 0;
