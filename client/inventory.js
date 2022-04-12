@@ -1,9 +1,9 @@
 // Copyright (C) 2022 Radioactive64
 
-var inventoryItems = document.getElementById('inventoryItemsBody');
-var inventoryEquips = document.getElementById('inventoryEquipsBody');
-var dragDiv = document.getElementById('invDrag');
-var tooltip = document.getElementById('invHoverTooltip');
+const inventoryItems = document.getElementById('inventoryItemsBody');
+const inventoryEquips = document.getElementById('inventoryEquipsBody');
+const dragDiv = document.getElementById('invDrag');
+const tooltip = document.getElementById('invHoverTooltip');
 
 // inventory structure
 Inventory = {
@@ -427,7 +427,7 @@ document.addEventListener('mousemove', function(e) {
 document.addEventListener('keydown', function(e) {
     if (loaded) {
         if (!inchat && !indebug) {
-            if (e.key == 'q' || e.key == 'Q') {
+            if (e.key.toLowerCase() == keybinds.drop) {
                 for (var i in Inventory.items) {
                     if (Inventory.items[i].item) if (Inventory.items[i].mousedOver) {
                         Inventory.currentDrag = Inventory.items[i].slotId;
@@ -445,6 +445,12 @@ document.addEventListener('keydown', function(e) {
                         Inventory.currentHover = null;
                     }
                 }
+            } else if (e.key.toLowerCase() == keybinds.swap) {
+                socket.emit('item', {
+                    action: 'swap',
+                    data: {}
+                });
+                e.preventDefault();
             }
         }
     }
@@ -485,8 +491,8 @@ function getInventoryData() {
     };
     request.send();
     for (var i in Inventory.equips) {
-        Inventory.itemImages[i] = new Image();
         totalassets++;
+        Inventory.itemImages[i] = new Image();
     }
 };
 async function loadInventoryData() {
@@ -517,9 +523,14 @@ async function loadInventoryData() {
         Inventory.itemImages['empty'].className = 'invSlotImgNoGrab noSelect';
     });
     for (var i in Inventory.equips) {
-        Inventory.itemImages[i].src = '/client/img/item/emptySlot' + i + '.png';
-        Inventory.itemImages[i].className = 'invSlotImgNoGrab noSelect';
-        loadedassets++;
+        await new Promise(function(resolve, reject) {
+            Inventory.itemImages[i].onload = function() {
+                loadedassets++;
+                resolve();
+            };
+            Inventory.itemImages[i].src = '/client/img/item/emptySlot' + i + '.png';
+            Inventory.itemImages[i].className = 'invSlotImgNoGrab noSelect';
+        });
     }
     for (var i in Inventory.equips) {
         new Inventory.EquipSlot(i);

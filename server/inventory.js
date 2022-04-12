@@ -31,6 +31,9 @@ Inventory = function(socket, player) {
                 case 'drop':
                     self.dropItem(data.data.slot, data.data.amount);
                     break;
+                case 'swap':
+                    self.dragItem('weapon', 'weapon2');
+                    break;
                 default:
                     error('Invalid item action ' + data.action);
                     break;
@@ -327,7 +330,7 @@ Inventory.Item = function(id, list, amount, enchantments) {
     if (Inventory.items[id] == null) {
         id = 'missing';
     }
-    var self = Object.assign(Inventory.items[id]);
+    var self = cloneDeep(Inventory.items[id]);
     self.id = id;
     self.slot = 0;
     self.stackSize = 0;

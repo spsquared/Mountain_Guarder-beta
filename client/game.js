@@ -13,7 +13,7 @@ socket.on('mapData', function(data) {
     load(data);
 });
 var tilesetloaded = false;
-var tileset = new Image();
+const tileset = new Image();
 tileset.onload = function() {
     tilesetloaded = true;
     loadedassets++;
@@ -21,20 +21,24 @@ tileset.onload = function() {
 function load(data) {
     document.getElementById('loadingContainer').style.animationName = 'fadeIn';
     document.getElementById('loadingContainer').style.display = 'block';
-    totalassets = 3;
+    totalassets = 2;
     for (var i in data.maps) {
         totalassets++;
     }
     setTimeout(async function() {
         getEntityData();
-        getNpcDialogues();
         getInventoryData();
+        getQuestData();
+        getNpcDialogues();
         document.getElementById('loadingBar').style.display = 'block';
         tileset.src = '/client/maps/tiles.png';
+        map.src = '/client/img/World.png';
+        const loadingBarText = document.getElementById('loadingBarText');
+        const loadingBarInner = document.getElementById('loadingBarInner');
         var updateLoadBar = setInterval(function() {
-            var percent = ~~(loadedassets/totalassets*100) + '%';
-            document.getElementById('loadingBarText').innerText = loadedassets + '/' + totalassets + ' (' + percent + ')';
-            document.getElementById('loadingBarInner').style.width = percent;
+            var percent = Math.round(loadedassets/totalassets*100) + '%';
+            loadingBarText.innerText = loadedassets + '/' + totalassets + ' (' + percent + ')';
+            loadingBarInner.style.width = percent;
             if (loadedassets >= totalassets) {
                 clearInterval(updateLoadBar);
                 document.getElementById('loadingIcon').style.opacity = 0;
@@ -50,6 +54,8 @@ function load(data) {
         }, 5);
         await loadEntityData();
         await loadInventoryData();
+        await loadQuestData();
+        await loadNpcDialogues();
         for (var i in data.maps) {
             await loadMap(data.maps[i]);
         }
@@ -131,7 +137,7 @@ async function loadMap(name) {
         };
         request.send();
     } else {
-        await sleep(100);
+        await sleep(500);
         await loadMap(name);
     }
 };
@@ -787,24 +793,25 @@ document.onvisibilitychange = function() {
 };
 
 // npc prompts
+const promptContainer = document.getElementById('promptContainer');
 socket.on('prompt', async function(id) {
     var data = Prompts[id];
-    document.getElementById('promptContainer').style.display = 'block';
+    promptContainer.style.display = 'block';
     await sleep((11-settings.dialogueSpeed)*10);
     var optionDivs = [];
     for (var i in data.options) {
-        var div = document.createElement('div');
+        const div = document.createElement('div');
         div.classList.add('promptChoice');
         div.classList.add('ui-lightbutton');
         div.option = parseInt(i);
         div.onclick = function() {
             socket.emit('promptChoose', this.option);
-            document.getElementById('promptContainer').style.display = 'none';
-            document.getElementById('promptContainer').innerHTML = '<div id="promptText"></div><div id="promptChoices"></div>';
+            promptContainer.style.display = 'none';
+            promptContainer.innerHTML = '<div id="promptText"></div><div id="promptChoices"></div>';
         };
         optionDivs[i] = div;
     }
-    var textDiv = document.getElementById('promptText');
+    const textDiv = document.getElementById('promptText');
     await displayText(data.text, textDiv);
     for (var i in optionDivs) {
         document.getElementById('promptChoices').appendChild(optionDivs[i]);
@@ -816,7 +823,7 @@ Prompts = [];
 async function displayText(text, div) {
     var questLabel = false;
     for (var i in text) {
-        var letter = document.createElement('span');
+        const letter = document.createElement('span');
         letter.classList.add('ui-lighttext');
         letter.classList.add('promptFade');
         if (text[i] == '`') {
@@ -830,6 +837,7 @@ async function displayText(text, div) {
     }
 };
 function getNpcDialogues() {
+    totalassets++;
     var request = new XMLHttpRequest();
     request.open('GET', '/client/prompts.json', false);
     request.onload = async function() {
@@ -849,6 +857,36 @@ function getNpcDialogues() {
     request.send();
 };
 async function loadNpcDialogues() {};
+
+// Banners
+const bannerContainer = document.getElementById('bannerContainer');
+Banners = [];
+socket.on('banner', function(data) {
+    new Banner(data.text, {
+        type: 'time',
+        time: 10000
+    });
+});
+Banner = function(html, param) {
+    const div = document.createElement('div');
+    div.classList.add('ui-block');
+    div.classList.add('banner');
+    div.innerHTML = html;
+    bannerContainer.insertBefore(div, bannerContainer.firstChild);
+    if (param) {
+        if (param.type == 'id') div.id2 = param.id;
+        else if (param.type == 'time') {
+            setTimeout(async function() {
+                div.style.animationName = 'banner-out';
+                await sleep(500);
+                div.remove();
+            }, param.time);
+        }
+    }
+
+    Banners.unshift(div);
+    return div;
+};
 
 // camera shake
 var cameraShake = {
@@ -882,7 +920,7 @@ function updateCameraShake() {
 
 // chat
 var inchat = false;
-var chatInput = document.getElementById('chatInput');
+const chatInput = document.getElementById('chatInput');
 chatInput.onfocus = function() {
     inchat = true;
     socket.emit('keyPress', {key:'up', state:false});
@@ -917,9 +955,8 @@ function insertChat(data) {
     if(minute == '0'){
         minute = '00';
     }
-    var msg = document.createElement('div');
-    msg.style = data.style;
-    msg.innerText = '[' + time.getHours() + ':' + minute + '] ' + data.text;
+    const msg = document.createElement('div');
+    msg.innerHTML = '[' + time.getHours() + ':' + minute + '] <span style="' + data.style + '">' + data.text + '</span>';
     var scroll = false;
     if (document.getElementById('chatText').scrollTop + document.getElementById('chatText').clientHeight >= document.getElementById('chatText').scrollHeight - 5) scroll = true;
     document.getElementById('chatText').appendChild(msg);
@@ -927,7 +964,7 @@ function insertChat(data) {
 };
 
 // world map
-var map = document.getElementById('worldMap');
+const map = document.getElementById('worldMap');
 var worldMap = {
     x: 0,
     y: 0,
@@ -1011,7 +1048,7 @@ setInterval(function() {
         }
     }
 }, 1000);
-socket.on('ping', function() {
+socket.on('pong', function() {
     var current = Date.now();
     pingCounter = current-pingSend;
 });
@@ -1022,15 +1059,15 @@ const debugConsoleEnabled = new URLSearchParams(window.location.search).get('con
 if (debugConsoleEnabled) {
     var consoleHistory = [];
     var historyIndex = 0;
-    var consoleInput = document.getElementById('debugInput');
-    var consoleLog = document.getElementById('debugLog');
+    const consoleInput = document.getElementById('debugInput');
+    const consoleLog = document.getElementById('debugLog');
     consoleInput.onkeydown = function(event) {
         if (event.key == 'Enter') {
             if (consoleInput.value != '') {
                 socket.emit('debugInput', consoleInput.value);
                 if (consoleInput.value != consoleHistory[consoleHistory.length-1]) consoleHistory.push(consoleInput.value);
                 historyIndex = consoleHistory.length;
-                log = document.createElement('div');
+                const log = document.createElement('div');
                 log.className = 'ui-darkText';
                 log.innerText = '> ' + consoleInput.value;
                 var scroll = false;
@@ -1057,7 +1094,7 @@ if (debugConsoleEnabled) {
         }
     };
     socket.on('debugLog', function(msg) {
-        log = document.createElement('div');
+        const log = document.createElement('div');
         log.className = 'ui-darkText';
         log.style.color = msg.color;
         log.innerText = msg.msg;

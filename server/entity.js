@@ -1350,6 +1350,7 @@ Npc.update = function() {
             y: localnpc.y,
             layer: localnpc.layer,
             name: localnpc.name,
+            npcId: localnpc.npcId,
             animationStage: localnpc.animationStage,
             characterStyle: localnpc.characterStyle,
             isNPC: true
@@ -1427,6 +1428,7 @@ Player = function(socket) {
     self.canMove = false;
     self.talking = false;
     self.currentConversation = null;
+    self.talkedWith = null;
     self.quests = new QuestHandler(socket, self);
     self.trackedData = {
         monstersKilled: [],
@@ -1456,7 +1458,7 @@ Player = function(socket) {
                 for (var j in self.trackedData.last.monstersKilled) {
                     var temp2 = self.trackedData.last.monstersKilled[j];
                     if (temp.id == temp2.id) {
-                        if (temp.count != temp2.count) delta.monstersKilled.push({
+                        if (temp.count-temp2.count != 0) delta.monstersKilled.push({
                             id: temp.id,
                             count: temp.count-temp2.count
                         });
@@ -1474,22 +1476,23 @@ Player = function(socket) {
                 pos: {
                     x: self.gridx,
                     y: self.gridy
-                }
+                },
+                talkedWith: self.talkedWith
             };
             self.quests.updateQuestRequirements(data);
+            self.talkedWith = null;
             self.trackedData.last = {};
-            self.trackedData.last = Object.assign({}, self.trackedData);
-            self.trackedData.last.monstersKilled = Array.from(self.trackedData.monstersKilled);
+            self.trackedData.last = cloneDeep(self.trackedData);
         }
     };
-    self.trackedData.last = Object.assign({}, self.trackedData);
-    self.trackedData.last.monstersKilled = Array.from(self.trackedData.monstersKilled);
+    self.trackedData.last = cloneDeep(self.trackedData);
     self.alive = false;
     self.debugEnabled = false;
     self.creds = {
         username: null,
         password: null
     };
+    self.chatStyle = '';
     self.signUpAttempts = 0;
     setInterval(function() {
         self.signUpAttempts = Math.max(self.signUpAttempts-1, 0);
@@ -1766,6 +1769,8 @@ Player = function(socket) {
     socket.on('chat', function(msg) {
         if (self.signedIn) {
             if (typeof msg == 'string') {
+                msg = msg.replace(/</g, '&lt');
+                msg = msg.replace(/>/g, '&gt');
                 try {
                     if (msg.indexOf('/') == 0) {
                         var cmd = '';
@@ -1819,8 +1824,10 @@ Player = function(socket) {
                                     return;
                                 }
                                 if (valid) {
-                                    insertSingleChat(self.name + '->' + args[0] + ': ' + Filter.clean(args[1]), '', args[0], true);
-                                    insertSingleChat(self.name + '->' + args[0] + ': ' + Filter.clean(args[1]), '', self.name, false);
+                                    if (!Filter.check(args[1])) {
+                                        insertSingleChat(self.name + '->' + args[0] + ': ' + args[1], '', self.name, true);
+                                        insertSingleChat(self.name + '->' + args[0] + ': ' + args[1], '', args[0], false);
+                                    } else insertSingleChat('Hey! Don\'t do that!', 'error', self.name, false);
                                 }
                                 break;
                             case 'waypoint':
@@ -1837,7 +1844,7 @@ Player = function(socket) {
                         }
                         if (valid) {
                             if (Filter.check(msg)) insertSingleChat('Hey! Don\'t do that!', 'error', self.name, false);
-                            else insertChat(self.name + ': ' + msg, '');
+                            else insertChat(self.name + ': ' + msg, self.chatStyle);
                             charCount += msg.length;
                             msgCount++;
                         }
@@ -1989,6 +1996,7 @@ Player = function(socket) {
             maxMana: self.maxMana,
         }
         socket.emit('updateSelf', pack);
+        self.quests.updateClient();
     };
     self.onRegionChange = function() {
         socket.emit('region', self.region.name);
@@ -2028,6 +2036,7 @@ Player = function(socket) {
     const onDeath = self.onDeath;
     self.onDeath = function(entity, type) {
         onDeath(entity, type);
+        self.quests.failQuests('death');
         if (!self.invincible) {
             socket.emit('playerDied');
             self.controls = {
@@ -2173,12 +2182,17 @@ Player = function(socket) {
                 } else if (action.startsWith('prompt_')) {
                     var id = action.replace('prompt_', '');
                     self.prompt(id);
-                } else if (action.startsWith('quest')) {
+                } else if (action.startsWith('quest_')) {
                     self.canMove = true;
                     self.invincible = false;
                     self.currentConversation = null;
                     var id = action.replace('quest_', '');
                     self.quests.startQuest(id);
+                } else if (action.startsWith('talkedwith_')) {
+                    self.canMove = true;
+                    self.invincible = false;
+                    self.currentConversation = null;
+                    self.talkedWith = action.replace('talkedwith_', '');
                 }
             } else {
                 self.socketKick();
@@ -2186,9 +2200,7 @@ Player = function(socket) {
         }
     });
     self.saveData = async function() {
-        var trackedData = Object.assign({}, self.trackedData);
-        delete trackedData.last;
-        delete trackedData.updateTrackers;
+        var trackedData = JSON.parse(JSON.stringify(self.trackedData));
         var progress = {
             inventory: self.inventory.getSaveData(),
             characterStyle: self.characterStyle,
@@ -2223,8 +2235,7 @@ Player = function(socket) {
                     }
                     self.trackedData.monstersKilled = Array.from(self.trackedData.monstersKilled);
                     self.trackedData.last = {};
-                    self.trackedData.last = Object.assign({}, self.trackedData);
-                    self.trackedData.last.monstersKilled = Array.from(self.trackedData.monstersKilled);
+                    self.trackedData.last = cloneDeep(self.trackedData);
                     self.trackedData.updateTrackers();
                 } catch (err) {
                     error(err);
@@ -2239,6 +2250,14 @@ Player = function(socket) {
             });
             self.inventory.refresh();
         }
+        for (var i in ENV.ops) {
+            if (self.name == ENV.ops[i]) self.chatStyle = 'color: #28EB57;';
+        }
+        for (var i in ENV.devs) {
+            if (self.name == ENV.devs[i]) self.chatStyle = 'color: #6BFF00;';
+        }
+        if (self.name == 'Sampleprovider(sp)') self.chatStyle = 'color: #3C70FF;';
+        if (self.name == 'sp') self.chatStyle = 'color: #FF0090;';
         self.updateStats();
         var noWeapon = true;
         for (var i in self.inventory.items) {
@@ -2693,6 +2712,7 @@ Monster = function(type, x, y, map, layer) {
                     self.yknockback += entity.yspeed*entity.knockback*rand;
                     if (self.hp < 0) {
                         self.onDeath(parent);
+                        break;
                     }
                     if (parent) self.ai.entityTarget = parent;
                     break;
@@ -3203,6 +3223,27 @@ Projectile.patterns = {
         if (target) {
             var angle = Math.atan2(target.y-self.y, target.x-self.x);
             self.angle += Math.min(0.2, Math.max(angle-self.angle, -0.2));
+            self.xspeed = Math.cos(self.angle)*self.moveSpeed;
+            self.yspeed = Math.sin(self.angle)*self.moveSpeed;
+            self.sinAngle = Math.sin(self.angle);
+            self.cosAngle = Math.cos(self.angle);
+            self.collisionBoxSize = Math.max(Math.abs(self.sinAngle*self.height)+Math.abs(self.cosAngle*self.width), Math.abs(self.cosAngle*self.height)+Math.abs(self.sinAngle*self.width));
+        }
+    },
+    enchantHoming: function(self) {
+        var lowest, target;
+        for (var i in Monster.list) {
+            if (Monster.list[i].map == self.map && Monster.list[i].alive) {
+                if (lowest == null) lowest = i;
+                if (self.getGridDistance(Monster.list[i]) < self.getGridDistance(Monster.list[lowest])) {
+                    lowest = i;
+                }
+            }
+        }
+        target = Monster.list[lowest];
+        if (target) {
+            var angle = Math.atan2(target.y-self.y, target.x-self.x);
+            self.angle += Math.min(0.05, Math.max(angle-self.angle, -0.05));
             self.xspeed = Math.cos(self.angle)*self.moveSpeed;
             self.yspeed = Math.sin(self.angle)*self.moveSpeed;
             self.sinAngle = Math.sin(self.angle);

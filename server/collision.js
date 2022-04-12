@@ -658,14 +658,14 @@ Spawner = function(map, x, y, layer, types) {
             }
             var localmonster = new Monster(monstertype, self.x, self.y, self.map, self.layer);
             localmonster.spawnerID = self.id;
-            localmonster.oldOnDeath = localmonster.onDeath;
-            localmonster.onDeath = function(entity) {
+            const onDeath = localmonster.onDeath;
+            localmonster.onDeath = function(entity, type) {
                 try {
                     Spawner.list[localmonster.spawnerID].onMonsterDeath();
                 } catch (err) {
                     error(err);
                 }
-                localmonster.oldOnDeath(entity);
+                onDeath(entity, type);
             };
             localmonster.canMove = false;
             setTimeout(function() {

@@ -3,7 +3,7 @@
 // sign in
 var deleteaccountconfirmed = false;
 var changePasswordActive = false;
-var signInError = document.getElementById('signInError');
+const signInError = document.getElementById('signInError');
 var signedIn = false;
 var awaitingResponse = false;
 function signIn() {
@@ -59,7 +59,7 @@ function changePassword() {
         }
     }
 };
-socket.on('signInState', function(state) {
+socket.on('signInState', async function(state) {
     switch (state) {
         case 'signedIn':
             document.getElementById('loadingContainer').onanimationend = function() {
@@ -80,6 +80,7 @@ socket.on('signInState', function(state) {
             deleteaccountconfirmed = false;
             signInError.style.color = '#00FF00';
             signInError.innerText = 'Account successfully deleted.';
+            await sleep(1000);
             window.location.reload();
             break;
         case 'changedPassword':
@@ -89,6 +90,7 @@ socket.on('signInState', function(state) {
             changePasswordActive = false;
             signInError.style.color = '#00FF00';
             signInError.innerText = 'Password successfully changed.';
+            await sleep(1000);
             window.location.reload();
             break;
         case 'incorrectPassword':
@@ -337,7 +339,7 @@ DraggableWindow = function(id) {
         document.getElementById(tab).style.display = '';
         self.currentTab = tab;
     };
-    var children = document.getElementById(id + 'Select').children;
+    const children = document.getElementById(id + 'Select').children;
     if (children[0]) {
         for (var i in children) {
             const id = children[i].id;
@@ -713,7 +715,7 @@ function UltraSecretFilters(filter) {
         case 'inverted':
             document.body.style.filter = 'invert(100%)';
             break;
-        case 'what':
+        case 'colors':
             var hue = 0;
             spinnyhuething = setInterval(function() {
                 hue++;

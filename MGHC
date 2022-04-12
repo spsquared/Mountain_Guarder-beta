@@ -1,6 +1,5 @@
 javascript:
-if (hacks == null)
-var hacks = document.createElement('div');
+const hacks = document.createElement('div');
 hacks.innerHTML = '<div style="display: block; position: absolute; top: 100px;"><div><button id="Mtracers" class="ui-lightbutton" style="background-color: #FFFFFFAA; color: black;" onclick="toggleMTracers();">Monster Tracers</button><button id="Mattack" class="ui-lightbutton" style="background-color: #FFFFFFAA; color: black;" onclick="cycleMAttack();">Auto Kill - off</button></div><div><button id="autopickup" class="ui-lightbutton" style="background-color: #FFFFFFAA; color: black;" onclick="toggleItemPickup();">Auto Pickup</button><button id="skiptpwait" class="ui-lightbutton" style="background-color: #FFFFFFAA; color: black;" onclick="toggleSkipTpWait();">Skip TP Fade</button></div><div><button id="autoheal" class="ui-lightbutton" style="background-color: #FFFFFFAA; color: black;" onclick="toggleHeal();">Auto Heal</button><button id="autorespawn" class="ui-lightbutton" style="background-color: #FFFFFFAA; color: black;" onclick="toggleRespawn();">Auto Respawn</button></div><div><button id="rickroll" class="ui-lightbutton" style="background-color: #FFFFFFAA; color: black;" onclick="disableRickrolls();">Disable Rickrolls</button></div></div>';
 document.getElementById('gameContainer').appendChild(hacks);
 var mTracers = false;
@@ -83,8 +82,11 @@ function toggleRespawn() {
     }
 };
 function disableRickrolls() {
-    document.body.innerHTML = '<iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&loop=1&rel=0&controls=0&disablekb=1" width=' + window.innerWidth + ' height=' + window.innerHeight + ' style="position: absolute; top: -2px; left: -2px;"></iframe><div style="position: absolute; top: 0px, left: 0px; width: 100vw; height: 100vh; z-index: 100;"></div>';
-    document.body.style.overflow = 'hidden';
+    insertChat({
+        text: "Rick Astley - Never Gonna Give You Up (full) - Lyrics\nWe're no strangers to love\nYou know the rules and so do I\nA full commitment's what I'm thinking of\nYou wouldn't get this from any other guy\nI just wanna tell you how I'm feelin\nGotta make you understand\nNever gonna give you up\nNever gonna let you down\nNever gonna run around and desert you\nNever gonna make you cry\nNever gonna say goodbye\nNever gonna tell a lie and hurt you\n We've known each other for so long\nYour heart's been achin but you're too shy to say it\nInside we both know what's been goin on\nYou know the game and we're gonna play it\nAnd if you ask me how I'm feelin\nDon't you tell me you're too blind to see\nNever gonna give you up\nNever gonna let you down\nNever gonna run around and desert you\nNever gonna make you cry\nNever gonna say goodbye\nNever gonna tell a lie and hurt you\nOooOoooooOOOOo\n(Give you up)\nNever gonna\nNever gonna\n(Give you up)\nNever gonna\nNever gonna\n(Give you up)\nWe've known each other for so long\nYour heart's been aching but you're too shy to say it\nInside we both know what's been going on\nYou know the game and we're gonna play it\nGotta make you understand\nNever gonna give you up\nNever gonna let you down\nNever gonna run around and desert you\nNever gonna make you cry\nNever gonna say goodbye\nNever gonna tell a lie and hurt you",
+        style: 'font-size: 18px; color: yellow;'
+    });
+    UltraSecretFilters('colors');
 };
 MGHC = function() {
     if (mTracers) {
@@ -141,7 +143,7 @@ MGHC = function() {
     if (autopickup) {
         for (var i in DroppedItem.list) {
             var localdroppeditem = DroppedItem.list[i];
-            if (Math.sqrt(Math.pow(player.x-localdroppeditem.x, 2) + Math.pow(player.y-localdroppeditem.y, 2)) < 512) {
+            if (getDistance(localdroppeditem) < 256) {
                 var x = localdroppeditem.x-player.x+OFFSETX;
                 var y = localdroppeditem.y-player.y+OFFSETY;
                 socket.emit('click', {button: 'right', x: x, y: y, state: true});
@@ -158,10 +160,17 @@ document.onmousemove = function(e) {
         if (!e.isTrusted) {
             socket.emit('timeout');
         }
-        mouseX = e.clientX-window.innerWidth/2;
-        mouseY = e.clientY-window.innerHeight/2;
-        socket.emit('mouseMove', {x: mouseX-OFFSETX, y: mouseY-OFFSETY});
-        DroppedItem.updateHighlight();
+        if (pointerLocked) {
+            mouseX += e.movementX;
+            mouseY += e.movementY;
+            mouseX = Math.max(-window.innerWidth/2, Math.min(mouseX, window.innerWidth/2));
+            mouseY = Math.max(-window.innerHeight/2, Math.min(mouseY, window.innerHeight/2));
+            document.getElementById('crossHair').style.left = mouseX + window.innerWidth/2-11 + 'px';
+            document.getElementById('crossHair').style.top = mouseY + window.innerHeight/2-11 + 'px';
+        } else {
+            mouseX = e.clientX-window.innerWidth/2;
+            mouseY = e.clientY-window.innerHeight/2;
+        }
     }
 };
 socket.off('teleport1');
@@ -183,8 +192,10 @@ socket.on('teleport2', function(pos) {
     player.x = pos.x;
     player.y = pos.y;
     if (skiptpwait) {
-        socket.emit('teleport2');
     } else {
+        player.map = pos.map;
+        player.x = pos.x;
+        player.y = pos.y;
         document.getElementById('fade').style.animationName = 'fadeOut';
         document.getElementById('fade').onanimationend = function() {
             document.getElementById('fade').style.display = 'none';
@@ -202,6 +213,7 @@ socket.on('playerDied', function() {
     } else {
         document.getElementById('respawnButton').style.display = 'none';
         document.getElementById('deathScreen').style.display = 'block';
+        if (controllerConnected) document.getElementById('respawnButton').innerText = 'Press A to Respawn';
         var time = 5;
         document.getElementById('respawnTimer').innerText = time;
         var timer = setInterval(function() {
@@ -216,22 +228,41 @@ socket.on('playerDied', function() {
 });
 drawFrame = function() {
     if (loaded && player) {
-        LAYERS.mlower.clearRect(0, 0, window.innerWidth, window.innerHeight);
-        LAYERS.elower.clearRect(0, 0, window.innerWidth, window.innerHeight);
-        LAYERS.mupper.clearRect(0, 0, window.innerWidth, window.innerHeight);
-        LAYERS.eupper.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        if (settings.debug) frameStart = Date.now();
+        for (var i = 0; i < MAPS[player.map].layerCount; i++) {
+            if (LAYERS.entitylayers[i] == null) {
+                LAYERS.entitylayers[i] = createCanvas();
+                LAYERS.elayers[i] = LAYERS.entitylayers[i].getContext('2d');
+                LAYERS.entitylayers[i].width = window.innerWidth*SCALE;
+                LAYERS.entitylayers[i].height = window.innerHeight*SCALE;
+                LAYERS.elayers[i].scale(SCALE, SCALE);
+                resetCanvas(LAYERS.entitylayers[i]);
+            }
+        }
         CTX.clearRect(0, 0, window.innerWidth, window.innerHeight);
         OFFSETX = 0;
         OFFSETY = 0;
         if (MAPS[player.map].width*64 > window.innerWidth) OFFSETX = -Math.max((window.innerWidth/2) - (player.x - MAPS[player.map].offsetX), Math.min((MAPS[player.map].offsetX + (MAPS[player.map].width*64)) - player.x - (window.innerWidth/2), 0));
         if (MAPS[player.map].height*64 > window.innerHeight) OFFSETY = -Math.max((window.innerHeight/2) - (player.y - MAPS[player.map].offsetY), Math.min((MAPS[player.map].offsetY + (MAPS[player.map].height*64)) - player.y - (window.innerHeight/2), 0));
+        OFFSETX += lsdX;
+        OFFSETY += lsdY;
+        updateCameraShake();
         drawMap();
+        DroppedItem.updateHighlight();
         Entity.draw();
         CTX.drawImage(LAYERS.map0, 0, 0, window.innerWidth, window.innerHeight);
-        CTX.drawImage(LAYERS.entity0, 0, 0, window.innerWidth, window.innerHeight);
+        for (var i = 0; i < MAPS[player.map].layerCount+1; i++) {
+            if (LAYERS.entitylayers[i]) CTX.drawImage(LAYERS.entitylayers[i], 0, 0, window.innerWidth, window.innerHeight);
+            if (LAYERS.mapvariables[i]) CTX.drawImage(LAYERS.mapvariables[i], 0, 0, window.innerWidth, window.innerHeight);
+        }
         CTX.drawImage(LAYERS.map1, 0, 0, window.innerWidth, window.innerHeight);
         CTX.drawImage(LAYERS.entity1, 0, 0, window.innerWidth, window.innerHeight);
         drawDebug();
         MGHC();
+        if (settings.debug) {
+            var current = Date.now();
+            frameTimeCounter = current-frameStart;
+        }
+        if (!controllerConnected && !mAttack) socket.emit('mouseMove', {x: mouseX-OFFSETX, y: mouseY-OFFSETY});
     }
 };

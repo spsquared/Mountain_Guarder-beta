@@ -1,7 +1,7 @@
 // Copyright (C) 2022 Radioactive64
 // Go to README.md for more information
 
-const version = 'v0.10.0 Alpha 05';
+const version = 'v0.10.0-A06';
 require('./server/log.js');
 console.info('\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022');
 appendLog('Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022', 'log');
@@ -19,6 +19,7 @@ const limiter = rateLimit({
     max: 50,
     handler: function(req, res, options) {}
 });
+cloneDeep = require('lodash/cloneDeep');
 
 app.get('/', function(req, res) {res.sendFile(__dirname + '/client/index.html');});
 app.get('/itemcreator', function(req, res) {res.sendFile(__dirname + '/client/ItemCreator/index.html');});
@@ -89,7 +90,7 @@ io.on('connection', function(socket) {
             socket.disconnect(true);
             delete Player.list[player.id];
         }});
-        socket.emit('checkReconnect');
+        setTimeout(function() {socket.emit('checkReconnect');}, 1000);
         // connection
         socket.on('disconnect', async function() {
             if (player.name) {
@@ -263,7 +264,7 @@ io.on('connection', function(socket) {
         }, 500);
         // performance metrics
         socket.on('ping', function() {
-            socket.emit('ping');
+            socket.emit('pong');
         });
         // ddos spam protection
         var packetCount = 0;
@@ -472,7 +473,7 @@ try {
     var pack = Entity.update();
     for (var i in Player.list) {
         var localplayer = Player.list[i];
-        var localpack = Object.assign({}, pack);
+        var localpack = cloneDeep(pack);
         if (localplayer.name) {
             for (var j in localpack) {
                 var entities = localpack[j];
@@ -496,7 +497,7 @@ try {
     var debugPack = Entity.getDebugData();
     for (var i in Player.list) {
         var localplayer = Player.list[i];
-        var localpack = Object.assign({}, debugPack);
+        var localpack = cloneDeep(debugPack);
         if (localplayer.name) {
             if (localplayer.debugEnabled) {
                 for (var j in localpack) {

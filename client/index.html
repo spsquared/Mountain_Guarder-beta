@@ -19,9 +19,10 @@
         <script src="/client/tracker.js"></script>
         <script>socket.emit('_0x7f0334', window._0x2b8cf2._0x442696);</script>
         <script src="/client/index.js" defer></script>
+        <script src="/client/game.js" defer></script>
         <script src="/client/entity.js" defer></script>
         <script src="/client/inventory.js" defer></script>
-        <script src="/client/game.js" defer></script>
+        <script src="/client/quest.js" defer></script>
         <script src="/client/menu.js" defer></script>
         <script src="/client/controller.js" defer></script>
         <link rel="stylesheet" href="/client/assets/main.css">
@@ -76,6 +77,16 @@
                         insert changes here
                     </div>
                 </div> -->
+                <div class="stack ui-block ui-lighttext">
+                    <div class="ui-lighttext stackHeader">
+                        v0.10.0-A06
+                    </div>
+                    <div class="ui-lighttext stackBody">
+                        Introducing the quest system! Bob now gives out a quest: Bird Squishing - Kill 5 of any bird without dying.<br>
+                        Note: Quest system may not be stable - as per usual make a bug report when something isn't working correctly.<br>
+                        Note 2: Rewards are not currently working so quests will not award anything.
+                    </div>
+                </div>
                 <div class="stack ui-block ui-lighttext">
                     <div class="ui-lighttext stackHeader">
                         v0.9.1 - 3/19/22
@@ -989,6 +1000,7 @@
                     <div id="statsMNtext" class="ui-lighttext">0/200</div>
                 </div>
             </div>
+            <div id="bannerContainer" class="ui-lighttext noSelect"></div>
             <div class="ui-lighttext noSelect">
                 <div id="version">v0.0.0</div>
                 <div id="fps" class="debugOverlay">FPS: 0</div>
@@ -1078,7 +1090,7 @@
                     </div>
                     <div class="window-body">
                         <div id="mapContainer">
-                            <img id="worldMap" src="./client/img/World.png">
+                            <img id="worldMap">
                         </div>
                     </div>
                     <div id="mapSelect"></div>
@@ -1358,6 +1370,22 @@
                                     </td>
                                     <td>
                                         <button id="keybind_second" class="ui-lightbutton keyBindButton" onclick="changeKeybind('second');">RMB</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Hot-Swap Weapons&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="keybind_swap" class="ui-lightbutton keyBindButton" onclick="changeKeybind('swap');">TAB</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Drop Item&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="keybind_drop" class="ui-lightbutton keyBindButton" onclick="changeKeybind('drop');">Q</button>
                                     </td>
                                 </tr>
                                 <tr>

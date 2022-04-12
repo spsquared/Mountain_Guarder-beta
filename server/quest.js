@@ -10,59 +10,50 @@ QuestHandler = function(socket, player) {
     self.startQuest = function(id) {
         if (self.qualifiesFor(id)) {
             self.current[id] = new QuestData(id);
+            socket.emit('quest', {
+                type: 'start',
+                id: id
+            });
         }
     };
+    self.advanceQuestStage = function(id) {
+        if (self.current[id].advanceStage()) self.endQuest(id, true);
+        else socket.emit('quest', {
+            type: 'advance',
+            id: id,
+            stage: self.current[id].stage
+        });
+    };
     self.endQuest = function(id, success) {
-        if (self.current[id] != null) {
-            self.current[id] = null;
-            if (success) self.done.push(id);
+        delete self.current[id];
+        if (success) {
+            if (self.done.indexOf(id) == -1) self.done.push(id);
+            socket.emit('quest', {
+                type: 'end',
+                id: id
+            });
+            console.log('finished quest')
         } else {
-            error('Invalid quest id ' + id);
+            socket.emit('quest', {
+                type: 'fail',
+                id: id
+            });
         }
     };
     self.updateQuestRequirements = function(data) {
         for (var i in self.current) {
-            var objectives = self.current[i].objectivesComplete;
-            for (var j in objectives) {
-                switch (j) {
-                    case 'obtain':
-                        for (var k in data.aqquiredItems) {
-                            for (var l in objectives[j]) {
-                                if (k == l) objectives[j][l] += data.aqquiredItems[k];
-                            }
-                        }
-                        break;
-                    case 'area':
-                        if (Math.sqrt((data.pos.x-self.current[i].objectives[j].x)**2+(data.pos.x-self.current[i].objectives[j].x)**2) < self.current[i].objectives[j].r) {
-                            objectives[j] = true;
-                        }
-                        break;
-                    case 'killPlayer':
-                        objectives[j] += data.trackedData.playerKills;
-                        break;
-                    case 'killMonster':
-                        for (var k in data.monstersKilled) {
-                            console.log(data.monstersKilled[k].id)
-                            for (var l in objectives[j]) {
-                                if (l == 'any') objectives[j][l] += data.monstersKilled[k].count;
-                                if (l == 'bird' && data.monstersKilled[k].id.includes('bird')) objectives[j][l] += data.monstersKilled[k].count;
-                                if (l == data.monstersKilled[k].id) objectives[j][l] += data.monstersKilled[k].count;
-                            }
-                        }
-                        // console.log(objectives[j])
-                        break;
-                    case 'dealDamage':
-                        objectives[j] += data.trackedData.damageDealt;
-                        break;
-                    case 'dps':
-                        objectives[j] = data.trackedData.dps;
-                        break;
-                    default:
-                        error('Invalid quest objective ' + j);
-                        break;
-                }
-            }
+            if (self.current[i].checkRequirements(data)) self.advanceQuestStage(i);
         }
+    };
+    self.updateClient = function() {
+        var pack = [];
+        for (var i in self.current) {
+            pack.push({
+                id: i,
+                data: self.current[i].objectivesComplete
+            });
+        }
+        socket.emit('questData', pack);
     };
     self.qualifiesFor = function(id) {
         var quest = QuestData.quests[id];
@@ -75,6 +66,21 @@ QuestHandler = function(socket, player) {
         } else {
             error('Invalid quest id ' + id);
             return false;
+        }
+    };
+    self.isInQuest = function(id) {
+        for (var i in self.current) {
+            if (self.current[i].id == id) {
+                return self.current[i].stage;
+            }
+        }
+        return false;
+    };
+    self.failQuests = function(reason) {
+        if (reason == 'death') {
+            for (var i in self.current) {
+                if (self.current[i].failOnDeath) self.endQuest(i, false);
+            }
         }
     };
     self.getSaveData = function() {
@@ -90,24 +96,112 @@ QuestHandler = function(socket, player) {
     return self;
 };
 QuestData = function(id) {
-    var quest = QuestData.quests[id];
+    const quest = cloneDeep(QuestData.quests[id]);
     var self = {
         id: id,
-        objectives: quest.objectives,
-        objectivesComplete: quest.objectives,
-        rewards: quest.rewards
+        stages: quest.objectives,
+        stage: 0,
+        objectives: cloneDeep(quest.objectives[0]),
+        objectivesComplete: cloneDeep(quest.objectives[0]),
+        rewards: quest.rewards,
+        failOnDeath: quest.failOnDeath
     };
     for (var i in self.objectivesComplete) {
-        if (typeof self.objectivesComplete == 'object') {
+        if (i == 'killMonster' || i == 'obtain') {
             for (var j in self.objectivesComplete[i]) {
                 self.objectivesComplete[i][j] = 0;
             }
-            if (i == 'area') self.objectivesComplete[i] = false;
+        } else if (j == 'talk' || j == 'area') {
+            self.objectivesComplete[i] = false;
         } else {
             self.objectivesComplete[i] = 0;
         }
     }
-    console.log(self)
+
+    self.checkRequirements = function(data) {
+        var objectives = self.objectivesComplete;
+        var goals = self.objectives;
+        for (var i in objectives) {
+            switch (i) {
+                case 'obtain':
+                    for (var j in data.aqquiredItems) {
+                        for (var k in objectives[i]) {
+                            if (j == k) objectives[i][k] += data.aqquiredItems[j];
+                        }
+                    }
+                    break;
+                case 'area':
+                    if (Math.sqrt((data.pos.x-goals[i].x)**2+(data.pos.x-goals[i].x)**2) < goals[i].r) {
+                        objectives[i] = true;
+                    }
+                    break;
+                case 'killPlayer':
+                    objectives[i] += data.trackedData.playerKills;
+                    break;
+                case 'killMonster':
+                    for (var j in data.trackedData.monstersKilled) {
+                        for (var k in objectives[i]) {
+                            if (k == 'any') objectives[i][k] += data.trackedData.monstersKilled[j].count;
+                            if (k == 'bird' && data.trackedData.monstersKilled[j].id.includes('bird')) objectives[i][k] += data.trackedData.monstersKilled[j].count;
+                            if (k == data.trackedData.monstersKilled[j].id) objectives[i][k] += data.trackedData.monstersKilled[j].count;
+                        }
+                    }
+                    break;
+                case 'dealDamage':
+                    objectives[i] += data.trackedData.damageDealt;
+                    break;
+                case 'dps':
+                    objectives[i] = Math.max(data.trackedData.dps, objectives[i]);
+                    break;
+                case 'talk':
+                    if (data.talkedWith == goals[i]) objectives[i] = true;
+                    break;
+                default:
+                    error('Invalid quest objective ' + i);
+                    break;
+            }
+        }
+        var completed = true;
+        check: for (var j in objectives) {
+            if (j == 'killMonster' || j == 'obtain') {
+                for (var k in objectives[j]) {
+                    if (objectives[j][k] < goals[j][k]) {
+                        completed = false;
+                        break check;
+                    }
+                }
+            } else if (j == 'talk' || j == 'area') {
+                if (objectives[j] == false) {
+                    completed = false;
+                    break;
+                }
+            } else {
+                if (objectives[j] < goals[j]) {
+                    completed = false;
+                    break;
+                }
+            }
+        }
+        return completed;
+    };
+    self.advanceStage = function() {
+        self.stage++;
+        if (self.stages[self.stage] == null) return true;
+        self.objectives = cloneDeep(self.stages[self.stage]);
+        self.objectivesComplete = cloneDeep(self.stages[self.stage]);
+        for (var i in self.objectivesComplete) {
+            if (i == 'killMonster' || i == 'obtain') {
+                for (var j in self.objectivesComplete[i]) {
+                    self.objectivesComplete[i][j] = 0;
+                }
+            } else if (i == 'talk' || i == 'area') {
+                self.objectivesComplete[i] = false;
+            } else {
+                self.objectivesComplete[i] = 0;
+            }
+        }
+        return false;
+    };
 
     return self;
 };

@@ -25,8 +25,8 @@
         "text": "But out here in the Outpost we kill those pesky monsters. They like to steal stuff, mostly by killing the owner and taking their belongings. You should go kill some, you'll get your money's worth for it. Maybe you'll even get some precious loot.",
         "options": [
             {
-                "text": "Start quest: `Bird Squishing`;",
-                "action": "quest_5monsters"
+                "text": "Start quest: `Bird Squishing`",
+                "action": "quest_5birds"
             },
             {
                 "text": "...",
@@ -40,6 +40,37 @@
             {
                 "text": "*End conversation*",
                 "action": "close_"
+            }
+        ]
+    },
+    "bob5": {
+        "text": "Go kill those monsters!",
+        "options": [
+            {
+                "text": "Ok.",
+                "action": "close_"
+            }
+        ]
+    },
+    "bob6": {
+        "text": "Wow! You actually did it without dying! Last time someone named spuh tried to do it and I haven't seen him since.",
+        "options": [
+            {
+                "text": "???",
+                "action": "prompt_bob7"
+            },
+            {
+                "text": "...",
+                "action": "prompt_bob7"
+            }
+        ]
+    },
+    "bob7": {
+        "text": "Okay fine, here's your reward.",
+        "options": [
+            {
+                "text": "End quest `Bird Squishing`",
+                "action": "talkedwith_bob"
             }
         ]
     }

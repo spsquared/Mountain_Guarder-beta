@@ -149,7 +149,7 @@ Rig.healthBarG = new Image();
 Rig.healthBarR = new Image();
 
 // players
-Player = function(id, map, x, y, isNPC, name) {
+Player = function(id, map, x, y, name, isNPC, npcId) {
     var self = new Rig(id, map, x, y);
     self.layer = 0;
     self.animationImage = null;
@@ -169,7 +169,10 @@ Player = function(id, map, x, y, isNPC, name) {
     };
     self.isNPC = false;
     if (isNPC) self.isNPC = true;
+    if (npcId) self.npcId = npcId;
     self.name = name;
+    self.nameColor = '#FF9900';
+    if (self.name == 'Sampleprovider(sp)') self.nameColor = '#3C70FF';
 
     self.update = function(data) {
         if (self.map != data.map) {
@@ -211,7 +214,7 @@ Player = function(id, map, x, y, isNPC, name) {
         }
         LAYERS.eupper.textAlign = 'center';
         LAYERS.eupper.font = '12px Pixel';
-        LAYERS.eupper.fillStyle = '#FF9900';
+        LAYERS.eupper.fillStyle = self.nameColor;
         if (self.isNPC) {
             LAYERS.eupper.fillText(self.name, self.x+OFFSETX, self.y-58+OFFSETY);
         } else {
@@ -258,7 +261,7 @@ Player.update = function(data) {
             Player.list[data[i].id].update(data[i]);
         } else {
             try {
-                new Player(data[i].id, data[i].map, data[i].x, data[i].y, data[i].isNPC, data[i].name);
+                new Player(data[i].id, data[i].map, data[i].x, data[i].y, data[i].name, data[i].isNPC, data[i].npcId);
                 Player.list[data[i].id].updateAnimationCanvas();
                 Player.list[data[i].id].update(data[i]);
             } catch (err) {
@@ -722,8 +725,6 @@ DroppedItem.list = [];
 function getEntityData() {
     // health bars
     totalassets += 2;
-    Rig.healthBarG.onload = function() {loadedassets++;};
-    Rig.healthBarR.onload = function() {loadedassets++;};
     // players
     for (var i in Player.animations) {
         if (i == 'hair') {
@@ -757,7 +758,7 @@ function getEntityData() {
         console.error('There was a connection error. Please retry');
     };
     request.send();
-    // projectiles
+    // // projectiles
     totalassets++;
     var request = new XMLHttpRequest();
     request.open('GET', '/client/projectile.json', false);
@@ -783,6 +784,8 @@ function getEntityData() {
 };
 async function loadEntityData() {
     // health bars
+    Rig.healthBarG.onload = function() {loadedassets++;};
+    Rig.healthBarR.onload = function() {loadedassets++;};
     Rig.healthBarG.src = '/client/img/player/healthbar_green.png';
     Rig.healthBarR.src = '/client/img/monster/healthbar_red.png';
     // players
@@ -849,74 +852,40 @@ AnimatedTile.animations = [];
 
 // load data
 function getAnimatedTileData() {
-    totalassets++;
-    var request = new XMLHttpRequest();
-    request.open('GET', '/client/maps/tiles.tsx', false);
-    request.onload = async function() {
-        if (this.status >= 200 && this.status < 400) {
-            var parser = new DOMParser();
-            var raw = parser.parseFromString(this.response, 'text/xml');
-            for (var i in raw) {
-                if (raw[i])
-                for (var j in raw) {
-                    if (raw[i][j])console.log(raw[i][j])
-                }
-            }
-        } else {
-            console.error('Error: Server returned status ' + this.status);
-            await sleep(1000);
-            request.send();
-        }
-    };
-    request.onerror = function(){
-        console.error('There was a connection error. Please retry');
-    };
-    request.send();
+    // totalassets++;
+    // var request = new XMLHttpRequest(); 
+    // request.open('GET', '/client/maps/tiles.tsx', false);
+    // request.onload = async function() {
+    //     if (this.status >= 200 && this.status < 400) {
+    //         var parser = new DOMParser();
+    //         var raw = parser.parseFromString(this.response, 'text/xml');
+    //         for (var i in raw) {
+    //             if (raw[i])
+    //             for (var j in raw) {
+    //                 if (raw[i][j])console.log(raw[i][j])
+    //             }
+    //         }
+    //         loadedassets++;
+    //     } else {
+    //         console.error('Error: Server returned status ' + this.status);
+    //         await sleep(1000);
+    //         request.send();
+    //     }
+    // };
+    // request.onerror = function(){
+    //     console.error('There was a connection error. Please retry');
+    // };
+    // request.send();
 };
-async function loadEntityData() {
-    // health bars
-    Rig.healthBarG.src = '/client/img/player/healthbar_green.png';
-    Rig.healthBarR.src = '/client/img/monster/healthbar_red.png';
-    // players
-    for (var i in Player.animations) {
-        if (i == 'hair') {
-            for (var j in Player.animations[i]) {
-                await new Promise(function(resolve, reject) {
-                    Player.animations[i][j].onload = function() {
-                        loadedassets++;
-                        resolve();
-                    };
-                    Player.animations[i][j].src = '/client/img/player/playermap_' + i + j + '.png';
-                });
-            }
-        } else {
-            await new Promise(function(resolve, reject) {
-                Player.animations[i].onload = function() {
-                    loadedassets++;
-                    resolve();
-                };
-                Player.animations[i].src = '/client/img/player/playermap_' + i + '.png';
-            });
-        }
-    }
-    // monsters
-    for (var i in Monster.types) {
-        await new Promise(function(resolve, reject) {
-            Monster.images[i].onload = function() {
-                loadedassets++;
-                resolve();
-            };
-            Monster.images[i].src = '/client/img/monster/' + i + '.png';
-        });
-    }
-    // projectiles
-    for (var i in Projectile.types) {
-        await new Promise(function(resolve, reject) {
-            Projectile.images[i].onload = function() {
-                loadedassets++;
-                resolve();
-            };
-            Projectile.images[i].src = '/client/img/projectile/' + i + '.png';
-        });
-    }
+async function loadAnimatedTileData() {
+    // // monsters
+    // for (var i in Monster.types) {
+    //     await new Promise(function(resolve, reject) {
+    //         Monster.images[i].onload = function() {
+    //             loadedassets++;
+    //             resolve();
+    //         };
+    //         Monster.images[i].src = '/client/img/monster/' + i + '.png';
+    //     });
+    // }
 };

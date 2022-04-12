@@ -1,5 +1,6 @@
 {
     "template": {
+        "name": "Template Quest",
         "requirements": {
             "xpLevel": 0,
             "completed": []
@@ -29,10 +30,10 @@
             "items": {
                 "missing": 1
             }
-        },
-        "failOnDeath": false
+        }
     },
     "5birds": {
+        "name": "Bird Squishing",
         "requirements": {
             "xpLevel": 0,
             "completed": []
@@ -52,7 +53,6 @@
             "items": {
                 "silvercoin": 2
             }
-        },
-        "failOnDeath": true
+        }
     }
 }

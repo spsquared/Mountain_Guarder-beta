@@ -145,7 +145,7 @@
         "circleDistance": 0,
         "hp": 80,
         "fleeThreshold": 0,
-        "moveSpeed": 10,
+        "moveSpeed": 12,
         "stats": {
             "damageType": "magic",
             "projectileSpeed": 1,

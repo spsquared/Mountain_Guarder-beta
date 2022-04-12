@@ -1,6 +1,6 @@
 // Copyright (C) 2022 Radioactive64
 
-const version = 'v0.10.0 Alpha 05';
+const version = 'v0.10.0-A06';
 var firstload = false;
 // canvas
 CTXRAW = document.getElementById('ctx');
@@ -62,6 +62,8 @@ keybinds = {
     heal: ' ',
     use: 0,
     second: 2,
+    swap: 'tab',
+    drop: 'q',
     chat: 't',
     settings: null,
     inventory: 'e',
@@ -135,35 +137,22 @@ resetCanvases();
 // right click and highlight prevention
 document.querySelectorAll("input").forEach(function(item) {if (item.type != 'text' && item.type != 'password') {item.addEventListener('focus', function() {this.blur();});}});
 document.querySelectorAll("button").forEach(function(item) {item.addEventListener('focus', function() {this.blur();});});
-document.getElementById('ctx').addEventListener('contextmenu', function(e) {e.preventDefault()});
-document.getElementById('fade').addEventListener('contextmenu', function(e) {e.preventDefault()});
-document.getElementById('deathScreen').addEventListener('contextmenu', function(e) {e.preventDefault()});
-document.getElementById('regionName').addEventListener('contextmenu', function(e) {e.preventDefault()});
-document.getElementById('promptContainer').addEventListener('contextmenu', function(e) {e.preventDefault()});
-document.getElementById('stats').addEventListener('contextmenu', function(e) {e.preventDefault()});
-document.getElementById('chatText').addEventListener('contextmenu', function(e) {e.preventDefault()});
-document.getElementById('dropdownMenu').addEventListener('contextmenu', function(e) {e.preventDefault()});
-document.getElementById('windows').addEventListener('contextmenu', function(e) {e.preventDefault()});
-document.getElementById('loadingContainer').addEventListener('contextmenu', function(e) {e.preventDefault()});
-document.getElementById('ctx').addEventListener('dblclick', function(e) {e.preventDefault()});
-document.getElementById('fade').addEventListener('dblclick', function(e) {e.preventDefault()});
-document.getElementById('deathScreen').addEventListener('dblclick', function(e) {e.preventDefault()});
-document.getElementById('regionName').addEventListener('dblclick', function(e) {e.preventDefault()});
-document.getElementById('promptContainer').addEventListener('dblclick', function(e) {e.preventDefault()});
-document.getElementById('stats').addEventListener('dblclick', function(e) {e.preventDefault()});
-document.getElementById('chatText').addEventListener('dblclick', function(e) {e.preventDefault()});
-document.getElementById('dropdownMenu').addEventListener('dblclick', function(e) {e.preventDefault()});
-document.getElementById('windows').addEventListener('dblclick', function(e) {e.preventDefault()});
-document.getElementById('loadingContainer').addEventListener('dblclick', function(e) {e.preventDefault()});
-document.getElementById('ctx').addEventListener('dragstart', function(e) {e.preventDefault()});
-document.getElementById('fade').addEventListener('dragstart', function(e) {e.preventDefault()});
-document.getElementById('deathScreen').addEventListener('dragstart', function(e) {e.preventDefault()});
-document.getElementById('regionName').addEventListener('dragstart', function(e) {e.preventDefault()});
-document.getElementById('stats').addEventListener('dragstart', function(e) {e.preventDefault()});
-document.getElementById('chatText').addEventListener('dragstart', function(e) {e.preventDefault()});
-document.getElementById('dropdownMenu').addEventListener('dragstart', function(e) {e.preventDefault()});
-document.getElementById('windows').addEventListener('dragstart', function(e) {e.preventDefault()});
-document.getElementById('loadingContainer').addEventListener('dragstart', function(e) {e.preventDefault()});
+function preventDefaults(id) {
+    const element = document.getElementById(id);
+    element.addEventListener('contextmenu', function(e) {e.preventDefault()});
+    element.addEventListener('dblclick', function(e) {e.preventDefault()});
+    element.addEventListener('dragstart', function(e) {e.preventDefault()});
+};
+preventDefaults('ctx');
+preventDefaults('fade');
+preventDefaults('deathScreen');
+preventDefaults('regionName');
+preventDefaults('promptContainer');
+preventDefaults('stats');
+preventDefaults('chatText');
+preventDefaults('dropdownMenu');
+preventDefaults('windows');
+preventDefaults('loadingContainer');
 
 // version
 document.getElementById('version').innerText = version;
@@ -192,6 +181,7 @@ socket.on('disconnect', function() {
 socket.on('disconnected', function() {
     document.getElementById('disconnectedContainer').style.display = 'block';
     socket.emit('disconnected');
+    socket.off('disconnected');
 });
 
 // pointer lock

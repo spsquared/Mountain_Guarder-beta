@@ -119,6 +119,7 @@
     height: 100vh;
     background-color: black;
     animation-duration: 0.5s;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
     z-index: 2;
 }
 
@@ -203,6 +204,72 @@
     width: 150px;
     height: 20px;
     text-align: center;
+}
+
+/* banners */
+#bannerContainer {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
+    width: 258px;
+    z-index: 4;
+}
+.banner {
+    width: 240px;
+    min-height: 18px;
+    margin: 4px 4px;
+    padding: 4px 4px;
+    font-size: 14px;
+    transition: 0.2s linear all;
+    animation: 0.5s ease banner-in;
+}
+@keyframes banner-in {
+    from {
+        transform: translateX(258px);
+    }
+    to {
+        transform: none;
+    }
+}
+@keyframes banner-out {
+    from {
+        transform: none;
+    }
+    to {
+        transform: translateX(258px);
+    }
+}
+
+/* quest banners */
+.quest-title {
+    color: cyan;
+}
+.quest-progress {
+    width: 236px;
+    height: 18px;
+    border: 2px solid whitesmoke;
+    margin-top: 4px;
+    background-color: #555555;
+    text-align: center;
+}
+.quest-progressinner {
+    width: 0%;
+    height: 18px;
+    animation: 2s ease-in-out progressbar alternate infinite;
+    transition: 0.1s linear width;
+}
+.quest-progresstext {
+    font-size: 12px;
+    transform: translateY(-18px);
+}
+@keyframes progressbar {
+    from {
+        background-color: darkgreen;
+    }
+    to {
+        background-color: forestgreen;
+    }
 }
 
 /* version label */
