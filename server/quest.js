@@ -17,14 +17,16 @@ QuestHandler = function(socket, player) {
         }
     };
     self.advanceQuestStage = function(id) {
-        if (self.current[id].advanceStage()) self.endQuest(id, true);
-        else socket.emit('quest', {
+        if (self.current[id].advanceStage()) {
+            self.endQuest(id, true);
+        } else socket.emit('quest', {
             type: 'advance',
             id: id,
             stage: self.current[id].stage
         });
     };
     self.endQuest = function(id, success) {
+        var rewards = self.current[id].rewards;
         delete self.current[id];
         if (success) {
             if (self.done.indexOf(id) == -1) self.done.push(id);
@@ -32,7 +34,15 @@ QuestHandler = function(socket, player) {
                 type: 'end',
                 id: id
             });
-            console.log('finished quest')
+            for (var i in rewards) {
+                if (i == 'xp') {
+                    player.xp += rewards[i];
+                } else if (i == 'items') {
+                    for (var j in rewards[i]) {
+                        player.inventory.addItem(j, rewards[i][j]);
+                    }
+                }
+            }
         } else {
             socket.emit('quest', {
                 type: 'fail',

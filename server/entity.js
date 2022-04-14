@@ -688,10 +688,10 @@ Rig = function() {
                                 var ydirmove2 = 0;
                                 var xdirknockback2 = 0;
                                 var ydirknockback2 = 0;
-                                var xdirmove2 = remainingxmove2/Math.ceil(Math.abs(max2)) || 0;
-                                var ydirmove2 = remainingymove2/Math.ceil(Math.abs(max2)) || 0;
-                                var xdirknockback2 = remainingxknockback2/Math.ceil(Math.abs(max2)) || 0;
-                                var ydirknockback2 = remainingyknockback2/Math.ceil(Math.abs(max2)) || 0;
+                                var xdirmove2 = remainingxmove2/Math.ceil(max2) || 0;
+                                var ydirmove2 = remainingymove2/Math.ceil(max2) || 0;
+                                var xdirknockback2 = remainingxknockback2/Math.ceil(max2) || 0;
+                                var ydirknockback2 = remainingyknockback2/Math.ceil(max2) || 0;
                                 while (!(-1 < remainingxmove2 && remainingxmove2 < 1) || !(-1 < remainingymove2 && remainingymove2 < 1) || !(-1 < remainingxknockback2 && remainingxknockback2 < 1) || !(-1 < remainingyknockback2 && remainingyknockback2 < 1)) {
                                     if (self.aiControlled) if (self.aiControl()) {
                                         remainingxmove = self.xmove-(movexmove*Math.abs(self.xmove)/self.xmove) || 0;
@@ -704,10 +704,10 @@ Rig = function() {
                                         remainingxmove2 = xdirmove-(movexmove2*Math.abs(self.xmove)/self.xmove) || 0;
                                         remainingymove2 = ydirmove-(moveymove2*Math.abs(self.ymove)/self.ymove) || 0;
                                         var max2 = Math.max(Math.abs(remainingxmove2), Math.abs(remainingymove2), Math.abs(remainingxknockback2), Math.abs(remainingyknockback2));
-                                        xdirmove2 = remainingxmove2/Math.ceil(Math.abs(max2)) || 0;
-                                        ydirmove2 = remainingymove2/Math.ceil(Math.abs(max2)) || 0;
-                                        xdirknockback2 = remainingxknockback2/Math.ceil(Math.abs(max2)) || 0;
-                                        ydirknockback2 = remainingyknockback2/Math.ceil(Math.abs(max2)) || 0;
+                                        xdirmove2 = remainingxmove2/Math.ceil(max2) || 0;
+                                        ydirmove2 = remainingymove2/Math.ceil(max2) || 0;
+                                        xdirknockback2 = remainingxknockback2/Math.ceil(max2) || 0;
+                                        ydirknockback2 = remainingyknockback2/Math.ceil(max2) || 0;
                                     }
                                     self.lastx = self.x;
                                     self.lasty = self.y;
@@ -1401,6 +1401,7 @@ Player = function(socket) {
     self.animationDirection = 'facing';
     self.facingDirection = 'down';
     self.attacking = false;
+    self.secondary = false;
     self.lastHeal = 0;
     self.stats.heal = 8;
     self.mouseX = 0;
@@ -1722,6 +1723,9 @@ Player = function(socket) {
                             }
                         }
                     }
+                    self.secondary = data.state;
+                    self.mouseX = data.x;
+                    self.mouseY = data.y; 
                 }
             }
         } else {
@@ -1736,15 +1740,17 @@ Player = function(socket) {
             self.socketKick();
         }
     });
-    socket.on('controllerAxes', async function(axes) {
-        if (typeof axes == 'object' && axes != null) {
+    socket.on('controllerInput', async function(inputs) {
+        if (typeof inputs == 'object' && inputs != null) {
             if (self.alive) {
-                self.controls.xaxis = Math.round(axes.movex*10)/10;
-                self.controls.yaxis = Math.round(axes.movey*10)/10;
+                self.controls.xaxis = Math.round(inputs.movex*10)/10;
+                self.controls.yaxis = Math.round(inputs.movey*10)/10;
                 if (Math.abs(self.controls.xaxis) == 0.1) self.controls.xaxis = 0;
                 if (Math.abs(self.controls.yaxis) == 0.1) self.controls.yaxis = 0;
-                self.mouseX = axes.aimx;
-                self.mouseY = axes.aimy;
+                self.mouseX = inputs.aimx;
+                self.mouseY = inputs.aimy;
+                self.attacking = inputs.attack;
+                self.secondary = inputs.second;
             }
         } else {
             self.socketKick();
@@ -2187,7 +2193,7 @@ Player = function(socket) {
                     self.invincible = false;
                     self.currentConversation = null;
                     var id = action.replace('quest_', '');
-                    self.quests.startQuest(id);
+                    if (self.quests.qualifiesFor(id)) self.quests.startQuest(id);
                 } else if (action.startsWith('talkedwith_')) {
                     self.canMove = true;
                     self.invincible = false;

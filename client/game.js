@@ -554,7 +554,7 @@ function drawDebug() {
 function resetFPS() {
     clearInterval(drawLoop);
     drawLoop = setInterval(function() {
-        requestAnimationFrame(function() {
+        if (visible) requestAnimationFrame(function() {
             drawFrame();
             if (settings.useController) updateControllers();
             fpsCounter++;
@@ -576,6 +576,8 @@ socket.on('debugTick', function(debug) {
     debugData = debug.data;
     tpsCounter = debug.tps;
     tickTime = debug.tickTime;
+    serverHeapUsed = debug.heapSize;
+    serverHeapMax = debug.heapMax;
 });
 document.onkeydown = function(e) {
     if (loaded) {
@@ -697,7 +699,7 @@ document.onmouseup = function(e) {
     }
 };
 document.onmousemove = function(e) {
-    if (loaded) {
+    if (loaded && visible) {
         if (!e.isTrusted) {
             socket.emit('timeout');
         }
@@ -880,6 +882,7 @@ Banner = function(html, param) {
                 div.style.animationName = 'banner-out';
                 await sleep(500);
                 div.remove();
+                delete Banners[Banners.indexOf(div)];
             }, param.time);
         }
     }
@@ -1021,6 +1024,8 @@ var debugStart = 0;
 var tickTime = 0;
 var entTime = 0;
 var packetTime = 0;
+var serverHeapUsed = 0;
+var serverHeapMax = 0;
 setInterval(function() {
     if (loaded) {
         document.getElementById('fps').innerText = 'FPS: ' + fpsCounter;
@@ -1045,6 +1050,8 @@ setInterval(function() {
             document.getElementById('mapdrawTime').innerText = 'Map: ' + mapTimeCounter + 'ms';
             document.getElementById('debugdrawTime').innerText = 'Debug: ' + debugTimeCounter + 'ms';
             document.getElementById('tickTime').innerText = 'Tick: ' + tickTime + 'ms';
+            document.getElementById('serverHeap').innerText = 'Server Heap: ' + serverHeapUsed + '/' + serverHeapMax + 'MB';
+            document.getElementById('clientHeap').innerText = 'Heap: ' + Math.round(performance.memory.usedJSHeapSize/1048576*100)/100 + '/' + Math.round(performance.memory.jsHeapSizeLimit/1048576*100)/100 + 'MB';
         }
     }
 }, 1000);

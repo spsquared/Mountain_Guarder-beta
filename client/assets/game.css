@@ -320,6 +320,16 @@
     bottom: 222px;
     left: 16px;
 }
+#serverHeap {
+    position: absolute;
+    bottom: 300px;
+    left: 16px;
+}
+#clientHeap {
+    position: absolute;
+    bottom: 274px;
+    left: 16px;
+}
 
 #mousepos {
     position: absolute;

@@ -63,8 +63,8 @@
                     </tbody></table>
                     <div style="margin-top: 8px;">
                         <button id="signIn" class="ui-lightbutton" onclick="signIn();">Sign In</button>
-                        <button id="createAccount" class="ui-lightbutton" onclick="createAccount();">Create Account</button>
-                        <button id="deleteAccount" class="ui-lightbutton" onclick="deleteAccount();">Delete Account</button>
+                        <!-- <button id="createAccount" class="ui-lightbutton" onclick="createAccount();">Create Account</button>
+                        <button id="deleteAccount" class="ui-lightbutton" onclick="deleteAccount();">Delete Account</button> -->
                         <button id="changePassword" class="ui-lightbutton" onclick="changePassword();">Change Password</button>
                         <div id="signInError"></div>
                     </div>
@@ -79,12 +79,48 @@
                 </div> -->
                 <div class="stack ui-block ui-lighttext">
                     <div class="ui-lighttext stackHeader">
-                        v0.10.0-A06
+                        v0.10.0-B01 - 4/14/22
                     </div>
                     <div class="ui-lighttext stackBody">
-                        Introducing the quest system! Bob now gives out a quest: Bird Squishing - Kill 5 of any bird without dying.<br>
-                        Note: Quest system may not be stable - as per usual make a bug report when something isn't working correctly.<br>
-                        Note 2: Rewards are not currently working so quests will not award anything.
+                        Mountain Guarder v0.10.0 Beta 01
+
+                        Stability - Should be stable
+
+                        <ul>
+                            <li>Added quests</li>
+                            <li>Added Garuder Coins</li>
+                            <li>Some items can now stack</li>
+                            <li>Added tracked stats</li>
+                            <li>Added controller support</li>
+                            <li>Added Rare Steak</li>
+                            <li>Added hot-swapping to offhand item</li>
+                            <li>Walking animations now scale to movement speed</li>
+                            <li>Buffed cherrybombs</li>
+                            <li>Nerfed staffs</li>
+                            <li>Fixed lag while not on tab</li>
+                            <li>Added keybind for dropping items</li>
+                            <li><a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder/issues/225" target="_blank">Patched crashes from socket.emit (Issue #225)</a></li>
+                            <li>Fixed `/msg` command</li>
+                            <li><a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder/issues/226" target="_blank">Added custom cursor to fade overlay (Issue #226)</a></li>
+                            <li>Rebalanced items for more incentive to use melee</li>
+                            <li>Added JS Heap usage information of debug</li>
+                            <li>Mountain Guarder now tags computers with an id for security</li>
+                            <li>Fixed wierd inventory behavior</li>
+                            <li><a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder/issues/224" target="_blank">Fixed missing tree collisions (Issue #224)</a></li>
+                            <li>Added chat colors for devs and ops</li>
+                            <li>Allowed username 'sp'</li>
+                            <li>Updated region locations</li>
+                            <li>Changed monster spawning distributions</li>
+                            <li>Changed offhand to shield</li>
+                            <li>Updated <a href="https://mountainguarder.herokuapp.com/itemcreator" target="_blank">MGIC</a></li>
+                            <li>Fixed "invalid particle type undefined" errors</li>
+                            <li>Changed chat size</li>
+                            <li>Fixed server/client debug desync</li>
+                            <li>Changed packet rate limiting</li>
+                            <li>Upgrade database user data column to 1,048,576 characters</li>
+                            <li>Replaced plaintext password chache in player objects with encrypted chache</li>
+                            <li>Multiple small optimizations</li>
+                        </ul>
                     </div>
                 </div>
                 <div class="stack ui-block ui-lighttext">
@@ -978,7 +1014,7 @@
         </div>
         <div id="gameContainer">
             <canvas id="ctx"></canvas>
-            <img id="crossHair" src="./client/img/assets/crosshair.png">
+            <img id="crossHair" src="./client/img/assets/crosshair.png" class="noSelect">
             <div id="bossBars" class="noSelect"></div>
             <div id="regionName" class="ui-lighttext ui-block noSelect"></div>
             <div id="promptContainer" class=" ui-lighttext ui-block noSelect">
@@ -1021,6 +1057,8 @@
                     <!-- <div id="enttickTime">Entity: 0ms</div>
                     <div id="packtickTime">Packet Compile: 0ms</div> -->
                 </div>
+                <div id="serverHeap" class="debugOverlay">Server Heap: 0/0mB</div>
+                <div id="clientHeap" class="debugOverlay">Heap: 0/0mB</div>
                 <div id="position" class="debugOverlay">(0, 0)</div>
                 <div id="mousepos" class="debugOverlay">(0, 0)</div>
                 <div id="entCount" class="debugOverlay">
@@ -1439,10 +1477,157 @@
                             </tbody>
                         </table>
                     </div>
+                    <div id="settingsController" class="window-body" style="width: 366px; overflow-y: auto; display: none;">
+                        <table><tbody>
+                            <tr>
+                                <td style="text-align: right;">
+                                    Sensitivity:
+                                </td>
+                                <td>
+                                    <input type="range" id="sensitivitySlider" class="ui-slider" min="50" max="200" value="100" step="10" oninput="controllerSlider('sensitivity');">
+                                </td>
+                                <td>
+                                    <div id="sensitivityIndicator" class="ui-lighttext">100%</div>
+                                </td>
+                            </tr>
+                            <!-- <tr>
+                                <td style="text-align: right;">
+                                    toggle setting:
+                                </td>
+                                <td>
+                                    <label class="ui-toggle">
+                                        <input type="checkbox" id="thingToggle" class="ui-toggleInput" onclick="controllerToggle('thing');" checked>
+                                        <span class="ui-toggleSlider"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <div id="thingIndicator" class="ui-lighttext">on</div>
+                                </td>
+                            </tr> -->
+                            <tr>
+                                <td style="text-align: right;">
+                                    Drift X:
+                                </td>
+                                <td>
+                                    <input type="range" id="driftXSlider" class="ui-slider" min="-20" max="20" value="0" step="1" oninput="controllerSlider('driftX');">
+                                </td>
+                                <td>
+                                    <div id="driftXIndicator" class="ui-lighttext">0%</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: right;">
+                                    Drift Y:
+                                </td>
+                                <td>
+                                    <input type="range" id="driftYSlider" class="ui-slider" min="-20" max="20" value="0" step="1" oninput="controllerSlider('driftY');">
+                                </td>
+                                <td>
+                                    <div id="driftYIndicator" class="ui-lighttext">0%</div>
+                                </td>
+                            </tr>
+                        </tbody></table>
+                    </div>
+                    <div id="keybindsController" class="window-body" style="width: 366px; overflow-y: auto; display: none;">
+                        <table>
+                            <tbody style="text-align: right;">
+                                <tr>
+                                    <td>
+                                        Move&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="controllerKeybind_move" class="ui-lightbutton keyBindButton" onclick="changeControllerKeybind('move');">0 1</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Aim&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="controllerKeybind_aim" class="ui-lightbutton keyBindButton" onclick="changeControllerKeybind('aim');">2 3</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Heal&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="controllerKeybind_heal" class="ui-lightbutton keyBindButton" onclick="changeControllerKeybind('heal');">LS</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Use Item&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="controllerKeybind_use" class="ui-lightbutton keyBindButton" onclick="changeControllerKeybind('use');">LT</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Use Secondary&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="controllerKeybind_second" class="ui-lightbutton keyBindButton" onclick="changeControllerKeybind('second');">RT</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Hot-Swap Weapons&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="controllerKeybind_swap" class="ui-lightbutton keyBindButton" onclick="changeControllerKeybind('swap');">RS</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Drop Item&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="controllerKeybind_drop" class="ui-lightbutton keyBindButton" onclick="changeControllerKeybind('drop');">UP</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Open chat&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="controllerKeybind_chat" class="ui-lightbutton keyBindButton" onclick="changeControllerKeybind('chat');">X</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Settings&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="controllerKeybind_settings" class="ui-lightbutton keyBindButton" onclick="changeControllerKeybind('settings');">&emsp;</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Toggle Inventory&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="controllerKeybind_inventory" class="ui-lightbutton keyBindButton" onclick="changeControllerKeybind('inventory');">Y</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Menu&nbsp;
+                                    </td>
+                                    <td>
+                                        <button id="controllerKeybind_menu" class="ui-lightbutton keyBindButton" onclick="changeControllerKeybind('menu');">MENU</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                     <div id="settingsSelect" class="window-select">
                         <button id="settingsGameSelect" class="window-select-button ui-lightbutton">Settings</button>
                         <button id="settingsPlayerSelect" class="window-select-button ui-lightbutton">Customize</button>
                         <button id="settingsKeybindsSelect" class="window-select-button ui-lightbutton">Keybinds</button>
+                        <button id="settingsControllerSelect" class="window-select-button ui-lightbutton">Controller</button>
+                        <button id="keybindsControllerSelect" class="window-select-button ui-lightbutton">Controllerbinds</button>
                     </div>
                 </div>
             </div>

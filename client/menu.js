@@ -497,6 +497,8 @@ function updateSetting(setting) {
         case 'useController':
             if (settings.useController) {
                 indicatorText = 'on';
+                document.getElementById('settingsControllerSelect').style.display = 'block';
+                // document.getElementById('keybindsControllerSelect').style.display = 'block';
             } else {
                 indicatorText = 'off';
                 socket.emit('controllerAxes', {
@@ -505,6 +507,8 @@ function updateSetting(setting) {
                     aimx: 0,
                     aimy: 0
                 });
+                document.getElementById('settingsControllerSelect').style.display = 'none';
+                document.getElementById('keybindsControllerSelect').style.display = 'none';
             }
             break;
         case 'chatBackground':
@@ -547,33 +551,76 @@ function updateSetting(setting) {
     }
     document.getElementById(setting + 'Indicator').innerText = indicatorText;
 };
+function controllerToggle(setting) {
+    controllerSettings[setting] = !controllerSettings[setting];
+    updateControllerSetting(setting);
+    saveSettings();
+};
+function controllerSlider(setting) {
+    controllerSettings[setting] = parseInt(document.getElementById(setting + 'Slider').value);
+    updateControllerSetting(setting);
+    saveSettings();
+};
+function updateControllerSetting(setting) {
+    var indicatorText = controllerSettings[setting];
+    switch (setting) {
+        case 'sensitivity':
+            indicatorText += '%';
+            break;
+        case 'driftX':
+            indicatorText += '%';
+            break;
+        case 'driftY':
+            indicatorText += '%';
+            break;
+        default:
+            console.error('Invalid setting ' + setting);
+            break;
+    }
+    document.getElementById(setting + 'Indicator').innerText = indicatorText;
+};
 function saveSettings() {
     var cookiestring = JSON.stringify(settings);
+    var cookiestring2 = JSON.stringify(controllerSettings);
     var date = new Date();
-    date.setUTCFullYear(date.getUTCFullYear()+10, date.getUTCMonth(), date.getUTCDate())
+    date.setUTCFullYear(date.getUTCFullYear()+10, date.getUTCMonth(), date.getUTCDate());
     document.cookie = 'settings=' + cookiestring + '; expires=' + date + ';';
+    document.cookie = 'controllerSettings=' + cookiestring2 + '; expires=' + date + ';';
 };
 try {
-    document.cookie.split('; ').forEach(function(cookie) {if (cookie.startsWith('settings=')) {
-        cookiesettings = JSON.parse(cookie.replace('settings=', ''));
-        for (var i in cookiesettings) {
-            if (settings[i] != null) settings[i] = cookiesettings[i];
+    document.cookie.split('; ').forEach(function(cookie) {
+        if (cookie.startsWith('settings=')) {
+            cookiesettings = JSON.parse(cookie.replace('settings=', ''));
+            for (var i in cookiesettings) {
+                if (settings[i] != null) settings[i] = cookiesettings[i];
+            }
+            settings.debug = false;
+            document.getElementById('fpsSlider').value = settings.fps;
+            document.getElementById('renderDistanceSlider').value = settings.renderDistance;
+            document.getElementById('renderQualitySlider').value = settings.renderQuality;
+            document.getElementById('particlesToggle').checked = settings.particles;
+            document.getElementById('dialogueSpeedSlider').value = settings.dialogueSpeed;
+            // document.getElementById('pointerLockToggle').checked = settings.pointerLock;
+            document.getElementById('useControllerToggle').checked = settings.useController;
+            document.getElementById('chatBackgroundToggle').checked = settings.chatBackground;
+            document.getElementById('chatSizeSlider').value = settings.chatSize;
+            document.getElementById('highContrastToggle').checked = settings.highContrast;
+            for (var i in settings) {
+                updateSetting(i);
+            }
+        } else if (cookie.startsWith('controllerSettings=')) {
+            cookiesettings = JSON.parse(cookie.replace('controllerSettings=', ''));
+            for (var i in cookiesettings) {
+                if (controllerSettings[i] != null) controllerSettings[i] = cookiesettings[i];
+            }
+            document.getElementById('sensitivitySlider').value = controllerSettings.sensitivity;
+            document.getElementById('driftXSlider').value = controllerSettings.driftX;
+            document.getElementById('driftYSlider').value = controllerSettings.driftY;
+            for (var i in controllerSettings) {
+                updateControllerSetting(i);
+            }
         }
-        settings.debug = false;
-        document.getElementById('fpsSlider').value = settings.fps;
-        document.getElementById('renderDistanceSlider').value = settings.renderDistance;
-        document.getElementById('renderQualitySlider').value = settings.renderQuality;
-        document.getElementById('particlesToggle').checked = settings.particles;
-        document.getElementById('dialogueSpeedSlider').value = settings.dialogueSpeed;
-        // document.getElementById('pointerLockToggle').checked = settings.pointerLock;
-        document.getElementById('useControllerToggle').checked = settings.useController;
-        document.getElementById('chatBackgroundToggle').checked = settings.chatBackground;
-        document.getElementById('chatSizeSlider').value = settings.chatSize;
-        document.getElementById('highContrastToggle').checked = settings.highContrast;
-        for (var i in settings) {
-            updateSetting(i);
-        }
-    }});
+    });
 } catch (err) {
     console.error(err);
 }
@@ -667,7 +714,7 @@ function updateKeybind(keybind) {
 function saveKeybinds() {
     var cookiestring = JSON.stringify(keybinds);
     var date = new Date();
-    date.setUTCFullYear(date.getUTCFullYear()+10, date.getUTCMonth(), date.getUTCDate())
+    date.setUTCFullYear(date.getUTCFullYear()+10, date.getUTCMonth(), date.getUTCDate());
     document.cookie = 'keybinds=' + cookiestring + '; expires=' + date + ';';
 }
 try {

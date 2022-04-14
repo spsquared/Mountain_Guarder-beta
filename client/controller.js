@@ -21,15 +21,14 @@ async function updateControllers() {
             var controller = controllers[i];
             axes.movex = controller.axes[0];
             axes.movey = controller.axes[1];
-            var size = Math.min(window.innerWidth, window.innerHeight)/2;
-            axes.aimx = controller.axes[2]*size;
-            axes.aimy = controller.axes[3]*size;
+            axes.aimx = Math.max(-window.innerWidth/2, Math.min(axes.aimx + Math.round((controller.axes[2]+(controllerSettings.driftX/100))*10)/10*controllerSettings.sensitivity*0.3, window.innerWidth/2));
+            axes.aimy = Math.max(-window.innerHeight/2, Math.min(axes.aimy + Math.round((controller.axes[3]+(controllerSettings.driftY/100))*10)/10*controllerSettings.sensitivity*0.3, window.innerHeight/2));
             document.getElementById('crossHair').style.left = axes.aimx + window.innerWidth/2-11 + 'px';
             document.getElementById('crossHair').style.top = axes.aimy + window.innerHeight/2-11 + 'px';
-            // add section in settings for these keybinds
-            buttons.attack = controller.buttons[6].pressed;
-            buttons.second = controller.buttons[4].pressed;
+            buttons.attack = controller.buttons[6].value > 0.5;
+            buttons.second = controller.buttons[4].value > 0.5;
             buttons.clicking = controller.buttons[0].pressed;
+            buttons.interacting = controller.buttons[3].pressed;
             break;
         }
     }
@@ -37,11 +36,14 @@ async function updateControllers() {
     else document.getElementById('crossHair').style.display = '';
 };
 async function sendControllers() {
-    socket.emit('controllerAxes', {
+    socket.emit('controllerInput', {
         movex: axes.movex,
         movey: axes.movey,
         aimx: axes.aimx,
-        aimy: axes.aimy
+        aimy: axes.aimy,
+        attack: buttons.attack,
+        second: buttons.second,
+        clicking: buttons.clicking
     });
     if (buttons.clicking && document.getElementById('respawnButton').style.display == 'block') respawn();
 };

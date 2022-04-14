@@ -1,7 +1,7 @@
 // Copyright (C) 2022 Radioactive64
 // Go to README.md for more information
 
-const version = 'v0.10.0-A06';
+const version = 'v0.10.0-B01';
 require('./server/log.js');
 console.info('\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022');
 appendLog('Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022', 'log');
@@ -495,6 +495,8 @@ try {
         }
     }
     var debugPack = Entity.getDebugData();
+    var heapSize = Math.round(process.memoryUsage().heapUsed/1048576*100)/100;
+    var heapMax = Math.round(process.memoryUsage().rss/1048576*100)/100;
     for (var i in Player.list) {
         var localplayer = Player.list[i];
         var localpack = cloneDeep(debugPack);
@@ -519,7 +521,9 @@ try {
                 localplayer.socket.emit('debugTick', {
                     data: localpack,
                     tps: TPS,
-                    tickTime: tickTimeCounter
+                    tickTime: tickTimeCounter,
+                    heapSize: heapSize,
+                    heapMax: heapMax
                 });
             }
         }

@@ -29,13 +29,13 @@
                 "action": "quest_5birds"
             },
             {
-                "text": "...",
+                "text": "Nah, I'm fine.",
                 "action": "prompt_bob4"
             }
         ]
     },
     "bob4": {
-        "text": "...",
+        "text": "Okay then.",
         "options": [
             {
                 "text": "*End conversation*",

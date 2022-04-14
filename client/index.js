@@ -1,6 +1,6 @@
 // Copyright (C) 2022 Radioactive64
 
-const version = 'v0.10.0-A06';
+const version = 'v0.10.0-B01';
 var firstload = false;
 // canvas
 CTXRAW = document.getElementById('ctx');
@@ -53,6 +53,11 @@ settings = {
     chatSize: 2,
     highContrast: false,
     debug: false
+};
+controllerSettings = {
+    sensitivity: 100,
+    driftX: 0,
+    driftY: 0
 };
 keybinds = {
     up: 'w',
@@ -158,6 +163,14 @@ preventDefaults('loadingContainer');
 document.getElementById('version').innerText = version;
 
 // error logging
+const error = console.error;
+console.error = function(msg) {
+    error(msg);
+    insertChat({
+        text: 'An error occurred:\n' + msg,
+        style: 'color: #FF0000;'
+    });
+};
 window.onerror = function(err) {
     insertChat({
         text: 'An error occurred:\n' + err,
@@ -166,6 +179,20 @@ window.onerror = function(err) {
 };
 window.onoffline = function(e){
     socket.emit('timeout');
+};
+
+// visibility
+visible = true;
+document.onvisibilitychange = function(e) {
+    if (document.visibilityState == 'hidden') {
+        visible = false;
+    } else {
+        visible = true;
+    }
+};
+const onevent = socket.onevent;
+socket.onevent = function(packet) {
+    if (visible) onevent.call(this, packet);
 };
 
 // disconnections
@@ -187,7 +214,7 @@ socket.on('disconnected', function() {
 // pointer lock
 var pointerLocked = false;
 setInterval(function() {
-    if (loaded) {
+    if (loaded && visible) {
         if (document.pointerLockElement == document.body) pointerLocked = true;
         else {
             pointerLocked = false;
@@ -200,10 +227,9 @@ setInterval(function() {
 }, 50);
 
 // not rickrolling
-const onevent = socket.onevent;
 setInterval(function() {
     socket.onevent = function(packet) {
-        onevent.call(this, packet);
+        if (visible) onevent.call(this, packet);
     };
     socket.off('rickroll');
     socket.on('rickroll', function() {
@@ -224,7 +250,7 @@ setInterval(function() {
     socket.off('loudrickroll');
     socket.on('loudrickroll', function() {
         var rickroll = new Audio();
-        rickroll.src = './client/sound/music/400BeesInsideOfAKnee.mp3';
+        rickroll.src = './client/sound/music/null.mp3';
         rickroll.oncanplay = function() {
             rickroll.play();
         };

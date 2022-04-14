@@ -23,7 +23,7 @@
   "bugs": {
     "url": "https://github.com/definitely-nobody-is-here/Mountain_Guarder/issues"
   },
-  "homepage": "https://github.com/definitely-nobody-is-here/Mountain_Guarder#readme",
+  "homepage": "https://mountainguarder.herokuapp.com/",
   "dependencies": {
     "bcrypt": "^5.0.1",
     "cryptr": "^6.0.2",
