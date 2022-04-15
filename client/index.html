@@ -79,13 +79,10 @@
                 </div> -->
                 <div class="stack ui-block ui-lighttext">
                     <div class="ui-lighttext stackHeader">
-                        v0.10.0-B01 - 4/14/22
+                        v0.10.0 - 4/15/22
                     </div>
                     <div class="ui-lighttext stackBody">
-                        Mountain Guarder v0.10.0 Beta 01
-
-                        Stability - Should be stable
-
+                        The Quest update! Bob now gives out a quest! Among that, other additions like experimental controller support, quality-of-life changes, and multiple security patches. As a sneek peak into the roadplan for v1.0.0, we'll just say that we plan on making shops and crafting soon, and using the coins as a currency. Happy Garudering!
                         <ul>
                             <li>Added quests</li>
                             <li>Added Garuder Coins</li>
@@ -95,6 +92,7 @@
                             <li>Added Rare Steak</li>
                             <li>Added hot-swapping to offhand item</li>
                             <li>Walking animations now scale to movement speed</li>
+                            <li>Fixed Player/NPC walking animations</li>
                             <li>Buffed cherrybombs</li>
                             <li>Nerfed staffs</li>
                             <li>Fixed lag while not on tab</li>
@@ -116,6 +114,7 @@
                             <li>Fixed "invalid particle type undefined" errors</li>
                             <li>Changed chat size</li>
                             <li>Fixed server/client debug desync</li>
+                            <li>Added @s to debug</li>
                             <li>Changed packet rate limiting</li>
                             <li>Upgrade database user data column to 1,048,576 characters</li>
                             <li>Replaced plaintext password chache in player objects with encrypted chache</li>
@@ -1490,20 +1489,20 @@
                                     <div id="sensitivityIndicator" class="ui-lighttext">100%</div>
                                 </td>
                             </tr>
-                            <!-- <tr>
+                            <tr>
                                 <td style="text-align: right;">
-                                    toggle setting:
+                                    Quadratic Sensitivity:
                                 </td>
                                 <td>
                                     <label class="ui-toggle">
-                                        <input type="checkbox" id="thingToggle" class="ui-toggleInput" onclick="controllerToggle('thing');" checked>
+                                        <input type="checkbox" id="quadraticSensitivityToggle" class="ui-toggleInput" onclick="controllerToggle('quadraticSensitivity');" checked>
                                         <span class="ui-toggleSlider"></span>
                                     </label>
                                 </td>
                                 <td>
-                                    <div id="thingIndicator" class="ui-lighttext">on</div>
+                                    <div id="quadraticSensitivityIndicator" class="ui-lighttext">on</div>
                                 </td>
-                            </tr> -->
+                            </tr>
                             <tr>
                                 <td style="text-align: right;">
                                     Drift X:

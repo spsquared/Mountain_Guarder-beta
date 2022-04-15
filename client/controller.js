@@ -21,8 +21,13 @@ async function updateControllers() {
             var controller = controllers[i];
             axes.movex = controller.axes[0];
             axes.movey = controller.axes[1];
-            axes.aimx = Math.max(-window.innerWidth/2, Math.min(axes.aimx + Math.round((controller.axes[2]+(controllerSettings.driftX/100))*10)/10*controllerSettings.sensitivity*0.3, window.innerWidth/2));
-            axes.aimy = Math.max(-window.innerHeight/2, Math.min(axes.aimy + Math.round((controller.axes[3]+(controllerSettings.driftY/100))*10)/10*controllerSettings.sensitivity*0.3, window.innerHeight/2));
+            if (controllerSettings.quadraticSensitivity) {
+                axes.aimx = Math.max(-window.innerWidth/2, Math.min(axes.aimx + ((Math.round((controller.axes[2]+(controllerSettings.driftX/100))*10)/10*controllerSettings.sensitivity*0.1)**2)/2*parseInt(Math.abs(controller.axes[2])/controller.axes[2]), window.innerWidth/2));
+                axes.aimy = Math.max(-window.innerHeight/2, Math.min(axes.aimy + ((Math.round((controller.axes[3]+(controllerSettings.driftY/100))*10)/10*controllerSettings.sensitivity*0.1)**2)/2*parseInt(Math.abs(controller.axes[3])/controller.axes[3]), window.innerHeight/2));
+            } else {
+                axes.aimx = Math.max(-window.innerWidth/2, Math.min(axes.aimx + Math.round((controller.axes[2]+(controllerSettings.driftX/100))*10)/10*controllerSettings.sensitivity*0.2, window.innerWidth/2));
+                axes.aimy = Math.max(-window.innerHeight/2, Math.min(axes.aimy + Math.round((controller.axes[3]+(controllerSettings.driftY/100))*10)/10*controllerSettings.sensitivity*0.2, window.innerHeight/2));
+            }
             document.getElementById('crossHair').style.left = axes.aimx + window.innerWidth/2-11 + 'px';
             document.getElementById('crossHair').style.top = axes.aimy + window.innerHeight/2-11 + 'px';
             buttons.attack = controller.buttons[6].value > 0.5;
@@ -43,7 +48,8 @@ async function sendControllers() {
         aimy: axes.aimy,
         attack: buttons.attack,
         second: buttons.second,
-        clicking: buttons.clicking
+        clicking: buttons.clicking,
+        interacting: buttons.interacting
     });
     if (buttons.clicking && document.getElementById('respawnButton').style.display == 'block') respawn();
 };

@@ -1,7 +1,7 @@
 // Copyright (C) 2022 Radioactive64
 // Go to README.md for more information
 
-const version = 'v0.10.0-B01';
+const version = 'v0.10.0';
 require('./server/log.js');
 console.info('\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022');
 appendLog('Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022', 'log');
@@ -164,6 +164,9 @@ io.on('connection', function(socket) {
                                     i++;
                                 }
                                 if (arg == '') break;
+                            }
+                            for (var i in args) {
+                                if (args[i] == '@s') args[i] = player.name;
                             }
                             logColor(player.name + ': ' + input, '\x1b[33m', 'log');
                             if (ENV.useDiscordWebhook) postDebugDiscord('DBG', input);
@@ -356,9 +359,9 @@ s = {
             }
         } else return 'No player with username ' + username;
     },
-    give: function(username, item) {
+    give: function(username, item, amount) {
         var player = s.findPlayer(username);
-        if (player) player.inventory.addItem(item);
+        if (player) player.inventory.addItem(item, parseInt(amount));
         else return 'No player with username ' + username;
     },
     rickroll: function(username) {

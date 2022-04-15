@@ -337,14 +337,10 @@ Entity.update = function() {
         particles: [],
         droppedItems: []
     };
-    for (var i in pack1) {
-        pack.players.push(pack1[i]);
-    }
+    pack.players = pack1;
     pack.monsters = pack2;
     pack.projectiles = pack3;
-    for (var i in pack4) {
-        pack.players.push(pack4[i]);
-    }
+    pack.players = pack.players.concat(pack4);
     pack.particles = pack5;
     pack.droppedItems = pack6;
 
@@ -362,14 +358,10 @@ Entity.getDebugData = function() {
         projectiles: [],
         droppedItems: []
     };
-    for (var i in pack1) {
-        pack.players.push(pack1[i]);
-    }
+    pack.players = pack1;
     pack.monsters = pack2;
     pack.projectiles = pack3;
-    for (var i in pack4) {
-        pack.players.push(pack4[i]);
-    }
+    pack.players = pack.players.concat(pack4);
     pack.droppedItems = pack5;
 
     return pack;
@@ -845,36 +837,36 @@ Rig = function() {
                 self.animationStage++;
                 switch (self.animationDirection) {
                     case 'up':
-                        if (self.animationStage < 25) self.animationStage = 25;
-                        if (self.animationStage > 29) self.animationStage = 25;
+                        if (self.animationStage < 24) self.animationStage = 24;
+                        if (self.animationStage > 29) self.animationStage = 24;
                         break;
                     case 'down':
-                        if (self.animationStage < 1) self.animationStage = 1;
-                        if (self.animationStage > 5) self.animationStage = 1;
+                        if (self.animationStage < 0) self.animationStage = 0;
+                        if (self.animationStage > 5) self.animationStage = 0;
                         break;
                     case 'left':;
-                        if (self.animationStage < 37) self.animationStage = 37;
-                        if (self.animationStage > 41) self.animationStage = 37;
+                        if (self.animationStage < 36) self.animationStage = 36;
+                        if (self.animationStage > 41) self.animationStage = 36;
                         break;
                     case 'right':
-                        if (self.animationStage < 13) self.animationStage = 13;
-                        if (self.animationStage > 17) self.animationStage = 13;
+                        if (self.animationStage < 12) self.animationStage = 12;
+                        if (self.animationStage > 17) self.animationStage = 12;
                         break;
                     case 'upleft':
-                        if (self.animationStage < 31) self.animationStage = 31;
-                        if (self.animationStage > 35) self.animationStage = 31;
+                        if (self.animationStage < 30) self.animationStage = 30;
+                        if (self.animationStage > 35) self.animationStage = 30;
                         break;
                     case 'downleft':
-                        if (self.animationStage < 43) self.animationStage = 43;
-                        if (self.animationStage > 47) self.animationStage = 43;
+                        if (self.animationStage < 42) self.animationStage = 42;
+                        if (self.animationStage > 47) self.animationStage = 42;
                         break;
                     case 'upright':
-                        if (self.animationStage < 19) self.animationStage = 19;
-                        if (self.animationStage > 23) self.animationStage = 19;
+                        if (self.animationStage < 18) self.animationStage = 18;
+                        if (self.animationStage > 23) self.animationStage = 18;
                         break;
                     case 'downright':
-                        if (self.animationStage < 7) self.animationStage = 7;
-                        if (self.animationStage > 11) self.animationStage = 7;
+                        if (self.animationStage < 6) self.animationStage = 6;
+                        if (self.animationStage > 11) self.animationStage = 6;
                         break;
                     default:
                         error('Invalid animationDirection ' + self.animationDirection);
@@ -1681,47 +1673,7 @@ Player = function(socket) {
                     self.mouseY = data.y; 
                 } else if (data.button == 'right') {
                     if (data.state) {
-                        for (var i in DroppedItem.list) {
-                            var localdroppeditem = DroppedItem.list[i];
-                            if (self.getDistance(localdroppeditem) < 512) {
-                                if (localdroppeditem.playerId == self.id || localdroppeditem.playerId == null) {
-                                    var x = self.x+data.x;
-                                    var y = self.y+data.y;
-                                    var left = localdroppeditem.x-localdroppeditem.width/2;
-                                    var right = localdroppeditem.x+localdroppeditem.width/2;
-                                    var top = localdroppeditem.y-localdroppeditem.height/2;
-                                    var bottom = localdroppeditem.y+localdroppeditem.height/2;
-                                    if (x >= left && x <= right && y >= top && y <= bottom) {
-                                        if (!self.inventory.full()) {
-                                            var res = self.inventory.addItem(localdroppeditem.itemId, localdroppeditem.stackSize, localdroppeditem.enchantments);
-                                            if (typeof res == 'number') {
-                                                delete DroppedItem.list[i];
-                                            }
-                                        }
-                                        return;
-                                    }
-                                }
-                            }
-                        }
-                        for (var i in Npc.list) {
-                            var localnpc = Npc.list[i];
-                            if (self.getDistance(localnpc) < 512) {
-                                var x = self.x+data.x;
-                                var y = self.y+data.y;
-                                var left = localnpc.x-localnpc.width/2;
-                                var right = localnpc.x+localnpc.width/2;
-                                var top = localnpc.y-localnpc.height/2;
-                                var bottom = localnpc.y+localnpc.height/2;
-                                if (x >= left && x <= right && y >= top && y <= bottom) {
-                                    try {
-                                        localnpc.rightClickEvent(self, localnpc);
-                                    } catch (err) {
-                                        error(err);
-                                    }
-                                    return;
-                                }
-                            }
-                        }
+                        self.interact(data.x, data.y);
                     }
                     self.secondary = data.state;
                     self.mouseX = data.x;
@@ -1751,6 +1703,7 @@ Player = function(socket) {
                 self.mouseY = inputs.aimy;
                 self.attacking = inputs.attack;
                 self.secondary = inputs.second;
+                if (inputs.interacting) self.interact(self.mouseX, self.mouseY);
             }
         } else {
             self.socketKick();
@@ -2154,6 +2107,49 @@ Player = function(socket) {
                             error('Invalid item effect ' + effect.id);
                             break;
                     }
+                }
+            }
+        }
+    };
+    self.interact = function(x, y) {
+        for (var i in DroppedItem.list) {
+            var localdroppeditem = DroppedItem.list[i];
+            if (self.map == localdroppeditem.map && self.getDistance(localdroppeditem) < 512) {
+                if (localdroppeditem.playerId == self.id || localdroppeditem.playerId == null) {
+                    var x = self.x+x;
+                    var y = self.y+y;
+                    var left = localdroppeditem.x-localdroppeditem.width/2;
+                    var right = localdroppeditem.x+localdroppeditem.width/2;
+                    var top = localdroppeditem.y-localdroppeditem.height/2;
+                    var bottom = localdroppeditem.y+localdroppeditem.height/2;
+                    if (x >= left && x <= right && y >= top && y <= bottom) {
+                        if (!self.inventory.full()) {
+                            var res = self.inventory.addItem(localdroppeditem.itemId, localdroppeditem.stackSize, localdroppeditem.enchantments);
+                            if (typeof res == 'number') {
+                                delete DroppedItem.list[i];
+                            }
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+        for (var i in Npc.list) {
+            var localnpc = Npc.list[i];
+            if (self.map == localnpc.map && self.getDistance(localnpc) < 512) {
+                var x = self.x+x;
+                var y = self.y+y;
+                var left = localnpc.x-localnpc.width/2;
+                var right = localnpc.x+localnpc.width/2;
+                var top = localnpc.y-localnpc.height/2;
+                var bottom = localnpc.y+localnpc.height/2;
+                if (x >= left && x <= right && y >= top && y <= bottom) {
+                    try {
+                        localnpc.rightClickEvent(self, localnpc);
+                    } catch (err) {
+                        error(err);
+                    }
+                    return;
                 }
             }
         }

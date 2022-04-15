@@ -1,6 +1,6 @@
 // Copyright (C) 2022 Radioactive64
 
-const version = 'v0.10.0-B01';
+const version = 'v0.10.0';
 var firstload = false;
 // canvas
 CTXRAW = document.getElementById('ctx');
@@ -56,6 +56,7 @@ settings = {
 };
 controllerSettings = {
     sensitivity: 100,
+    quadraticSensitivity: true,
     driftX: 0,
     driftY: 0
 };

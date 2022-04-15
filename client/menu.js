@@ -567,6 +567,13 @@ function updateControllerSetting(setting) {
         case 'sensitivity':
             indicatorText += '%';
             break;
+        case 'quadraticSensitivity':
+            if (controllerSettings.quadraticSensitivity) {
+                indicatorText = 'on';
+            } else {
+                indicatorText = 'off';
+            }
+            break;
         case 'driftX':
             indicatorText += '%';
             break;
