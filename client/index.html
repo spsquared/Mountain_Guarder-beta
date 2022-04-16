@@ -1012,7 +1012,7 @@
             </div>
         </div>
         <div id="gameContainer">
-            <canvas id="ctx"></canvas>
+            <canvas id="canvas"></canvas>
             <img id="crossHair" src="./client/img/assets/crosshair.png" class="noSelect">
             <div id="bossBars" class="noSelect"></div>
             <div id="regionName" class="ui-lighttext ui-block noSelect"></div>
@@ -1092,23 +1092,18 @@
                             </svg>
                         </span>
                     </div>
-                    <div class="window-body">
-                        <div id="inventoryItemsBlock">
-                            <div>Items</div>
-                            <div id="inventoryItemsBody" class="ui-block"></div>
-                        </div>
+                    <div id="inventoryItems" class="window-body">
+                        <div>Items</div>
+                        <div id="inventoryItemsBody" class="ui-block inventory-body"></div>
                     </div>
-                    <div id="inventoryEquips" class="window-body">
-                        <div id="inventoryEquipsBlock">
-                            <div>Equips</div>
-                            <div id="inventoryEquipsBody" class="ui-block"></div>
-                        </div>
+                    <div id="inventoryEquips" class="window-body inventory-right">
+                        <div>Equips</div>
+                        <div id="inventoryEquipsBody" class="ui-block inventory-body"></div>
                     </div>
-                    <div id="inventoryCrafting" class="window-body">
-                        <div id="inventoryCraftingBlock">
-                            <div>Crafting</div>
-                            <div id="inventoryCraftingBody" class="ui-block"></div>
-                        </div>
+                    <div id="inventoryCrafting" class="window-body inventory-right">
+                        <div>Crafting</div>
+                        <div id="inventoryCraftingBody" class="ui-block inventory-body"></div>
+                    </div>
                     </div>
                     <div id="inventorySelect" class="window-select">
                         <button id="inventoryEquipsSelect" class="window-select-button ui-lightbutton">Equips</button>

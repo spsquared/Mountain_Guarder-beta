@@ -161,8 +161,8 @@ function drawFrame() {
         CTX.clearRect(0, 0, window.innerWidth, window.innerHeight);
         OFFSETX = 0;
         OFFSETY = 0;
-        if (MAPS[player.map].width*64 > window.innerWidth) OFFSETX = -Math.max((window.innerWidth/2) - (player.x - MAPS[player.map].offsetX), Math.min((MAPS[player.map].offsetX + (MAPS[player.map].width*64)) - player.x - (window.innerWidth/2), 0));
-        if (MAPS[player.map].height*64 > window.innerHeight) OFFSETY = -Math.max((window.innerHeight/2) - (player.y - MAPS[player.map].offsetY), Math.min((MAPS[player.map].offsetY + (MAPS[player.map].height*64)) - player.y - (window.innerHeight/2), 0));
+        if (MAPS[player.map].width*64 > window.innerWidth) OFFSETX = -Math.max((window.innerWidth/2)-(player.x-MAPS[player.map].offsetX), Math.min((MAPS[player.map].offsetX+(MAPS[player.map].width*64))-player.x-(window.innerWidth/2), 0));
+        if (MAPS[player.map].height*64 > window.innerHeight) OFFSETY = -Math.max((window.innerHeight/2)-(player.y-MAPS[player.map].offsetY), Math.min((MAPS[player.map].offsetY+(MAPS[player.map].height*64))-player.y-(window.innerHeight/2), 0));
         OFFSETX += lsdX;
         OFFSETY += lsdY;
         updateCameraShake();
@@ -196,45 +196,41 @@ function drawMap() {
             resetCanvas(LAYERS.mapvariables[i]);
         }
     }
-    if (lastmap != player.map) {
-        for (var i in MAPS) {
-            for (var j in MAPS[i].chunks) {
-                delete MAPS[i].chunks[j];
-            }
-        }
-        lastmap = player.map;
-    }
     LAYERS.mlower.clearRect(0, 0, window.innerWidth, window.innerHeight);
     LAYERS.mupper.clearRect(0, 0, window.innerWidth, window.innerHeight);
     for (var i in LAYERS.mvariables) {
         LAYERS.mvariables[i].clearRect(0, 0, window.innerWidth, window.innerHeight);
     }
+    var translatex = (window.innerWidth/2)-player.x;
+    var translatey = (window.innerHeight/2)-player.y;
     LAYERS.mlower.save();
-    LAYERS.mlower.translate((window.innerWidth/2)-player.x,(window.innerHeight/2)-player.y);
+    LAYERS.mlower.translate(translatex, translatey);
     LAYERS.mupper.save();
-    LAYERS.mupper.translate((window.innerWidth/2)-player.x,(window.innerHeight/2)-player.y);
+    LAYERS.mupper.translate(translatex, translatey);
     for (var i in LAYERS.mvariables) {
         LAYERS.mvariables[i].save();
-        LAYERS.mvariables[i].translate((window.innerWidth/2)-player.x,(window.innerHeight/2)-player.y);
+        LAYERS.mvariables[i].translate(translatex, translatey);
     }
+    var width = MAPS[player.map].chunkwidth*64;
+    var height = MAPS[player.map].chunkheight*64;
     for (var y in MAPS[player.map].chunks) {
         for (var x in MAPS[player.map].chunks[y]) {
-            LAYERS.mlower.drawImage(MAPS[player.map].chunks[y][x].lower, (x*MAPS[player.map].chunkwidth*64)+OFFSETX, (y*MAPS[player.map].chunkheight*64)+OFFSETY, MAPS[player.map].chunkwidth*64, MAPS[player.map].chunkheight*64);
-            LAYERS.mupper.drawImage(MAPS[player.map].chunks[y][x].upper, (x*MAPS[player.map].chunkwidth*64)+OFFSETX, (y*MAPS[player.map].chunkheight*64)+OFFSETY, MAPS[player.map].chunkwidth*64, MAPS[player.map].chunkheight*64);
+            LAYERS.mlower.drawImage(MAPS[player.map].chunks[y][x].lower, (x*width)+OFFSETX, (y*height)+OFFSETY, width, height);
+            LAYERS.mupper.drawImage(MAPS[player.map].chunks[y][x].upper, (x*width)+OFFSETX, (y*height)+OFFSETY, width, height);
             for (var z in MAPS[player.map].chunks[y][x].variables) {
-                LAYERS.mvariables[z].drawImage(MAPS[player.map].chunks[y][x].variables[z], (x*MAPS[player.map].chunkwidth*64)+OFFSETX, (y*MAPS[player.map].chunkheight*64)+OFFSETY, MAPS[player.map].chunkwidth*64, MAPS[player.map].chunkheight*64);
+                LAYERS.mvariables[z].drawImage(MAPS[player.map].chunks[y][x].variables[z], (x*width)+OFFSETX, (y*height)+OFFSETY, width, height);
             }
         }
     }
     LAYERS.mupper.fillStyle = '#000000';
-    var width = MAPS[player.map].width*64;
-    var height = MAPS[player.map].height*64;
+    var mwidth = MAPS[player.map].width*64;
+    var mheight = MAPS[player.map].height*64;
     var offsetX = MAPS[player.map].offsetX;
     var offsetY = MAPS[player.map].offsetY;
-    LAYERS.mupper.fillRect(-1024+offsetX+OFFSETX, -1024+offsetY+OFFSETY, width+2048, 1024);
-    LAYERS.mupper.fillRect(-1024+offsetX+OFFSETX, height+offsetY+OFFSETY, width+2048, 1024);
-    LAYERS.mupper.fillRect(-1024+offsetX+OFFSETX, -1024+offsetY+OFFSETY, 1024, height+2048);
-    LAYERS.mupper.fillRect(width+offsetX+OFFSETX, offsetY+OFFSETY, 1024, height+2048);
+    LAYERS.mupper.fillRect(-1024+offsetX+OFFSETX, -1024+offsetY+OFFSETY, mwidth+2048, 1024);
+    LAYERS.mupper.fillRect(-1024+offsetX+OFFSETX, mheight+offsetY+OFFSETY, mwidth+2048, 1024);
+    LAYERS.mupper.fillRect(-1024+offsetX+OFFSETX, -1024+offsetY+OFFSETY, 1024, mheight+2048);
+    LAYERS.mupper.fillRect(mwidth+offsetX+OFFSETX, offsetY+OFFSETY, 1024, mheight+2048);
     LAYERS.mlower.restore();
     LAYERS.mupper.restore();
     for (var i in LAYERS.mvariables) {
@@ -568,6 +564,7 @@ socket.on('updateTick', function(data) {
     if (loaded) {
         Entity.update(data);
         player = Player.list[playerid];
+        if (lastmap != player.map) MAPS[player.map].chunks.length = 0;
         updateRenderedChunks();
         if (settings.useController) sendControllers();
     }

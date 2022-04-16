@@ -550,10 +550,10 @@ const updateTicks = setInterval(function() {
             if (consecutiveTimeouts > 5) {
                 insertChat('[!] Internal server error! Resetting server... [!]', 'error');
                 error('Internal server error! Resetting server...');
-                Monster.list.length = 0;
-                Projectile.list.length = 0;
-                DroppedItem.list.length = 0;
-                Particle.list.length = 0;
+                Monster.list = [];
+                Projectile.list = [];
+                DroppedItem.list = [];
+                Particle.list = [];
                 resetMaps();
             }
             if (consecutiveTimeouts > 4) {

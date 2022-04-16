@@ -3,14 +3,14 @@
 const version = 'v0.10.0';
 var firstload = false;
 // canvas
-CTXRAW = document.getElementById('ctx');
+CTXRAW = document.getElementById('canvas');
 CTX = CTXRAW.getContext('2d');
 MAPS = [];
 NO_OFFSCREENCANVAS = false;
 if (typeof OffscreenCanvas == 'undefined') NO_OFFSCREENCANVAS = true;
 function createCanvas(w, h) {
     if (NO_OFFSCREENCANVAS) {
-        var canvas = document.createElement('canvas');
+        const canvas = document.createElement('canvas');
         canvas.width = w || 1;
         canvas.height = h || 1;
         return canvas;
@@ -149,7 +149,7 @@ function preventDefaults(id) {
     element.addEventListener('dblclick', function(e) {e.preventDefault()});
     element.addEventListener('dragstart', function(e) {e.preventDefault()});
 };
-preventDefaults('ctx');
+preventDefaults('canvas');
 preventDefaults('fade');
 preventDefaults('deathScreen');
 preventDefaults('regionName');
@@ -268,7 +268,7 @@ setInterval(function() {
     });
 });
 
-// important sleep function
+// utility
 function sleep(ms) {
     return new Promise(function(resolve, reject) {setTimeout(resolve, ms)});
 };

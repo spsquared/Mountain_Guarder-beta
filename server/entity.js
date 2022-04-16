@@ -508,7 +508,7 @@ Rig = function() {
                 if (self.ai.entityTarget) self.ai.pathtoEntity();
                 else if (self.ai.posTarget.x) self.ai.pathtoPos();
                 else if (self.ai.idleMove != 'none') self.ai.pathIdle();
-                else self.ai.path.length = 0;
+                else self.ai.path = [];
             }
             self.controls = {
                 up: false,
@@ -877,7 +877,7 @@ Rig = function() {
     };
     self.ai.pathtoEntity = function() {
         if (self.ai.entityTarget) {
-            self.ai.path.length = 0;
+            self.ai.path = [];
             try {
                 var x = self.x;
                 var y = self.y;
@@ -1016,7 +1016,7 @@ Rig = function() {
     };
     self.ai.pathtoPos = function() {
         if (self.ai.posTarget) {
-            self.ai.path.length = 0;
+            self.ai.path = [];
             try {
                 if (self.getSquareGridDistance(self.ai.posTarget) < self.ai.maxRange) {
                     var offsetx = self.gridx-self.ai.maxRange-1;
@@ -1051,7 +1051,7 @@ Rig = function() {
         return self.ai.path;
     };
     self.ai.pathIdle = function() {
-        // self.ai.path.length = 0;
+        // self.ai.path = [];
         if (self.ai.idleMove == 'waypoints') {
             try {
                 if (self.ai.idleWaypoints.lastPathEnd >= seconds(self.ai.idleWaypoints.waitTime)*Math.random()) {
@@ -1105,7 +1105,7 @@ Rig = function() {
                 if (self.x == self.ai.idleWaypoints.pos.x*64+32 && self.y == self.ai.idleWaypoints.pos.y*64+32) self.ai.idleWaypoints.walking = false;
                 if (!self.ai.idleWaypoints.walking) {
                     self.ai.idleWaypoints.lastPathEnd += seconds(0.1);
-                    self.ai.path.length = 0;
+                    self.ai.path = [];
                 }
             } catch (err) {
                 error(err);
@@ -1149,7 +1149,7 @@ Rig = function() {
                 if (self.gridx == self.ai.idleWaypoints.pos.x && self.gridy == self.ai.idleWaypoints.pos.y) self.ai.idleRandom.walking = false;
                 if (!self.ai.idleRandom.walking) {
                     self.ai.idleRandom.lastPathEnd += seconds(0.1);
-                    self.ai.path.length = 0;
+                    self.ai.path = [];
                 }
             } catch (err) {
                 error(err);
@@ -1248,7 +1248,7 @@ Rig = function() {
             self.x = x*64+32;
             self.y = y*64+32;
             self.layer = layer;
-            self.ai.path.length = 0;
+            self.ai.path = [];
             self.ai.entityTarget = null;
             self.ai.posTarget = {
                 x: null,
@@ -1256,7 +1256,7 @@ Rig = function() {
             };
             self.ai.idleRandom.walking = false;
             self.ai.idleWaypoints.walking = false;
-            self.ai.idleWaypoints.lastWaypoints.length = 0;
+            self.ai.idleWaypoints.lastWaypoints = [];
             for (var i = 0; i < 20; i++) {
                 new Particle(self.map, self.x, self.y, self.layer, 'teleport');
             }
@@ -2406,7 +2406,7 @@ Monster = function(type, x, y, map, layer) {
         self.ai.lastPath++;
         if (self.ai.lastPath >= seconds(0.1)) {
             self.ai.lastPath = 0;
-            self.ai.path.length = 0;
+            self.ai.path = [];
             if (self.ai.inNomonsterRegion) {
                 var closest = {
                     x: null,
@@ -2514,7 +2514,7 @@ Monster = function(type, x, y, map, layer) {
             } else if (self.ai.idleMove != 'none') {
                 self.ai.pathIdle();
             } else {
-                self.ai.path.length = 0;
+                self.ai.path = [];
             }
         }
         self.xspeed = Math.round(self.xmove+self.xknockback);
@@ -2842,7 +2842,7 @@ Monster = function(type, x, y, map, layer) {
             self.ai.inNomonsterRegion = true;
             self.ai.entityTarget = null;
             self.ai.posTarget = null;
-            self.ai.path.length = 0;
+            self.ai.path = [];
         } else {
             self.ai.inNomonsterRegion = false;
         }

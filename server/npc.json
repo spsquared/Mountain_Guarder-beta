@@ -26,5 +26,19 @@
                 "pantsColor": "#000000"
             }
         }
+    },
+    "adicyte": {
+        "type": "static",
+        "rightClickEvent": "function(player, self) {};",
+        "data": {
+            "name": "Adicyte",
+            "characterStyle": {
+                "hair": 1,
+                "hairColor": "#000000",
+                "bodyColor": "#FFF0B4",
+                "shirtColor": "#FFAE00",
+                "pantsColor": "#005A9E"
+            }
+        }
     }
 }

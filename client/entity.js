@@ -81,15 +81,17 @@ Entity.draw = function() {
     for (var i in DroppedItem.list) {
         if (DroppedItem.list[i].map == player.map) entities.push(DroppedItem.list[i]);
     }
+    var translatex = (window.innerWidth/2)-player.x;
+    var translatey = (window.innerHeight/2)-player.y;
     LAYERS.eupper.clearRect(0, 0, window.innerWidth, window.innerHeight);
     for (var i in LAYERS.elayers) {
         LAYERS.elayers[i].clearRect(0, 0, window.innerWidth, window.innerHeight);
     }
     LAYERS.eupper.save();
-    LAYERS.eupper.translate((window.innerWidth/2)-player.x,(window.innerHeight/2)-player.y);
+    LAYERS.eupper.translate(translatex, translatey);
     for (var i in LAYERS.elayers) {
         LAYERS.elayers[i].save();
-        LAYERS.elayers[i].translate((window.innerWidth/2)-player.x,(window.innerHeight/2)-player.y);
+        LAYERS.elayers[i].translate(translatex, translatey);
     }
     entities = entities.sort(function(a, b) {return a.y - b.y;});
     for (var i in entities) {
@@ -625,7 +627,6 @@ Particle = function(map, x, y, layer, type, value) {
                 self.opacity -= 2;
                 break;
             default:
-                console.error('invalid particle type ' + self.type);
                 delete Particle.list[self.id];
                 break;
         }

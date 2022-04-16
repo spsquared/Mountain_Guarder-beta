@@ -361,32 +361,27 @@ Inventory.generateEffects = function(item) {
     if (str == '') str = '<br><span style="font-size: 12px;">No Effects</span>';
     return str;
 };
-document.addEventListener('mousedown', function(e) {
+document.addEventListener('click', function(e) {
     if (loaded) {
         if (e.button == 0) {
-            for (var i in Inventory.items) {
-                if (Inventory.items[i].mousedOver) {
-                    dragDiv.style.left = e.clientX-32 + 'px';
-                    dragDiv.style.top = e.clientY-32 + 'px';
-                    if (Inventory.items[i].item) Inventory.startDrag(Inventory.items[i].slotId);
-                    return;
+            if (Inventory.currentDrag == null) {
+                for (var i in Inventory.items) {
+                    if (Inventory.items[i].mousedOver) {
+                        dragDiv.style.left = e.clientX-32 + 'px';
+                        dragDiv.style.top = e.clientY-32 + 'px';
+                        if (Inventory.items[i].item) Inventory.startDrag(Inventory.items[i].slotId);
+                        return;
+                    }
                 }
-            }
-            for (var i in Inventory.equips) {
-                if (Inventory.equips[i].mousedOver) {
-                    dragDiv.style.left = e.clientX-32 + 'px';
-                    dragDiv.style.top = e.clientY-32 + 'px';
-                    if (Inventory.equips[i].item) Inventory.startDrag(Inventory.equips[i].slotId);
-                    return;
+                for (var i in Inventory.equips) {
+                    if (Inventory.equips[i].mousedOver) {
+                        dragDiv.style.left = e.clientX-32 + 'px';
+                        dragDiv.style.top = e.clientY-32 + 'px';
+                        if (Inventory.equips[i].item) Inventory.startDrag(Inventory.equips[i].slotId);
+                        return;
+                    }
                 }
-            }
-        }
-    }
-});
-document.addEventListener('mouseup', function(e) {
-    if (loaded) {
-        if (e.button == 0) {
-            if (Inventory.currentDrag != null) {
+            } else {
                 if (document.getElementById('inventory').contains(e.target)) {
                     for (var i in Inventory.items) {
                         if (Inventory.items[i].mousedOver) {
