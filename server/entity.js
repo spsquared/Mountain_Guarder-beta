@@ -31,13 +31,13 @@ Entity = function() {
     self.id = Math.random();
     self.collisionBoxSize = Math.max(self.width, self.height);
 
-    self.update = function() {
+    self.update = function update() {
         self.updatePos();
     };
-    self.updatePos = function() {
+    self.updatePos = function updatePos() {
         self.collide();
     };
-    self.collide = function() {
+    self.collide = function collide() {
         try {
             if (self.xspeed != 0 || self.yspeed != 0) {
                 self.lastx = self.x;
@@ -113,7 +113,7 @@ Entity = function() {
             error(err);
         }
     };
-    self.checkCollisionLine = function(x1, y1, x2, y2) {
+    self.checkCollisionLine = function checkCollisionLine(x1, y1, x2, y2) {
         if (x1-x2 != 0) {
             for (var x = Math.floor(Math.min(x1, x2)/64); x <= Math.floor(Math.max(x1, x2)/64); x++) {
                 var y = Math.floor(((y2-y1)/(x2-x1)*(x*64)+y1)/64);
@@ -127,7 +127,7 @@ Entity = function() {
         }
         return false;
     };
-    self.checkSpannedCollision = function() {
+    self.checkSpannedCollision = function checkSpannedCollision() {
         var x = self.x;
         var y = self.y;
         var width = self.width;
@@ -149,7 +149,7 @@ Entity = function() {
         self.gridy = Math.floor(self.y/64);
         return colliding;
     };
-    self.checkLargeSpannedCollision = function() {
+    self.checkLargeSpannedCollision = function checkLargeSpannedCollision() {
         var colliding = false;
         if (self.checkPointCollision()) colliding = true;
         if (self.checkCollisionLine(self.lastx-self.width/2, self.lasty-self.height/2, self.x-self.width/2, self.y-self.height/2)) colliding = true;
@@ -159,7 +159,7 @@ Entity = function() {
         if (self.checkCollisionLine(self.lastx, self.lasty, self.x, self.y)) colliding = true;
         return colliding;
     };
-    self.checkPointCollision = function() {
+    self.checkPointCollision = function checkPointCollision() {
         var collisions = [];
         var range = Math.ceil(self.collisionBoxSize/128);
         for (var x = self.gridx-range; x <= self.gridx+range; x++) {
@@ -174,7 +174,7 @@ Entity = function() {
         }
         return false;
     };
-    self.doPointCollision = function() {
+    self.doPointCollision = function doPointCollision() {
         var collisions = [];
         var range = Math.ceil(self.collisionBoxSize/128);
         for (var x = self.gridx-range; x <= self.gridx+range; x++) {
@@ -226,7 +226,7 @@ Entity = function() {
         }
         return colliding;
     };
-    self.checkLayer = function() {
+    self.checkLayer = function checkLayer() {
         var collisions = [];
         var range = Math.ceil(self.collisionBoxSize/128);
         for (var x = self.gridx-range; x <= self.gridx+range; x++) {
@@ -244,7 +244,7 @@ Entity = function() {
             self.layer += dir;
         }
     };
-    self.checkSlowdown = function() {
+    self.checkSlowdown = function checkSlowdown() {
         var collisions = [];
             for (var y = self.gridy-1; y <= self.gridy+1; y++) {
                 for (var x = self.gridx-1; x <= self.gridx+1; x++) {
@@ -259,7 +259,7 @@ Entity = function() {
         }
         self.slowedDown = colliding;
     };
-    self.collideWith = function(entity) {
+    self.collideWith = function collideWith(entity) {
         if (self.getSquareDistance(entity) <= self.collisionBoxSize/2 + entity.collisionBoxSize/2) {
             var bound1left = self.x-(self.width/2);
             var bound1right = self.x+(self.width/2);
@@ -275,27 +275,27 @@ Entity = function() {
         }
         return false;
     };
-    self.getDistance = function(entity) {
+    self.getDistance = function getDistance(entity) {
         return Math.sqrt(Math.pow(self.x-entity.x, 2) + Math.pow(self.y-entity.y, 2));
     };
-    self.getSquareDistance = function(entity) {
+    self.getSquareDistance = function getSquareDistance(entity) {
         return Math.max(Math.abs(self.x-entity.x), Math.abs(self.y-entity.y));
     };
-    self.getGridDistance = function(entity) {
+    self.getGridDistance = function getGridDistance(entity) {
         if (entity.gridx != null) {
             return Math.sqrt(Math.pow(self.gridx-entity.gridx, 2) + Math.pow(self.gridy-entity.gridy, 2));
         } else {
             return Math.sqrt(Math.pow(self.gridx-entity.x, 2) + Math.pow(self.gridy-entity.y, 2));
         }
     };
-    self.getSquareGridDistance = function(entity) {
+    self.getSquareGridDistance = function getSquareGridDistance(entity) {
         if (entity.gridx != null) {
             return Math.max(Math.abs(self.gridx-entity.gridx), Math.abs(self.gridy-entity.gridy));
         } else {
             return Math.max(Math.abs(self.gridx-entity.x), Math.abs(self.gridy-entity.y));
         }
     };
-    self.rayCast = function(x, y) {
+    self.rayCast = function rayCast(x, y) {
         try {
             var ray = {
                 x: self.x,
@@ -323,7 +323,7 @@ Entity = function() {
 
     return self;
 };
-Entity.update = function() {
+Entity.update = function update() {
     var pack1 = Player.update();
     var pack2 = Monster.update();
     var pack3 = Projectile.update();
@@ -346,7 +346,7 @@ Entity.update = function() {
 
     return pack;
 };
-Entity.getDebugData = function() {
+Entity.getDebugData = function getDebugData() {
     var pack1 = Player.getDebugData();
     var pack2 = Monster.getDebugData();
     var pack3 = Projectile.getDebugData();
@@ -472,7 +472,7 @@ Rig = function() {
     };
     self.collisionBoxSize = Math.max(self.width, self.height);
 
-    self.update = function() {
+    self.update = function update() {
         self.updatePos();
         self.lastAutoHeal++;
         self.lastHeal++;
@@ -500,7 +500,7 @@ Rig = function() {
         }
         self.updateAnimation();
     };
-    self.updatePos = function() {
+    self.updatePos = function updatePos() {
         if (self.aiControlled) {
             self.ai.lastPath++;
             if (self.ai.lastPath >= seconds(0.1)) {
@@ -596,7 +596,7 @@ Rig = function() {
             }
         }
     };
-    self.collide = function() {
+    self.collide = function collide() {
         try {
             if (self.xspeed != 0 || self.yspeed != 0 || self.aiControlled) {
                 self.lastx = self.x;
@@ -747,7 +747,7 @@ Rig = function() {
             error(err);
         }
     };
-    self.aiControl = function() {
+    self.aiControl = function aiControl() {
         var oldcontrols = self.controls;
         self.controls = {
             up: false,
@@ -791,7 +791,7 @@ Rig = function() {
         }
         return false;
     };
-    self.updateAnimation = function() {
+    self.updateAnimation = function updateAnimation() {
         self.lastFrameUpdate++;
         if (self.animationDirection == 'none') {
             self.animationStage = 0;
@@ -875,7 +875,7 @@ Rig = function() {
             }
         }
     };
-    self.ai.pathtoEntity = function() {
+    self.ai.pathtoEntity = function pathtoEntity() {
         if (self.ai.entityTarget) {
             self.ai.path = [];
             try {
@@ -1014,7 +1014,7 @@ Rig = function() {
         }
         return self.ai.path;
     };
-    self.ai.pathtoPos = function() {
+    self.ai.pathtoPos = function pathtoPos() {
         if (self.ai.posTarget) {
             self.ai.path = [];
             try {
@@ -1050,7 +1050,7 @@ Rig = function() {
         }
         return self.ai.path;
     };
-    self.ai.pathIdle = function() {
+    self.ai.pathIdle = function pathIdle() {
         // self.ai.path = [];
         if (self.ai.idleMove == 'waypoints') {
             try {
@@ -1157,7 +1157,7 @@ Rig = function() {
         }
         return self.ai.path;
     };
-    self.onHit = function(entity, type) {
+    self.onHit = function onHit(entity, type) {
         var oldhp = self.hp;
         var critHp = 0;
         var parent;
@@ -1195,7 +1195,7 @@ Rig = function() {
         else new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
         if (parent) if (parent.entType == 'player') parent.trackedData.damageDealt += oldhp-self.hp;
     };
-    self.onDeath = function(entity, type) {
+    self.onDeath = function onDeath(entity, type) {
         if (!self.invincible) {
             var oldhp = self.hp;
             self.hp = 0;
@@ -1237,8 +1237,8 @@ Rig = function() {
             if (entity) if (entity.entType == 'player') entity.trackedData.damageDealt += oldhp-self.hp;
         }
     };
-    self.onRegionChange = function() {};
-    self.teleport = function(map, x, y, layer) {
+    self.onRegionChange = function onRegionChange() {};
+    self.teleport = function teleport(map, x, y, layer) {
         if (!self.teleporting) {
             self.teleporting = true;
             for (var i = 0; i < 20; i++) {
@@ -1320,17 +1320,17 @@ Npc = function(id, x, y, map) {
     self.aiControlled = true;
     self.collisionBoxSize = Math.max(self.width, self.height);
 
-    self.update = function() {
+    self.update = function update() {
         self.updatePos();
         self.animationSpeed = 15/Math.sqrt(self.xmove**2+self.ymove**2)*100 || 100;
         self.updateAnimation();
     };
-    self.onDeath = function() {};
+    self.onDeath = function onDeath() {};
 
     Npc.list[self.id] = self;
     return self;
 };
-Npc.update = function() {
+Npc.update = function update() {
     var pack = [];
     for (var i in Npc.list) {
         localnpc = Npc.list[i];
@@ -1351,7 +1351,7 @@ Npc.update = function() {
     
     return pack;
 };
-Npc.getDebugData = function() {
+Npc.getDebugData = function getDebugData() {
     var pack = [];
     for (var i in Npc.list) {
         var localnpc = Npc.list[i];
@@ -1833,7 +1833,7 @@ Player = function(socket) {
         }
     }, 1000);
 
-    self.update = function() {
+    self.update = function update() {
         if (self.canMove) self.updatePos();
         self.lastAttack++;
         if (self.attacking && !self.region.noattack && self.lastAttack > self.attack.useTime && self.attack.projectile != null && self.mana >= self.attack.manaCost && self.alive) {
@@ -1944,7 +1944,7 @@ Player = function(socket) {
         self.trackedData.updateTrackers();
         if (self.gridx == 3 && self.gridy == 9 && self.map == 'World' && self.alive) self.onDeath(self, 'fire');
     };
-    self.updateClient = function() {
+    self.updateClient = function updateClient() {
         var pack = {
             id: self.id,
             hp: self.hp,
@@ -1957,10 +1957,10 @@ Player = function(socket) {
         socket.emit('updateSelf', pack);
         self.quests.updateClient();
     };
-    self.onRegionChange = function() {
+    self.onRegionChange = function onRegionChange() {
         socket.emit('region', self.region.name);
     };
-    self.teleport = function(map, x, y, layer) {
+    self.teleport = function teleport(map, x, y, layer) {
         if (!self.teleporting) {
             self.teleporting = true;
             self.teleportLocation.map = map;
@@ -1987,13 +1987,13 @@ Player = function(socket) {
         }
     });
     const onHit = self.onHit;
-    self.onHit = function(entity, type) {
+    self.onHit = function onHit(entity, type) {
         var oldhp = self.hp;
         onHit(entity, type);
         self.trackedData.damageTaken += oldhp-self.hp;
     };
     const onDeath = self.onDeath;
-    self.onDeath = function(entity, type) {
+    self.onDeath = function onDeath(entity, type) {
         onDeath(entity, type);
         self.quests.failQuests('death');
         if (!self.invincible) {
@@ -2013,7 +2013,7 @@ Player = function(socket) {
             self.trackedData.deaths++;
         }
     };
-    self.respawn = function() {
+    self.respawn = function respawn() {
         self.hp = self.maxHP;
         self.alive = true;
     };
@@ -2025,7 +2025,7 @@ Player = function(socket) {
             socket.onevent = function(packet) {};
         } else self.respawn();
     });
-    self.updateStats = function() {
+    self.updateStats = function updateStats() {
         self.stats = {
             damageType: null,
             projectileSpeed: 1,
@@ -2111,7 +2111,7 @@ Player = function(socket) {
             }
         }
     };
-    self.interact = function(x, y) {
+    self.interact = function interact(x, y) {
         for (var i in DroppedItem.list) {
             var localdroppeditem = DroppedItem.list[i];
             if (self.map == localdroppeditem.map && self.getDistance(localdroppeditem) < 512) {
@@ -2154,7 +2154,7 @@ Player = function(socket) {
             }
         }
     };
-    self.prompt = function(id) {
+    self.prompt = function prompt(id) {
         self.attacking = false;
         self.canMove = false;
         self.invincible = true;
@@ -2169,6 +2169,7 @@ Player = function(socket) {
             y: 0,
             heal: false
         };
+        self.animationDirection = 'facing';
         socket.emit('prompt', id);
         self.currentConversation = id;
     };
@@ -2201,7 +2202,7 @@ Player = function(socket) {
             }
         }
     });
-    self.saveData = async function() {
+    self.saveData = async function saveData() {
         var trackedData = JSON.parse(JSON.stringify(self.trackedData));
         var progress = {
             inventory: self.inventory.getSaveData(),
@@ -2217,7 +2218,7 @@ Player = function(socket) {
         var data = JSON.stringify(progress);
         await ACCOUNTS.saveProgress(self.creds.username, self.creds.password, data);
     };
-    self.loadData = async function() {
+    self.loadData = async function loadData() {
         var data = await ACCOUNTS.loadProgress(self.creds.username, self.creds.password);
         var progress = JSON.parse(data);
         if (progress) {
@@ -2271,7 +2272,7 @@ Player = function(socket) {
             self.inventory.addItem('simplewoodenbow');
         }
     };
-    self.socketKick = function() { 
+    self.socketKick = function socketKick() { 
         if (self.name) insertChat(self.name + ' was kicked for socket.emit', 'anticheat');
         socket.emit('disconnected');
         socket.onevent = function(packet) {};
@@ -2282,7 +2283,7 @@ Player = function(socket) {
     Player.list[self.id] = self;
     return self;
 };
-Player.update = function() {
+Player.update = function update() {
     var pack = [];
     for (var i in Player.list) {
         var localplayer = Player.list[i];
@@ -2307,7 +2308,7 @@ Player.update = function() {
 
     return pack;
 };
-Player.getDebugData = function() {
+Player.getDebugData = function getDebugData() {
     var pack = [];
     for (var i in Player.list) {
         var localplayer = Player.list[i];
@@ -2380,7 +2381,7 @@ Monster = function(type, x, y, map, layer) {
     self.collisionBoxSize = Math.max(self.width, self.height);
     self.active = false;
 
-    self.update = function() {
+    self.update = function update() {
         self.active = false;
         for (var i in Player.list) {
             if (Player.list[i].map == self.map && self.getSquareGridDistance(Player.list[i]) < 48) {
@@ -2402,7 +2403,7 @@ Monster = function(type, x, y, map, layer) {
             self.updateAnimation();
         }
     };
-    self.updatePos = function() {
+    self.updatePos = function updatePos() {
         self.ai.lastPath++;
         if (self.ai.lastPath >= seconds(0.1)) {
             self.ai.lastPath = 0;
@@ -2539,7 +2540,7 @@ Monster = function(type, x, y, map, layer) {
             self.onRegionChange();
         }
     };
-    self.updateAggro = function() {
+    self.updateAggro = function updateAggro() {
         self.ai.lastTracked++;
         if (self.targetMonsters) {
             var lowest;
@@ -2579,7 +2580,7 @@ Monster = function(type, x, y, map, layer) {
             if (self.ai.entityTarget) if (!self.ai.entityTarget.alive) self.ai.entityTarget = null;
         }
     };
-    self.attack = function() {
+    self.attack = function attack() {
         self.ai.lastAttack++;
         switch (self.ai.attackType) {
             case 'triggeredcherrybomb':
@@ -2589,7 +2590,7 @@ Monster = function(type, x, y, map, layer) {
                     self.alive = false;
                     self.animationStage = 0;
                     self.animationLength = 10;
-                    self.onDeath = function() {};
+                    self.onDeath = function onDeath() {};
                 }
                 self.ai.attackTime++;
                 if (self.ai.attackTime >= seconds(0.2)) {
@@ -2696,7 +2697,7 @@ Monster = function(type, x, y, map, layer) {
             }
         }
     };
-    self.onHit = function(entity, type) {
+    self.onHit = function onHit(entity, type) {
         var oldhp = self.hp;
         var critHp = 0;
         var parent;
@@ -2736,7 +2737,7 @@ Monster = function(type, x, y, map, layer) {
         if (self.hp < self.ai.fleeThreshold) self.ai.fleeing = true;
         if (parent) if (parent.entType == 'player') parent.trackedData.damageDealt += oldhp-self.hp;
     };
-    self.onDeath = function(entity, type) {
+    self.onDeath = function onDeath(entity, type) {
         var oldhp = self.hp;
         self.hp = 0;
         self.alive = false;
@@ -2837,7 +2838,7 @@ Monster = function(type, x, y, map, layer) {
         if (entity) if (entity.entType == 'player') entity.trackedData.damageDealt += oldhp-self.hp;
         delete Monster.list[self.id];
     };
-    self.onRegionChange = function() {
+    self.onRegionChange = function onRegionChange() {
         if (self.region.nomonster) {
             self.ai.inNomonsterRegion = true;
             self.ai.entityTarget = null;
@@ -2851,7 +2852,7 @@ Monster = function(type, x, y, map, layer) {
     Monster.list[self.id] = self;
     return self;
 };
-Monster.update = function() {
+Monster.update = function update() {
     var pack = [];
     for (var i in Monster.list) {
         var localmonster = Monster.list[i];
@@ -2873,7 +2874,7 @@ Monster.update = function() {
 
     return pack;
 };
-Monster.getDebugData = function() {
+Monster.getDebugData = function getDebugData() {
     var pack = [];
     for (var i in Monster.list) {
         var localmonster = Monster.list[i];
@@ -2974,7 +2975,7 @@ Projectile = function(type, angle, parentID) {
     self.x += self.cosAngle*self.width/2;
     self.y += self.sinAngle*self.width/2;
 
-    self.update = function() {
+    self.update = function update() {
         if (self.parentIsPlayer) {
             if (Player.list[self.parentID] == null) {
                 delete Projectile.list[self.id];
@@ -3009,12 +3010,12 @@ Projectile = function(type, angle, parentID) {
             delete Projectile.list[self.id];
         }
     };
-    self.updatePos = function() {
+    self.updatePos = function updatePos() {
         self.pattern(self);
         self.collide();
         return self.checkPointCollision() && !self.noCollision;
     };
-    self.checkSpannedCollision = function() {
+    self.checkSpannedCollision = function checkSpannedCollision() {
         var colliding = false;
         var width = self.width;
         var height = self.height
@@ -3032,7 +3033,7 @@ Projectile = function(type, angle, parentID) {
         if (colliding) delete Projectile.list[self.id];
         return false;
     };
-    self.checkLargeSpannedCollision = function() {
+    self.checkLargeSpannedCollision = function checkLargeSpannedCollision() {
         var colliding = false;
         if (self.checkPointCollision()) colliding = true;
         if (self.checkCollisionLine(self.lastvertices[0].x, self.lastvertices[0].y, self.vertices[0].x, self.vertices[0].y)) colliding = true;
@@ -3043,7 +3044,7 @@ Projectile = function(type, angle, parentID) {
         if (colliding) delete Projectile.list[self.id];
         return false;
     }
-    self.checkPointCollision = function() {
+    self.checkPointCollision = function checkPointCollision() {
         var collisions = [];
         var range = Math.ceil(self.collisionBoxSize/128);
         for (var x = self.gridx-range; x <= self.gridx+range; x++) {
@@ -3068,14 +3069,14 @@ Projectile = function(type, angle, parentID) {
         }
         return false;
     };
-    self.doPointCollision = function() {
+    self.doPointCollision = function doPointCollision() {
         var colliding = self.checkPointCollision();
         if (colliding) delete Projectile.list[self.id];
         return colliding;
     };
-    self.checkLayer = function() {};
-    self.checkSlowdown = function() {};
-    self.collideWith = function(entity) {
+    self.checkLayer = function checkLayer() {};
+    self.checkSlowdown = function checkSlowdown() {};
+    self.collideWith = function collideWith(entity) {
         if (entity.map == self.map) {
             if (entity.noProjectile == null || entity.noProjectile == false) {
                 if (self.getSquareDistance(entity) <= self.collisionBoxSize/2 + entity.collisionBoxSize/2) {
@@ -3107,14 +3108,14 @@ Projectile = function(type, angle, parentID) {
             return false;
         }
     };
-    self.getSlope = function(pos1, pos2) {
+    self.getSlope = function getSlope(pos1, pos2) {
         return (pos2.y - pos1.y) / (pos2.x - pos1.x);
     };
 
     Projectile.list[self.id] = self;
     return self;
 };
-Projectile.update = function() {
+Projectile.update = function update() {
     var pack = [];
     for (var i in Projectile.list) {
         localprojectile = Projectile.list[i];
@@ -3134,7 +3135,7 @@ Projectile.update = function() {
 
     return pack;
 };
-Projectile.getDebugData = function() {
+Projectile.getDebugData = function getDebugData() {
     var pack = [];
     for (var i in Projectile.list) {
         localprojectile = Projectile.list[i];
@@ -3294,7 +3295,7 @@ Particle = function(map, x, y, layer, type, value) {
     Particle.list.push(self);
     return self;
 };
-Particle.update = function() {
+Particle.update = function update() {
     var pack = [];
     for (var i in Particle.list) {
         localparticle = Particle.list[i];
@@ -3333,7 +3334,7 @@ DroppedItem = function(map, x, y, itemId, enchantments, stackSize, playerId) {
     if (!valid) self.itemId = 'missing';
     self.time = 0;
 
-    self.update = function() {
+    self.update = function update() {
         self.time++;
         if (self.time >= seconds(ENV.itemDespawnTime*60)) delete DroppedItem.list[self.id];
     };
@@ -3341,7 +3342,7 @@ DroppedItem = function(map, x, y, itemId, enchantments, stackSize, playerId) {
     DroppedItem.list[self.id] = self;
     return self;
 };
-DroppedItem.update = function() {
+DroppedItem.update = function update() {
     var pack = [];
     for (var i in DroppedItem.list) {
         localdroppeditem = DroppedItem.list[i];
@@ -3362,7 +3363,7 @@ DroppedItem.update = function() {
 
     return pack;
 };
-DroppedItem.getDebugData = function() {
+DroppedItem.getDebugData = function getDebugData() {
     var pack = [];
     for (var i in DroppedItem.list) {
         localdroppeditem = DroppedItem.list[i];

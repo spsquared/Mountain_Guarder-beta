@@ -1024,7 +1024,7 @@ var packetTime = 0;
 var serverHeapUsed = 0;
 var serverHeapMax = 0;
 setInterval(function() {
-    if (loaded) {
+    if (loaded && visible) {
         document.getElementById('fps').innerText = 'FPS: ' + fpsCounter;
         document.getElementById('tps').innerText = 'TPS: ' + tpsCounter;
         document.getElementById('ping').innerText = 'Ping: ' + pingCounter + 'ms';

@@ -11,7 +11,7 @@ if (ENV.useDiscordWebhook) {
     token = null;
     debugtoken = null;
     
-    postDiscord = async function(text) {
+    postDiscord = async function postDiscord(text) {
         var time = new Date();
         var minute = '' + time.getUTCMinutes();
         if(minute.length == 1){
@@ -25,7 +25,7 @@ if (ENV.useDiscordWebhook) {
             webhook.send('`[' + time.getUTCHours() + ':' + minute + '] ' + text + '`');
         }
     };
-    postDebugDiscord = async function(code, text) {
+    postDebugDiscord = async function postDebugDiscord(code, text) {
         var time = new Date();
         var minute = '' + time.getUTCMinutes();
         if(minute.length == 1){

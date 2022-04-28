@@ -3,6 +3,8 @@
 const inventoryItems = document.getElementById('inventoryItemsBody');
 const inventoryEquips = document.getElementById('inventoryEquipsBody');
 const dragDiv = document.getElementById('invDrag');
+const dragImg = document.getElementById('invDragImg');
+const dragStackSize = document.getElementById('invDragStackSize');
 const tooltip = document.getElementById('invHoverTooltip');
 
 // inventory structure
@@ -145,46 +147,6 @@ Inventory.enchantSlot = function(slot, enchantments) {
     }
     Inventory.refreshSlot(slot);
 };
-Inventory.startDrag = function(slot) {
-    Inventory.currentDrag = slot;
-    dragDiv.style.display = 'block';
-    document.getElementById('invDragStackSize').innerText = '';
-    if (typeof slot == 'number') {
-        document.getElementById('invDragImg').src = '/client/img/item/' + Inventory.items[slot].item.id + '.png';
-        if (Inventory.items[slot].item.stackSize != 1) document.getElementById('invDragStackSize').innerText = Inventory.items[slot].item.stackSize;
-        Inventory.items[slot].slot.innerHTML = '<img src="/client/img/item/empty.png" class="invSlotImgNoGrab"></img>';
-    } else {
-        document.getElementById('invDragImg').src = '/client/img/item/' + Inventory.equips[slot].item.id + '.png';
-        if (Inventory.equips[slot].item.stackSize != 1) document.getElementById('invDragStackSize').innerText = Inventory.equips[slot].item.stackSize;
-        Inventory.equips[slot].slot.innerHTML = '<img src="/client/img/item/emptySlot' + Inventory.equips[slot].slotId + '.png" class="invSlotImgNoGrab"></img>';
-    }
-};
-Inventory.endDrag = function(slot) {
-    dragDiv.style.display = '';
-    document.getElementById('invDragImg').src = '/client/img/item/empty.png';
-    document.getElementById('invDragStackSize').innerText = '';
-    socket.emit('item', {
-        action: 'drag',
-        data: {
-            slot: Inventory.currentDrag,
-            newSlot: slot
-        }
-    });
-    Inventory.currentDrag = null;
-};
-Inventory.drop = function(amount) {
-    dragDiv.style.display = '';
-    document.getElementById('invDragImg').src = '/client/img/item/empty.png';
-    document.getElementById('invDragStackSize').innerText = '';
-    socket.emit('item', {
-        action: 'drop',
-        data: {
-            slot: Inventory.currentDrag,
-            amount: amount || 1
-        }
-    });
-    Inventory.currentDrag = null;
-};
 Inventory.getRarityColor = function(rarity) {
     var str = '';
     switch (rarity) {
@@ -214,7 +176,7 @@ Inventory.getRarityColor = function(rarity) {
 };
 Inventory.generateEffects = function(item) {
     var str = '';
-    if (typeof item == 'object') {
+    if (typeof item === 'object') {
         if (item.slotType == 'weapon') {
             var damageType = 'Damage';
             switch (item.damageType) {
@@ -363,43 +325,35 @@ Inventory.generateEffects = function(item) {
 };
 document.addEventListener('click', function(e) {
     if (loaded) {
-        if (e.button == 0) {
-            if (Inventory.currentDrag == null) {
+        if (e.button == 0 || e.button == 2) {
+            if (document.getElementById('inventory').contains(e.target)) {
                 for (var i in Inventory.items) {
                     if (Inventory.items[i].mousedOver) {
-                        dragDiv.style.left = e.clientX-32 + 'px';
-                        dragDiv.style.top = e.clientY-32 + 'px';
-                        if (Inventory.items[i].item) Inventory.startDrag(Inventory.items[i].slotId);
+                        if (Inventory.currentDrag) {
+                            if (e.button == 0) Inventory.placeItem(parseInt(i), Inventory.currentDrag.stackSize);
+                            else Inventory.placeItem(parseInt(i), 1);
+                        } else if (Inventory.items[i].item) {
+                            if (e.button == 0) Inventory.takeItem(parseInt(i), Inventory.items[i].item.stackSize);
+                            else Inventory.takeItem(parseInt(i), 1);
+                        }
                         return;
                     }
                 }
                 for (var i in Inventory.equips) {
                     if (Inventory.equips[i].mousedOver) {
-                        dragDiv.style.left = e.clientX-32 + 'px';
-                        dragDiv.style.top = e.clientY-32 + 'px';
-                        if (Inventory.equips[i].item) Inventory.startDrag(Inventory.equips[i].slotId);
+                        if (Inventory.currentDrag) {
+                            if (e.button == 0) Inventory.placeItem(i, Inventory.currentDrag.stackSize);
+                            else Inventory.placeItem(i, 1);
+                        } else if (Inventory.equips[i].item) {
+                            if (e.button == 0) Inventory.takeItem(i, Inventory.equips[i].item.stackSize);
+                            else Inventory.takeItem(i, 1);
+                        }
                         return;
                     }
                 }
-            } else {
-                if (document.getElementById('inventory').contains(e.target)) {
-                    for (var i in Inventory.items) {
-                        if (Inventory.items[i].mousedOver) {
-                            Inventory.endDrag(Inventory.items[i].slotId);
-                            return;
-                        }
-                    }
-                    for (var i in Inventory.equips) {
-                        if (Inventory.equips[i].mousedOver) {
-                            Inventory.endDrag(Inventory.equips[i].slotId);
-                            return;
-                        }
-                    }
-                    Inventory.endDrag(Inventory.currentDrag);
-                } else {
-                    if (typeof Inventory.currentDrag == 'number') Inventory.drop(Inventory.items[Inventory.currentDrag].item.stackSize);
-                    else Inventory.drop(Inventory.equips[Inventory.currentDrag].item.stackSize);
-                }
+            } else if (Inventory.currentDrag) {
+                if (e.button == 0) Inventory.dropItem(null, Inventory.currentDrag.stackSize);
+                else Inventory.dropItem(null, 1);
             }
         }
     }
@@ -425,25 +379,22 @@ document.addEventListener('keydown', function(e) {
             if (e.key.toLowerCase() == keybinds.drop) {
                 for (var i in Inventory.items) {
                     if (Inventory.items[i].item) if (Inventory.items[i].mousedOver) {
-                        Inventory.currentDrag = Inventory.items[i].slotId;
-                        if (e.getModifierState('Control')) Inventory.drop(Inventory.items[i].item.stackSize);
-                        else Inventory.drop(1);
+                        if (e.getModifierState('Control')) Inventory.dropItem(parseInt(i), Inventory.items[i].item.stackSize);
+                        else Inventory.dropItem(parseInt(i), 1);
                         tooltip.style.opacity = 0;
                         Inventory.currentHover = null;
                     }
                 }
                 for (var i in Inventory.equips) {
                     if (Inventory.equips[i].item) if (Inventory.equips[i].mousedOver) {
-                        Inventory.currentDrag = Inventory.equips[i].slotId;
-                        Inventory.drop();
+                        Inventory.dropItem(parseInt(i), Inventory.equips[i].item.stackSize);
                         tooltip.style.opacity = 0;
                         Inventory.currentHover = null;
                     }
                 }
             } else if (e.key.toLowerCase() == keybinds.swap) {
                 socket.emit('item', {
-                    action: 'swap',
-                    data: {}
+                    action: 'swap'
                 });
                 e.preventDefault();
             }
@@ -533,6 +484,41 @@ async function loadInventoryData() {
 };
 
 // io
+Inventory.takeItem = function(slot, amount) {
+    socket.emit('item', {
+        action: 'takeItem',
+        slot: slot,
+        amount: amount
+    });
+};
+Inventory.placeItem = function(slot, amount) {
+    socket.emit('item', {
+        action: 'placeItem',
+        slot: slot,
+        amount: amount
+    });
+};
+Inventory.dropItem = function(slot, amount) {
+    socket.emit('item', {
+        action: 'dropItem',
+        slot: slot,
+        amount: amount
+    });
+};
+socket.on('dragging', function(data) {
+    Inventory.currentDrag = data;
+    if (data) {
+        dragDiv.style.display = 'block';
+        dragDiv.style.left = mouseX+window.innerWidth/2-32 + 'px';
+        dragDiv.style.top = mouseY+window.innerHeight/2-32 + 'px';
+        if (data.stackSize != 1) dragStackSize.innerText = data.stackSize;
+        dragImg.src = '/client/img/item/' + data.id + '.png';
+    } else {
+        dragDiv.style.display = 'none';
+        dragStackSize.innerText = '';
+        dragImg.src = '/client/img/item/empty.png';
+    }
+});
 socket.on('item', function(data) {
     switch (data.action) {
         case 'maxItems':

@@ -543,8 +543,8 @@
     left: 0px;
     width: 64px;
     height: 64px;
-    cursor: grabbing;
     pointer-events: none;
+    cursor: grabbing;
     z-index: 7;
 }
 #invDragImg {

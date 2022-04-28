@@ -2,8 +2,8 @@
 // Go to README.md for more information
 
 const version = 'v0.10.0';
-require('./server/log.js');
 console.info('\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022');
+require('./server/log.js');
 appendLog('Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022', 'log');
 logColor('Starting server...', '\x1b[32m', 'log');
 const express = require('express');

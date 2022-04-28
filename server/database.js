@@ -20,7 +20,7 @@ url = null;
 
 ACCOUNTS = {
     connected: false,
-    connect: async function() {
+    connect: async function connect() {
         if (!ACCOUNTS.connected) {
             if (ENV.offlineMode) {
                 ACCOUNTS.connected = true;
@@ -38,7 +38,7 @@ ACCOUNTS = {
             warn('Already connected!');
         }
     },
-    disconnect: async function() {
+    disconnect: async function disconnect() {
         if (ACCOUNTS.connected) {
             try {
                 if (!ENV.offlineMode) await database.end();
@@ -50,7 +50,7 @@ ACCOUNTS = {
             warn('Not Connected!');
         }
     },
-    signup: async function(username, password) {
+    signup: async function signup(username, password) {
         if (ENV.offlineMode) return 0;
         if (username == 'unavailable') return 3;
         if (await getCredentials(username) == false) {
@@ -65,7 +65,7 @@ ACCOUNTS = {
         }
         return 1;
     },
-    login: async function(username, password) {
+    login: async function login(username, password) {
         if (ENV.offlineMode) return 0;
         var cred = await getCredentials(username);
         if (cred) {
@@ -76,7 +76,7 @@ ACCOUNTS = {
         }
         return 2;
     },
-    deleteAccount: async function(username, password) {
+    deleteAccount: async function deleteAccount(username, password) {
         if (ENV.offlineMode) return 0;
         var cred = await getCredentials(username);
         if (cred) {
@@ -93,7 +93,7 @@ ACCOUNTS = {
         }
         return 2;
     },
-    changePassword: async function(username, oldpassword, password) {
+    changePassword: async function changePassword(username, oldpassword, password) {
         if (ENV.offlineMode) return 0;
         var cred = await getCredentials(username);
         if (cred) {
@@ -110,7 +110,7 @@ ACCOUNTS = {
         }
         return 2;
     },
-    validateCredentials: function(username, password) {
+    validateCredentials: function validateCredentials(username, password) {
         if (username != '' && username != null) {
             if (username.length > 3 || username == 'sp') {
                 if (username.length <= 20) {
@@ -137,7 +137,7 @@ ACCOUNTS = {
             return 1;
         }
     },
-    loadProgress: async function(username, password) {
+    loadProgress: async function loadProgress(username, password) {
         if (ENV.offlineMode) return '{}';
         var progress = await getProgress(username, password);
         if (progress != false) {
@@ -146,7 +146,7 @@ ACCOUNTS = {
         warn('Failed to load progress!');
         return false;
     },
-    saveProgress: async function(username, password, data) {
+    saveProgress: async function saveProgress(username, password, data) {
         if (ENV.offlineMode) return true;
         var status = await updateProgress(username, password, data);
         if (status) {

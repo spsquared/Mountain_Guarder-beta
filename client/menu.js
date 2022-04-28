@@ -386,7 +386,7 @@ inventoryWindow.hide = function() {
     for (var i in Inventory.equips) {
         Inventory.equips[i].mousedOver = false;
     }
-    if (Inventory.currentDrag) Inventory.endDrag(Inventory.currentDrag);
+    if (Inventory.currentDrag) Inventory.dropItem(null, Inventory.currentDrag.stackSize);
     Inventory.currentDrag = null;
     Inventory.currentHover = null;
 };
@@ -693,28 +693,25 @@ document.addEventListener('mousedown', function(e) {
 });
 function updateKeybind(keybind) {
     var str = keybinds[keybind];
-    if (str != null) {
-        if (typeof str == 'number') {
-            switch (str) {
-                case 0:
-                    str = 'LMB';
-                    break;
-                case 1:
-                    str = 'CMB';
-                    break;
-                case 2:
-                    str = 'RMB';
-                    break;
-                default:
-                    str = 'MB' + str;
-                    break;
-            }
+    if (typeof str == 'number') {
+        switch (str) {
+            case 0:
+                str = 'LMB';
+                break;
+            case 1:
+                str = 'CMB';
+                break;
+            case 2:
+                str = 'RMB';
+                break;
+            default:
+                str = 'MB' + str;
+                break;
         }
-        if (str == ' ') str = 'SPACE';
-        str = str.toUpperCase();
-    } else {
-        str = '&emsp;';
     }
+    if (str === ' ') str = 'SPACE';
+    str = str.toUpperCase();
+    if (str === null) str = '&emsp;';
     document.getElementById('keybind_' + keybind).innerHTML = str;
     document.getElementById('keybind_' + keybind).style.color = '';
 };

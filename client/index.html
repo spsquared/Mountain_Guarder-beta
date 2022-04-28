@@ -8,11 +8,11 @@
         <meta id="viewport" name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=2.0, minimum-scale=1.0, user-scalable=no">
         <meta charset="utf-8">
         <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://meadowguarderold.herokuapp.com/ 'unsafe-eval' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; script-src-elem 'self' 'unsafe-eval' 'unsafe-inline'; frame-src 'self' https://www.youtube.com/ https://meadowguarderold.herokuapp.com/ 'unsafe-eval' 'unsafe-inline'">
-        <meta id="title" content="Mountain Guarder">
-        <meta id="description" content="A free-to-play fantasy RPG">
-        <meta id="url" content="https://mountainguarder.herokuapp.com">
-        <meta id="image" content="https://mountainguarder.herokuapp.com/client/img/loading.png">
-        <link rel="icon" href="/client/assets/faviconbeta.ico" type="image/x-icon">
+        <meta name="title" content="Mountain Guarder">
+        <meta name="description" content="Meadow Guarder Old's sister game! Mountain Guarder is a free-to-play online multiplayer fantasy RPG">
+        <meta name="url" content="https://mountainguarder.herokuapp.com">
+        <meta name="image" content="https://mountainguarder.herokuapp.com/client/img/loading.png">
+        <link rel="icon" href="/client/assets/favicon.ico" type="image/x-icon">
         <noscript><meta http-equiv="refresh" content="0; url=/client/nojs.html"/></noscript>
         <script src="/socket.io/socket.io.js"></script>
         <script>socket = io();</script>
@@ -63,8 +63,8 @@
                     </tbody></table>
                     <div style="margin-top: 8px;">
                         <button id="signIn" class="ui-lightbutton" onclick="signIn();">Sign In</button>
-                        <!-- <button id="createAccount" class="ui-lightbutton" onclick="createAccount();">Create Account</button>
-                        <button id="deleteAccount" class="ui-lightbutton" onclick="deleteAccount();">Delete Account</button> -->
+                        <button id="createAccount" class="ui-lightbutton" onclick="createAccount();">Create Account</button>
+                        <button id="deleteAccount" class="ui-lightbutton" onclick="deleteAccount();">Delete Account</button>
                         <button id="changePassword" class="ui-lightbutton" onclick="changePassword();">Change Password</button>
                         <div id="signInError"></div>
                     </div>
@@ -950,7 +950,7 @@
                     </div>
                     <div class="ui-lighttext stackBody">
                         Sampleprovider(sp): Lead Developer<br>
-                        Suvanth: Bug/Vulnerability Finder<br>
+                        suvanth: Bug/Vulnerability Finder<br>
                         spuh: Bug Finder<br>
                         <br>
                         <a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder" target="_blank">GitHub repository</a><br>
@@ -1104,7 +1104,10 @@
                         <div>Crafting</div>
                         <div id="inventoryCraftingBody" class="ui-block inventory-body"></div>
                     </div>
-                    </div>
+                    <!-- <div id="inventoryShop" class="window-body inventory-right">
+                        <div>Shop Name</div>
+                        <div id="inventoryShopBody" class="ui-block inventory-body"></div>
+                    </div> -->
                     <div id="inventorySelect" class="window-select">
                         <button id="inventoryEquipsSelect" class="window-select-button ui-lightbutton">Equips</button>
                         <button id="inventoryCraftingSelect" class="window-select-button ui-lightbutton">Crafting</button>
