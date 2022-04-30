@@ -168,18 +168,18 @@ Inventory = function(socket, player) {
         else item = self.equips[slot];
         if (item) {
             if (typeof self.cachedItem == 'object' && self.cachedItem != null) {
-                // if (self.isSameItem(self.cachedItem, item)) {
-                //     var old = self.cachedItem.stackSize;
-                //     self.cachedItem.stackSize = Math.min(self.cachedItem.maxStackSize, self.cachedItem.stackSize+amount); // there is a dupe exploit waiting to happen here
-                //     self.removeItem(slot, self.cachedItem.stackSize-old);
-                // }
+                if (self.isSameItem(self.cachedItem, item)) {
+                    var old = self.cachedItem.stackSize;
+                    self.cachedItem.stackSize = Math.min(self.cachedItem.maxStackSize, self.cachedItem.stackSize+amount); // there is a dupe exploit waiting to happen here
+                    self.removeItem(slot, self.cachedItem.stackSize-old);
+                }
             } else {
                 self.cachedItem = cloneDeep(item);
+                self.cachedItem.slot = null;
                 self.cachedItem.stackSize = amount;
                 self.removeItem(slot, amount);
             }
             self.refreshItem(slot);
-            self.cachedItem.slot = null;
             self.refreshCached();
         }
     };
@@ -190,20 +190,20 @@ Inventory = function(socket, player) {
         if (typeof self.cachedItem == 'object' && self.cachedItem != null) {
             if (item) {
                 if (self.isSameItem(self.cachedItem, item)) {
-                    // var old = item.stackSize;
-                    // item.stackSize = Math.min(item.maxStackSize, item.stackSize+amount); // there is a dupe exploit waiting to happen here
-                    // self.cachedItem.stackSize -= item.stackSize-old;
-                    // if (self.cachedItem.stackSize < 1) self.cachedItem = null;
+                    var old = item.stackSize;
+                    item.stackSize = Math.min(item.maxStackSize, item.stackSize+amount); // there is a dupe exploit waiting to happen here
+                    self.cachedItem.stackSize -= item.stackSize-old;
+                    if (self.cachedItem.stackSize < 1) self.cachedItem = null;
                 } else {
-                    // if (typeof slot == 'number') {
-                    //     self.items[slot] = self.cachedItem;
-                    //     self.items[slot].slot = slot;
-                    // } else {
-                    //     self.equips[slot] = self.cachedItem;
-                    //     self.equips[slot].slot = slot;
-                    // }
-                    // self.cachedItem = item;
-                    // self.cachedItem.slot = null;
+                    if (typeof slot == 'number') {
+                        self.items[slot] = self.cachedItem;
+                        self.items[slot].slot = slot;
+                    } else {
+                        self.equips[slot] = self.cachedItem;
+                        self.equips[slot].slot = slot;
+                    }
+                    self.cachedItem = item;
+                    self.cachedItem.slot = null;
                 }
             } else {
                 item = cloneDeep(self.cachedItem);
@@ -217,6 +217,7 @@ Inventory = function(socket, player) {
                 if (amount == self.cachedItem.stackSize) self.cachedItem = null;
             }
             self.refreshItem(slot);
+            self.refresh();
             self.refreshCached();
         }
     };
