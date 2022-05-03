@@ -26,7 +26,7 @@ Inventory = {
     currentHover: null,
     maxItems: 30
 };
-Inventory.Item = function(id, slot, amount, enchantments) {
+Inventory.Item = function Item(id, slot, amount, enchantments) {
     var self = Object.assign({}, Inventory.itemTypes[id]);
     self.id = id;
     self.slot = slot;
@@ -46,7 +46,7 @@ Inventory.Item = function(id, slot, amount, enchantments) {
     }
     return self;
 };
-Inventory.Slot = function() {
+Inventory.Slot = function Slot() {
     var slot = document.createElement('div');
     slot.className = 'invSlot';
     slot.draggable = false;
@@ -82,7 +82,7 @@ Inventory.Slot = function() {
     self.refresh();
     return self;
 };
-Inventory.EquipSlot = function(equip) {
+Inventory.EquipSlot = function EquipSlot(equip) {
     var slot = document.createElement('div');
     slot.id = 'invSlotEquip' + equip;
     slot.className = 'invSlot';
@@ -118,11 +118,11 @@ Inventory.EquipSlot = function(equip) {
     self.refresh();
     return self;
 };
-Inventory.addItem = function(id, slot, amount, enchantments) {
+Inventory.addItem = function addItem(id, slot, amount, enchantments) {
     new Inventory.Item(id, slot, amount, enchantments);
     Inventory.refreshSlot(slot);
 };
-Inventory.removeItem = function(slot) {
+Inventory.removeItem = function removeItem(slot) {
     if (slot != null) {
         if (typeof slot == 'number') {
             Inventory.items[slot].item = null;
@@ -132,14 +132,14 @@ Inventory.removeItem = function(slot) {
         Inventory.refreshSlot(slot);
     }
 };
-Inventory.refreshSlot = function(slot) {
+Inventory.refreshSlot = function refreshSlot(slot) {
     if (typeof slot == 'number') {
         Inventory.items[slot].refresh();
     } else {
         Inventory.equips[slot].refresh();
     }
 };
-Inventory.enchantSlot = function(slot, enchantments) {
+Inventory.enchantSlot = function enchantSlot(slot, enchantments) {
     if (typeof slot == 'number') {
         Inventory.items[slot].enchant(enchantments);
     } else {
@@ -147,7 +147,7 @@ Inventory.enchantSlot = function(slot, enchantments) {
     }
     Inventory.refreshSlot(slot);
 };
-Inventory.getRarityColor = function(rarity) {
+Inventory.getRarityColor = function getRarityColor(rarity) {
     var str = '';
     switch (rarity) {
         case 'missing':
@@ -174,7 +174,7 @@ Inventory.getRarityColor = function(rarity) {
     }
     return str;
 };
-Inventory.generateEffects = function(item) {
+Inventory.generateEffects = function generateEffects(item) {
     var str = '';
     if (typeof item === 'object') {
         if (item.slotType == 'weapon') {
@@ -323,7 +323,7 @@ Inventory.generateEffects = function(item) {
     if (str == '') str = '<br><span style="font-size: 12px;">No Effects</span>';
     return str;
 };
-document.addEventListener('click', function(e) {
+document.addEventListener('mousedown', function(e) {
     if (loaded) {
         if (e.button == 0 || e.button == 2) {
             if (document.getElementById('inventory').contains(e.target)) {
@@ -484,21 +484,21 @@ async function loadInventoryData() {
 };
 
 // io
-Inventory.takeItem = function(slot, amount) {
+Inventory.takeItem = function takeItem(slot, amount) {
     socket.emit('item', {
         action: 'takeItem',
         slot: slot,
         amount: amount
     });
 };
-Inventory.placeItem = function(slot, amount) {
+Inventory.placeItem = function placeItem(slot, amount) {
     socket.emit('item', {
         action: 'placeItem',
         slot: slot,
         amount: amount
     });
 };
-Inventory.dropItem = function(slot, amount) {
+Inventory.dropItem = function dropItem(slot, amount) {
     socket.emit('item', {
         action: 'dropItem',
         slot: slot,

@@ -453,6 +453,7 @@ Rig = function() {
             waitTime: 20,
             lastPathEnd: 0
         },
+        frozen: false,
         path: [],
         pathfinder: new PF.BiAStarFinder({
             allowDiagonal: true,
@@ -762,29 +763,31 @@ Rig = function() {
         };
         self.xmove = 0;
         self.ymove = 0;
-        if (self.ai.path[0]) {
-            // var angle = Math.atan2(self.ai.path[0][1]*64+32-self.y, self.ai.path[0][0]*64+32-self.x);
-            // self.controls.xaxis = Math.cos(angle);
-            // self.controls.yaxis = Math.sin(angle);
-            if (self.ai.path[0][0]*64+32 < self.x) self.controls.left = true;
-            else if (self.ai.path[0][0]*64+32 > self.x) self.controls.right = true;
-            if (self.ai.path[0][1]*64+32 < self.y) self.controls.up = true;
-            else if (self.ai.path[0][1]*64+32 > self.y) self.controls.down = true;
-            if (Math.round(self.x) == self.ai.path[0][0]*64+32 && Math.round(self.y) == self.ai.path[0][1]*64+32) {
-                self.ai.path.shift();
+        if (!self.ai.frozen) {
+            if (self.ai.path[0]) {
+                // var angle = Math.atan2(self.ai.path[0][1]*64+32-self.y, self.ai.path[0][0]*64+32-self.x);
+                // self.controls.xaxis = Math.cos(angle);
+                // self.controls.yaxis = Math.sin(angle);
+                if (self.ai.path[0][0]*64+32 < self.x) self.controls.left = true;
+                else if (self.ai.path[0][0]*64+32 > self.x) self.controls.right = true;
+                if (self.ai.path[0][1]*64+32 < self.y) self.controls.up = true;
+                else if (self.ai.path[0][1]*64+32 > self.y) self.controls.down = true;
+                if (Math.round(self.x) == self.ai.path[0][0]*64+32 && Math.round(self.y) == self.ai.path[0][1]*64+32) {
+                    self.ai.path.shift();
+                }
+                if (self.slowedDown) self.moveSpeed *= 0.5;
+                self.controls.x = self.controls.xaxis;
+                self.controls.y = self.controls.yaxis;
+                if (self.controls.up) self.controls.y = Math.max(-1, Math.min(self.controls.y-1, 1));
+                if (self.controls.down) self.controls.y = Math.max(-1, Math.min(self.controls.y+1, 1));
+                if (self.controls.left) self.controls.x = Math.max(-1, Math.min(self.controls.x-1, 1));
+                if (self.controls.right) self.controls.x = Math.max(-1, Math.min(self.controls.x+1, 1));
+                self.xmove = self.controls.x*self.moveSpeed;
+                self.ymove = self.controls.y*self.moveSpeed;
+                if (self.slowedDown) self.moveSpeed *= 2;
+                self.xspeed = Math.round(self.xmove+self.xknockback);
+                self.yspeed = Math.round(self.ymove+self.yknockback);
             }
-            if (self.slowedDown) self.moveSpeed *= 0.5;
-            self.controls.x = self.controls.xaxis;
-            self.controls.y = self.controls.yaxis;
-            if (self.controls.up) self.controls.y = Math.max(-1, Math.min(self.controls.y-1, 1));
-            if (self.controls.down) self.controls.y = Math.max(-1, Math.min(self.controls.y+1, 1));
-            if (self.controls.left) self.controls.x = Math.max(-1, Math.min(self.controls.x-1, 1));
-            if (self.controls.right) self.controls.x = Math.max(-1, Math.min(self.controls.x+1, 1));
-            self.xmove = self.controls.x*self.moveSpeed;
-            self.ymove = self.controls.y*self.moveSpeed;
-            if (self.slowedDown) self.moveSpeed *= 2;
-            self.xspeed = Math.round(self.xmove+self.xknockback);
-            self.yspeed = Math.round(self.ymove+self.yknockback);
         }
         for (var i in self.controls) {
             if (self.controls[i] != oldcontrols[i]) return true;
@@ -1325,6 +1328,19 @@ Npc = function(id, x, y, map) {
         self.animationSpeed = 15/Math.sqrt(self.xmove**2+self.ymove**2)*100 || 100;
         self.updateAnimation();
     };
+    self.startConversation = function startConversation(player, id) {
+        self.ai.frozen = true;
+        player.prompt(id, self.id);
+    };
+    self.endConversation = function endConversation() {
+        self.ai.frozen = false;
+    };
+    self.openShop = function openShop(player) {
+        self.ai.frozen = true;
+    };
+    self.closeShop = function closeShop(player) {
+        self.ai.frozen = false;
+    };
     self.onDeath = function onDeath() {};
 
     Npc.list[self.id] = self;
@@ -1421,6 +1437,7 @@ Player = function(socket) {
     self.canMove = false;
     self.talking = false;
     self.currentConversation = null;
+    self.talkingWith = null;
     self.talkedWith = null;
     self.quests = new QuestHandler(socket, self);
     self.trackedData = {
@@ -1986,15 +2003,15 @@ Player = function(socket) {
             self.teleporting = false;
         }
     });
-    const onHit = self.onHit;
+    const oldonHit = self.onHit;
     self.onHit = function onHit(entity, type) {
         var oldhp = self.hp;
-        onHit(entity, type);
+        oldonHit(entity, type);
         self.trackedData.damageTaken += oldhp-self.hp;
     };
-    const onDeath = self.onDeath;
+    const oldonDeath = self.onDeath;
     self.onDeath = function onDeath(entity, type) {
-        onDeath(entity, type);
+        oldonDeath(entity, type);
         self.quests.failQuests('death');
         if (!self.invincible) {
             socket.emit('playerDied');
@@ -2154,7 +2171,7 @@ Player = function(socket) {
             }
         }
     };
-    self.prompt = function prompt(id) {
+    self.prompt = function prompt(id, npcId) {
         self.attacking = false;
         self.canMove = false;
         self.invincible = true;
@@ -2172,6 +2189,7 @@ Player = function(socket) {
         self.animationDirection = 'facing';
         socket.emit('prompt', id);
         self.currentConversation = id;
+        self.talkingWith = npcId;
     };
     socket.on('promptChoose', function(option) {
         if (self.currentConversation) {
@@ -2182,15 +2200,20 @@ Player = function(socket) {
                     self.canMove = true;
                     self.invincible = false;
                     self.currentConversation = null;
+                    console.log(self.talkingWith)
+                    if (Npc.list[self.talkingWith]) Npc.list[self.talkingWith].endConversation();
+                    self.talkingWith = null;
                 } else if (action.startsWith('prompt_')) {
                     var id = action.replace('prompt_', '');
-                    self.prompt(id);
+                    self.prompt(id, self.talkingWith);
                 } else if (action.startsWith('quest_')) {
                     self.canMove = true;
                     self.invincible = false;
                     self.currentConversation = null;
                     var id = action.replace('quest_', '');
                     if (self.quests.qualifiesFor(id)) self.quests.startQuest(id);
+                    if (Npc.list[self.talkingWith]) Npc.list[self.talkingWith].endConversation();
+                    self.talkingWith = null;
                 } else if (action.startsWith('talkedwith_')) {
                     self.canMove = true;
                     self.invincible = false;

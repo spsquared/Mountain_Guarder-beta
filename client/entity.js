@@ -20,7 +20,7 @@ Entity = function(id, map, x, y) {
         updated: true
     };
 
-    self.update = function(data) {
+    self.update = function update(data) {
         if (self.map != data.map) {
             self.x = data.x;
             self.y = data.y;
@@ -32,9 +32,9 @@ Entity = function(id, map, x, y) {
         self.interpolationStage = 0;
         self.updated = true;
     };
-    self.draw = function() {
+    self.draw = function draw() {
         if (inRenderDistance(self)) {
-            LAYERS.elayers[self.layer].fillText('MISSING TEXTURE', self.x+OFFSETX, self.y+OFFSETY);
+            CTX.fillText('MISSING TEXTURE', self.x+OFFSETX, self.y+OFFSETY);
         }
         if (self.interpolationStage < (settings.fps/20)) {
             self.x += self.xspeed;
@@ -47,7 +47,7 @@ Entity = function(id, map, x, y) {
 
     return self;
 };
-Entity.update = function(data) {
+Entity.update = function update(data) {
     Player.update(data.players);
     Monster.update(data.monsters);
     Projectile.update(data.projectiles);
@@ -55,56 +55,6 @@ Entity.update = function(data) {
         Particle.update(data.particles);
     }
     DroppedItem.update(data.droppedItems);
-};
-Entity.draw = function() {
-    if (settings.debug) entStart = Date.now();
-    var entities = [];
-    if (!settings.particles) {
-        Particle.list = [];
-    }
-    for (var i in Player.list) {
-        if (Player.list[i].map == player.map) entities.push(Player.list[i]);
-    }
-    for (var i in Monster.list) {
-        if (Monster.list[i].map == player.map) entities.push(Monster.list[i]);
-    }
-    for (var i in Projectile.list) {
-        if (Projectile.list[i].map == player.map) entities.push(Projectile.list[i]);
-    }
-    if (!settings.particles) {
-        Particle.list = [];
-    }
-    for (var i in Particle.list) {
-        if (Particle.list[i].map == player.map) entities.push(Particle.list[i]);
-        else Particle.list[i].draw(true);
-    }
-    for (var i in DroppedItem.list) {
-        if (DroppedItem.list[i].map == player.map) entities.push(DroppedItem.list[i]);
-    }
-    var translatex = (window.innerWidth/2)-player.x;
-    var translatey = (window.innerHeight/2)-player.y;
-    LAYERS.eupper.clearRect(0, 0, window.innerWidth, window.innerHeight);
-    for (var i in LAYERS.elayers) {
-        LAYERS.elayers[i].clearRect(0, 0, window.innerWidth, window.innerHeight);
-    }
-    LAYERS.eupper.save();
-    LAYERS.eupper.translate(translatex, translatey);
-    for (var i in LAYERS.elayers) {
-        LAYERS.elayers[i].save();
-        LAYERS.elayers[i].translate(translatex, translatey);
-    }
-    entities = entities.sort(function(a, b) {return a.y - b.y;});
-    for (var i in entities) {
-        entities[i].draw();
-    }
-    LAYERS.eupper.restore();
-    for (var i in LAYERS.elayers) {
-        LAYERS.elayers[i].restore();
-    }
-    if (settings.debug) {
-        var current = Date.now();
-        entTimeCounter = current-entStart;
-    }
 };
 
 // rigs
@@ -133,9 +83,9 @@ Rig = function(id, map, x, y) {
         self.updated = true;
     };
     self.draw = function() {
-        LAYERS.elayers[self.layer].fillText('MISSING TEXTURE', self.x+OFFSETX, self.y+OFFSETY);
-        LAYERS.eupper.drawImage(Rig.healthBarR, 0, 0, 42, 5, self.x-63+OFFSETX, self.y-52+OFFSETY, 126, 15);
-        LAYERS.eupper.drawImage(Rig.healthBarR, 1, 5, (self.hp/self.maxHP)*40, 5, self.x-60+OFFSETX, self.y-52+OFFSETY, (self.hp/self.maxHP)*120, 15);
+        CTX.fillText('MISSING TEXTURE', self.x+OFFSETX, self.y+OFFSETY);
+        CTX.drawImage(Rig.healthBarR, 0, 0, 42, 5, self.x-63+OFFSETX, self.y-52+OFFSETY, 126, 15);
+        CTX.drawImage(Rig.healthBarR, 1, 5, (self.hp/self.maxHP)*40, 5, self.x-60+OFFSETX, self.y-52+OFFSETY, (self.hp/self.maxHP)*120, 15);
         if (self.interpolationStage < (settings.fps/20)) {
             self.x += self.xspeed;
             self.y += self.yspeed;
@@ -176,7 +126,7 @@ Player = function(id, map, x, y, name, isNPC, npcId) {
     self.nameColor = '#FF9900';
     if (self.name == 'Sampleprovider(sp)') self.nameColor = '#3C70FF';
 
-    self.update = function(data) {
+    self.update = function update(data) {
         if (self.map != data.map) {
             self.x = data.x;
             self.y = data.y;
@@ -197,30 +147,30 @@ Player = function(id, map, x, y, name, isNPC, npcId) {
         if (self.heldItem) self.heldItem.image = Inventory.itemImages[self.heldItem.id];
         self.updated = true;
     };
-    self.draw = function () {
+    self.draw = function draw() {
         if (isNPC == false) {
             if (self.heldItem) if (self.heldItem.image) {
-                LAYERS.elayers[self.layer].save();
-                LAYERS.elayers[self.layer].translate(self.x+OFFSETX, self.y+OFFSETY);
-                LAYERS.elayers[self.layer].rotate(self.heldItem.angle);
-                LAYERS.elayers[self.layer].translate(Inventory.itemTypes[self.heldItem.id].heldDistance, 0);
-                LAYERS.elayers[self.layer].rotate(Inventory.itemTypes[self.heldItem.id].heldAngle*(Math.PI/180));
-                LAYERS.elayers[self.layer].drawImage(self.heldItem.image, -32, -32, 64, 64);
-                LAYERS.elayers[self.layer].restore();
+                CTX.save();
+                CTX.translate(self.x+OFFSETX, self.y+OFFSETY);
+                CTX.rotate(self.heldItem.angle);
+                CTX.translate(Inventory.itemTypes[self.heldItem.id].heldDistance, 0);
+                CTX.rotate(Inventory.itemTypes[self.heldItem.id].heldAngle*(Math.PI/180));
+                CTX.drawImage(self.heldItem.image, -32, -32, 64, 64);
+                CTX.restore();
             }
         }
-        LAYERS.elayers[self.layer].drawImage(self.animationsCanvas, (self.animationStage % 6)*8, (~~(self.animationStage / 6))*16, 8, 16, self.x-16+OFFSETX, self.y-52+OFFSETY, 32, 64);
+        CTX.drawImage(self.animationsCanvas, (self.animationStage % 6)*8, (~~(self.animationStage / 6))*16, 8, 16, self.x-16+OFFSETX, self.y-52+OFFSETY, 32, 64);
         if (self.isNPC == false) {
-            LAYERS.eupper.drawImage(Rig.healthBarG, 0, 0, 42, 5, self.x-63+OFFSETX, self.y-72+OFFSETY, 126, 15);
-            LAYERS.eupper.drawImage(Rig.healthBarG, 1, 5, (self.hp/self.maxHP)*40, 5, self.x-60+OFFSETX, self.y-72+OFFSETY, (self.hp/self.maxHP)*120, 15);
+            CTX.drawImage(Rig.healthBarG, 0, 0, 42, 5, self.x-63+OFFSETX, self.y-72+OFFSETY, 126, 15);
+            CTX.drawImage(Rig.healthBarG, 1, 5, (self.hp/self.maxHP)*40, 5, self.x-60+OFFSETX, self.y-72+OFFSETY, (self.hp/self.maxHP)*120, 15);
         }
-        LAYERS.eupper.textAlign = 'center';
-        LAYERS.eupper.font = '12px Pixel';
-        LAYERS.eupper.fillStyle = self.nameColor;
+        CTX.textAlign = 'center';
+        CTX.font = '12px Pixel';
+        CTX.fillStyle = self.nameColor;
         if (self.isNPC) {
-            LAYERS.eupper.fillText(self.name, self.x+OFFSETX, self.y-58+OFFSETY);
+            CTX.fillText(self.name, self.x+OFFSETX, self.y-58+OFFSETY);
         } else {
-            LAYERS.eupper.fillText(self.name, self.x+OFFSETX, self.y-80+OFFSETY);
+            CTX.fillText(self.name, self.x+OFFSETX, self.y-80+OFFSETY);
         }
         if (self.interpolationStage < (settings.fps/20)) {
             self.x += self.xspeed;
@@ -230,14 +180,14 @@ Player = function(id, map, x, y, name, isNPC, npcId) {
             self.interpolationStage++;
         }
     };
-    self.updateAnimationCanvas = async function() {
+    self.updateAnimationCanvas = async function updateAnimationCanvas() {
         self.animationsContext.clearRect(0, 0, 48, 128);
         self.animationsContext.drawImage(self.drawTintedCanvas('body'), 0, 0);
         self.animationsContext.drawImage(self.drawTintedCanvas('shirt'), 0, 0);
         self.animationsContext.drawImage(self.drawTintedCanvas('pants'), 0, 0);
         self.animationsContext.drawImage(self.drawTintedCanvas('hair'), 0, 0);
     };
-    self.drawTintedCanvas = function(asset) {
+    self.drawTintedCanvas = function drawTintedCanvas(asset) {
         var buffer = createCanvas(48, 128);
         var btx = buffer.getContext('2d');
         if (asset == 'hair') btx.drawImage(Player.animations[asset][self.characterStyle.hair], 0, 0);
@@ -254,7 +204,7 @@ Player = function(id, map, x, y, name, isNPC, npcId) {
     Player.list[self.id] = self;
     return self;
 };
-Player.update = function(data) {
+Player.update = function update(data) {
     for (var i in Player.list) {
         Player.list[i].updated = false;
     }
@@ -304,10 +254,10 @@ Monster = function(id, map, x, y, type) {
     self.rawHeight = tempmonster.rawHeight;
     self.animationImage = Monster.images[type];
 
-    self.draw = function () {
-        LAYERS.elayers[self.layer].drawImage(self.animationImage, self.animationStage*self.rawWidth, 0, self.rawWidth, self.rawHeight, self.x-self.width/2+OFFSETX, self.y-self.height/2+OFFSETY, self.width, self.height);
-        LAYERS.eupper.drawImage(Rig.healthBarR, 0, 0, 42, 5, self.x-63+OFFSETX, self.y-self.height/2-20+OFFSETY, 126, 15);
-        LAYERS.eupper.drawImage(Rig.healthBarR, 1, 5, (self.hp/self.maxHP)*40, 5, self.x-60+OFFSETX, self.y-self.height/2-20+OFFSETY, (self.hp/self.maxHP)*120, 15);
+    self.draw = function draw() {
+        CTX.drawImage(self.animationImage, self.animationStage*self.rawWidth, 0, self.rawWidth, self.rawHeight, self.x-self.width/2+OFFSETX, self.y-self.height/2+OFFSETY, self.width, self.height);
+        CTX.drawImage(Rig.healthBarR, 0, 0, 42, 5, self.x-63+OFFSETX, self.y-self.height/2-20+OFFSETY, 126, 15);
+        CTX.drawImage(Rig.healthBarR, 1, 5, (self.hp/self.maxHP)*40, 5, self.x-60+OFFSETX, self.y-self.height/2-20+OFFSETY, (self.hp/self.maxHP)*120, 15);
         if (self.interpolationStage < (settings.fps/20)) {
             self.x += self.xspeed;
             self.y += self.yspeed;
@@ -320,7 +270,7 @@ Monster = function(id, map, x, y, type) {
     Monster.list[self.id] = self;
     return self;
 };
-Monster.update = function(data) {
+Monster.update = function update(data) {
     for (var i in Monster.list) {
         Monster.list[i].updated = false;
     }
@@ -363,7 +313,7 @@ Projectile = function(id, map, x, y, angle, type) {
     self.animationImage = Projectile.images[type];
     self.animationStage = 0;
 
-    self.update = function(data) {
+    self.update = function update(data) {
         if (self.map != data.map) {
             self.x = data.x;
             self.y = data.y;
@@ -376,19 +326,19 @@ Projectile = function(id, map, x, y, angle, type) {
         self.rotationspeed = (data.angle-self.angle)/(settings.fps/20);
         self.updated = true;
     };
-    self.draw = function() {
+    self.draw = function draw() {
         if (self.above) {
-            LAYERS.eupper.save();
-            LAYERS.eupper.translate(self.x+OFFSETX, self.y+OFFSETY);
-            LAYERS.eupper.rotate(self.angle);
-            LAYERS.eupper.drawImage(self.animationImage, self.animationStage*self.rawWidth, 0, self.rawWidth, self.rawHeight, -self.width/2, -self.height/2, self.width, self.height);
-            LAYERS.eupper.restore();
+            CTX.save();
+            CTX.translate(self.x+OFFSETX, self.y+OFFSETY);
+            CTX.rotate(self.angle);
+            CTX.drawImage(self.animationImage, self.animationStage*self.rawWidth, 0, self.rawWidth, self.rawHeight, -self.width/2, -self.height/2, self.width, self.height);
+            CTX.restore();
         } else {
-            LAYERS.elayers[self.layer].save();
-            LAYERS.elayers[self.layer].translate(self.x+OFFSETX, self.y+OFFSETY);
-            LAYERS.elayers[self.layer].rotate(self.angle);
-            LAYERS.elayers[self.layer].drawImage(self.animationImage, self.animationStage*self.rawWidth, 0, self.rawWidth, self.rawHeight, -self.width/2, -self.height/2, self.width, self.height);
-            LAYERS.elayers[self.layer].restore();
+            CTX.save();
+            CTX.translate(self.x+OFFSETX, self.y+OFFSETY);
+            CTX.rotate(self.angle);
+            CTX.drawImage(self.animationImage, self.animationStage*self.rawWidth, 0, self.rawWidth, self.rawHeight, -self.width/2, -self.height/2, self.width, self.height);
+            CTX.restore();
         }
         if (self.interpolationStage < (settings.fps/20)) {
             self.x += self.xspeed;
@@ -403,7 +353,7 @@ Projectile = function(id, map, x, y, angle, type) {
     Projectile.list[self.id] = self;
     return self;
 };
-Projectile.update = function(data) {
+Projectile.update = function update(data) {
     for (var i in Projectile.list) {
         Projectile.list[i].updated = false;
     }
@@ -515,7 +465,7 @@ Particle = function(map, x, y, layer, type, value) {
             return;
     }
 
-    self.draw = function(nodraw) {
+    self.draw = function draw(nodraw) {
         self.x += self.xspeed;
         self.y += self.yspeed;
         self.chunkx = Math.floor(self.x/(64*MAPS[self.map].chunkwidth));
@@ -529,10 +479,10 @@ Particle = function(map, x, y, layer, type, value) {
                 if (!nodraw) {
                     var opstring = self.opacity.toString(16);
                     if (opstring.length == 1) opstring = 0 + opstring;
-                    LAYERS.elayers[self.layer].fillStyle = '#FF0000' + opstring;
-                    LAYERS.elayers[self.layer].textAlign = 'center';
-                    LAYERS.elayers[self.layer].font = '24px Pixel';
-                    LAYERS.elayers[self.layer].fillText(self.value, self.x+OFFSETX, self.y+OFFSETY);
+                    CTX.fillStyle = '#FF0000' + opstring;
+                    CTX.textAlign = 'center';
+                    CTX.font = '24px Pixel';
+                    CTX.fillText(self.value, self.x+OFFSETX, self.y+OFFSETY);
                 }
                 self.xspeed *= 0.98;
                 self.yspeed += 0.5;
@@ -542,10 +492,10 @@ Particle = function(map, x, y, layer, type, value) {
                 if (!nodraw) {
                     var opstring = self.opacity.toString(16);
                     if (opstring.length == 1) opstring = 0 + opstring;
-                    LAYERS.elayers[self.layer].fillStyle = '#FF0000' + opstring;
-                    LAYERS.elayers[self.layer].textAlign = 'center';
-                    LAYERS.elayers[self.layer].font = 'bold 36px Pixel';
-                    LAYERS.elayers[self.layer].fillText(self.value, self.x+OFFSETX, self.y+OFFSETY);
+                    CTX.fillStyle = '#FF0000' + opstring;
+                    CTX.textAlign = 'center';
+                    CTX.font = 'bold 36px Pixel';
+                    CTX.fillText(self.value, self.x+OFFSETX, self.y+OFFSETY);
                 }
                 self.xspeed *= 0.98;
                 self.yspeed += 0.3;
@@ -555,10 +505,10 @@ Particle = function(map, x, y, layer, type, value) {
                 if (!nodraw) {
                     var opstring = self.opacity.toString(16);
                     if (opstring.length == 1) opstring = 0 + opstring;
-                    LAYERS.elayers[self.layer].fillStyle = '#00FF00' + opstring;
-                    LAYERS.elayers[self.layer].textAlign = 'center';
-                    LAYERS.elayers[self.layer].font = '24px Pixel';
-                    LAYERS.elayers[self.layer].fillText(self.value, self.x+OFFSETX, self.y+OFFSETY);
+                    CTX.fillStyle = '#00FF00' + opstring;
+                    CTX.textAlign = 'center';
+                    CTX.font = '24px Pixel';
+                    CTX.fillText(self.value, self.x+OFFSETX, self.y+OFFSETY);
                 }
                 self.xspeed *= 0.98;
                 self.yspeed += 0.5;
@@ -568,8 +518,8 @@ Particle = function(map, x, y, layer, type, value) {
                 if (!nodraw) {
                     var opstring = self.opacity.toString(16);
                     if (opstring.length == 1) opstring = 0 + opstring;
-                    LAYERS.elayers[self.layer].fillStyle = '#9900CC' + opstring;
-                    LAYERS.elayers[self.layer].fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
+                    CTX.fillStyle = '#9900CC' + opstring;
+                    CTX.fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
                 }
                 self.xspeed *= 0.95;
                 self.yspeed *= 0.95;
@@ -580,8 +530,8 @@ Particle = function(map, x, y, layer, type, value) {
                     var opacity = Math.min(self.opacity, 100);
                     var opstring = opacity.toString(16);
                     if (opstring.length == 1) opstring = 0 + opstring;
-                    LAYERS.elayers[self.layer].fillStyle = self.color + opstring;
-                    LAYERS.elayers[self.layer].fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
+                    CTX.fillStyle = self.color + opstring;
+                    CTX.fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
                 }
                 self.xspeed *= 0.9;
                 self.yspeed *= 0.9;
@@ -592,8 +542,8 @@ Particle = function(map, x, y, layer, type, value) {
                     var opacity = Math.min(self.opacity, 100);
                     var opstring = opacity.toString(16);
                     if (opstring.length == 1) opstring = 0 + opstring;
-                    LAYERS.elayers[self.layer].fillStyle = self.color + opstring;
-                    LAYERS.elayers[self.layer].fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
+                    CTX.fillStyle = self.color + opstring;
+                    CTX.fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
                 }
                 self.angle += self.rotationspeed;
                 self.x = x+Math.cos(self.angle)*self.radius;
@@ -608,8 +558,8 @@ Particle = function(map, x, y, layer, type, value) {
                     var opacity = Math.min(self.opacity, 100);
                     var opstring = opacity.toString(16);
                     if (opstring.length == 1) opstring = 0 + opstring;
-                    LAYERS.elayers[self.layer].fillStyle = self.color + opstring;
-                    LAYERS.elayers[self.layer].fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
+                    CTX.fillStyle = self.color + opstring;
+                    CTX.fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
                 }
                 self.yspeed *= 0.95;
                 self.opacity -= 2;
@@ -619,8 +569,8 @@ Particle = function(map, x, y, layer, type, value) {
                     var opacity = Math.min(self.opacity, 100);
                     var opstring = opacity.toString(16);
                     if (opstring.length == 1) opstring = 0 + opstring;
-                    LAYERS.elayers[self.layer].fillStyle = self.color + opstring;
-                    LAYERS.elayers[self.layer].fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
+                    CTX.fillStyle = self.color + opstring;
+                    CTX.fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
                 }
                 self.xspeed *= 0.98;
                 self.yspeed += 0.2;
@@ -638,7 +588,7 @@ Particle = function(map, x, y, layer, type, value) {
     Particle.list[self.id] = self;
     return self;
 };
-Particle.update = function(data) {
+Particle.update = function update(data) {
     for (var i in data) {
         if (data[i]) new Particle(data[i].map, data[i].x, data[i].y, data[i].layer, data[i].type, data[i].value);
     }
@@ -663,20 +613,20 @@ DroppedItem = function(id, map, x, y, itemId, stackSize) {
     if (itemId) self.itemId = itemId;
     self.animationImage = Inventory.itemImages[itemId];
 
-    self.draw = function() {
-        LAYERS.elayers[self.layer].drawImage(self.animationImage, self.x-self.width/2+OFFSETX, self.y-self.height/2+OFFSETY, self.width, self.height);
+    self.draw = function draw() {
+        CTX.drawImage(self.animationImage, self.x-self.width/2+OFFSETX, self.y-self.height/2+OFFSETY, self.width, self.height);
         if (self.stackSize != 1) {
-            LAYERS.elayers[self.layer].textAlign = 'right';
-            LAYERS.elayers[self.layer].font = '14px Pixel';
-            LAYERS.elayers[self.layer].fillStyle = '#FFFF00';
-            LAYERS.elayers[self.layer].fillText(self.stackSize, self.x+self.width/2+OFFSETX-4, self.y+self.height/2+OFFSETY-4);
+            CTX.textAlign = 'right';
+            CTX.font = '14px Pixel';
+            CTX.fillStyle = '#FFFF00';
+            CTX.fillText(self.stackSize, self.x+self.width/2+OFFSETX-4, self.y+self.height/2+OFFSETY-4);
         }
     };
 
     DroppedItem.list[self.id] = self;
     return self;
 };
-DroppedItem.update = function(data) {
+DroppedItem.update = function update(data) {
     for (var i in DroppedItem.list) {
         DroppedItem.list[i].updated = false;
     }
@@ -700,7 +650,7 @@ DroppedItem.update = function(data) {
         }
     }
 };
-DroppedItem.updateHighlight = function() {
+DroppedItem.updateHighlight = function updateHighlight() {
     for (var i in DroppedItem.list) {
         DroppedItem.list[i].animationImage = Inventory.itemImages[DroppedItem.list[i].itemId];
     }
@@ -723,7 +673,7 @@ DroppedItem.updateHighlight = function() {
             }
         }
     }
-}
+};
 DroppedItem.list = [];
 
 // load data

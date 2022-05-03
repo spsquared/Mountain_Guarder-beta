@@ -1,6 +1,6 @@
 // Copyright (C) 2022 Radioactive64
 
-const version = 'v0.10.0';
+const version = 'v0.11.0-A01';
 var firstload = false;
 // canvas
 CTXRAW = document.getElementById('canvas');
@@ -164,27 +164,27 @@ preventDefaults('loadingContainer');
 document.getElementById('version').innerText = version;
 
 // error logging
-const error = console.error;
-console.error = function(msg) {
-    error(msg);
+const olderror = console.error;
+console.error = function error(msg) {
+    olderror(msg);
     insertChat({
         text: 'An error occurred:\n' + msg,
         style: 'color: #FF0000;'
     });
 };
-window.onerror = function(err) {
+window.onerror = function onerror(err) {
     insertChat({
         text: 'An error occurred:\n' + err,
         style: 'color: #FF0000;'
     });
 };
-window.onoffline = function(e){
+window.onoffline = function onoffline(e){
     socket.emit('timeout');
 };
 
 // visibility
 visible = true;
-document.onvisibilitychange = function(e) {
+document.onvisibilitychange = function onvisibilitychange(e) {
     if (document.visibilityState == 'hidden') {
         visible = false;
     } else {

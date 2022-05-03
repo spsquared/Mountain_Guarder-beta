@@ -166,79 +166,73 @@ function drawFrame() {
         OFFSETX += lsdX;
         OFFSETY += lsdY;
         updateCameraShake();
-        drawMap();
         DroppedItem.updateHighlight();
-        Entity.draw();
-        CTX.drawImage(LAYERS.map0, 0, 0, window.innerWidth, window.innerHeight);
-        for (var i = 0; i < MAPS[player.map].layerCount+1; i++) {
-            if (LAYERS.entitylayers[i]) CTX.drawImage(LAYERS.entitylayers[i], 0, 0, window.innerWidth, window.innerHeight);
-            if (LAYERS.mapvariables[i]) CTX.drawImage(LAYERS.mapvariables[i], 0, 0, window.innerWidth, window.innerHeight);
+        CTX.save();
+        CTX.translate((window.innerWidth/2)-player.x, (window.innerHeight/2)-player.y);
+        var width = MAPS[player.map].chunkwidth*64;
+        var height = MAPS[player.map].chunkheight*64;
+        for (var y in MAPS[player.map].chunks) {
+            for (var x in MAPS[player.map].chunks[y]) {
+                CTX.drawImage(MAPS[player.map].chunks[y][x].lower, (x*width)+OFFSETX, (y*height)+OFFSETY, width, height);
+            }
         }
-        CTX.drawImage(LAYERS.map1, 0, 0, window.innerWidth, window.innerHeight);
-        CTX.drawImage(LAYERS.entity1, 0, 0, window.innerWidth, window.innerHeight);
+        var entities = [];
+        if (!settings.particles) {
+            Particle.list = [];
+        }
+        for (var i in Player.list) {
+            if (Player.list[i].map == player.map) entities.push(Player.list[i]);
+        }
+        for (var i in Monster.list) {
+            if (Monster.list[i].map == player.map) entities.push(Monster.list[i]);
+        }
+        for (var i in Projectile.list) {
+            if (Projectile.list[i].map == player.map) entities.push(Projectile.list[i]);
+        }
+        if (!settings.particles) {
+            Particle.list = [];
+        }
+        for (var i in Particle.list) {
+            if (Particle.list[i].map == player.map) entities.push(Particle.list[i]);
+            else Particle.list[i].draw(true);
+        }
+        for (var i in DroppedItem.list) {
+            if (DroppedItem.list[i].map == player.map) entities.push(DroppedItem.list[i]);
+        }
+        for (var i = 0; i < MAPS[player.map].layerCount+1; i++) {
+            var entities2 = entities.filter(function(entity) {
+                return entity.layer == i;
+            });
+            for (var j in entities2) {
+                entities2[j].draw();
+            }
+            for (var y in MAPS[player.map].chunks) {
+                for (var x in MAPS[player.map].chunks[y]) {
+                    if (MAPS[player.map].chunks[y][x].variables[i] != null) CTX.drawImage(MAPS[player.map].chunks[y][x].variables[i], (x*width)+OFFSETX, (y*height)+OFFSETY, width, height);
+                }
+            }
+        }
+        for (var y in MAPS[player.map].chunks) {
+            for (var x in MAPS[player.map].chunks[y]) {
+                CTX.drawImage(MAPS[player.map].chunks[y][x].upper, (x*width)+OFFSETX, (y*height)+OFFSETY, width, height);
+            }
+        }
+        CTX.fillStyle = '#000000';
+        var mwidth = MAPS[player.map].width*64;
+        var mheight = MAPS[player.map].height*64;
+        var offsetX = MAPS[player.map].offsetX;
+        var offsetY = MAPS[player.map].offsetY;
+        CTX.fillRect(-1024+offsetX+OFFSETX, -1024+offsetY+OFFSETY, mwidth+2048, 1024);
+        CTX.fillRect(-1024+offsetX+OFFSETX, mheight+offsetY+OFFSETY, mwidth+2048, 1024);
+        CTX.fillRect(-1024+offsetX+OFFSETX, -1024+offsetY+OFFSETY, 1024, mheight+2048);
+        CTX.fillRect(mwidth+offsetX+OFFSETX, offsetY+OFFSETY, 1024, mheight+2048);
+        CTX.restore();
         drawDebug();
         if (settings.debug) {
             var current = Date.now();
             frameTimeCounter = current-frameStart;
         }
         if (!controllerConnected) socket.emit('mouseMove', {x: mouseX-OFFSETX, y: mouseY-OFFSETY});
-    }
-};
-function drawMap() {
-    if (settings.debug) mapStart = Date.now();
-    for (var i = 0; i < MAPS[player.map].layerCount+1; i++) {
-        if (LAYERS.mapvariables[i] == null) {
-            LAYERS.mapvariables[i] = createCanvas();
-            LAYERS.mvariables[i] = LAYERS.mapvariables[i].getContext('2d');
-            LAYERS.mapvariables[i].width = window.innerWidth*SCALE;
-            LAYERS.mapvariables[i].height = window.innerHeight*SCALE;
-            LAYERS.mvariables[i].scale(SCALE, SCALE);
-            resetCanvas(LAYERS.mapvariables[i]);
-        }
-    }
-    LAYERS.mlower.clearRect(0, 0, window.innerWidth, window.innerHeight);
-    LAYERS.mupper.clearRect(0, 0, window.innerWidth, window.innerHeight);
-    for (var i in LAYERS.mvariables) {
-        LAYERS.mvariables[i].clearRect(0, 0, window.innerWidth, window.innerHeight);
-    }
-    var translatex = (window.innerWidth/2)-player.x;
-    var translatey = (window.innerHeight/2)-player.y;
-    LAYERS.mlower.save();
-    LAYERS.mlower.translate(translatex, translatey);
-    LAYERS.mupper.save();
-    LAYERS.mupper.translate(translatex, translatey);
-    for (var i in LAYERS.mvariables) {
-        LAYERS.mvariables[i].save();
-        LAYERS.mvariables[i].translate(translatex, translatey);
-    }
-    var width = MAPS[player.map].chunkwidth*64;
-    var height = MAPS[player.map].chunkheight*64;
-    for (var y in MAPS[player.map].chunks) {
-        for (var x in MAPS[player.map].chunks[y]) {
-            LAYERS.mlower.drawImage(MAPS[player.map].chunks[y][x].lower, (x*width)+OFFSETX, (y*height)+OFFSETY, width, height);
-            LAYERS.mupper.drawImage(MAPS[player.map].chunks[y][x].upper, (x*width)+OFFSETX, (y*height)+OFFSETY, width, height);
-            for (var z in MAPS[player.map].chunks[y][x].variables) {
-                LAYERS.mvariables[z].drawImage(MAPS[player.map].chunks[y][x].variables[z], (x*width)+OFFSETX, (y*height)+OFFSETY, width, height);
-            }
-        }
-    }
-    LAYERS.mupper.fillStyle = '#000000';
-    var mwidth = MAPS[player.map].width*64;
-    var mheight = MAPS[player.map].height*64;
-    var offsetX = MAPS[player.map].offsetX;
-    var offsetY = MAPS[player.map].offsetY;
-    LAYERS.mupper.fillRect(-1024+offsetX+OFFSETX, -1024+offsetY+OFFSETY, mwidth+2048, 1024);
-    LAYERS.mupper.fillRect(-1024+offsetX+OFFSETX, mheight+offsetY+OFFSETY, mwidth+2048, 1024);
-    LAYERS.mupper.fillRect(-1024+offsetX+OFFSETX, -1024+offsetY+OFFSETY, 1024, mheight+2048);
-    LAYERS.mupper.fillRect(mwidth+offsetX+OFFSETX, offsetY+OFFSETY, 1024, mheight+2048);
-    LAYERS.mlower.restore();
-    LAYERS.mupper.restore();
-    for (var i in LAYERS.mvariables) {
-        LAYERS.mvariables[i].restore();
-    }
-    if (settings.debug) {
-        var current = Date.now();
-        mapTimeCounter = current-mapStart;
     }
 };
 function resetRenderedChunks() {

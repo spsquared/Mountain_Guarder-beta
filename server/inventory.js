@@ -42,6 +42,8 @@ Inventory = function(socket, player) {
                         self.equips['weapon2'] = temp;
                         self.equips['weapon'].slot = 'weapon';
                         self.equips['weapon2'].slot = 'weapon2';
+                        self.refreshItem('weapon');
+                        self.refreshItem('weapon2');
                     }
                     break;
                 default:
@@ -95,6 +97,13 @@ Inventory = function(socket, player) {
             else if (self.items[i].stackSize < self.items[i].maxStackSize) return false;
         }
         return true;
+    };
+    self.contains = function contains(id, amount) {
+        var count = 0;
+        for (var i in self.items) {
+            if (self.items[i]) if (self.items[i].id == id) count += self.items[i].stackSize;
+        }
+        return count >= amount;
     };
     self.refresh = function refresh() {
         for (var i = 0; i < self.maxItems; i++) {
@@ -167,18 +176,18 @@ Inventory = function(socket, player) {
         if (typeof slot == 'number') item = self.items[slot];
         else item = self.equips[slot];
         if (item) {
-            if (typeof self.cachedItem == 'object' && self.cachedItem != null) {
-                if (self.isSameItem(self.cachedItem, item)) {
-                    var old = self.cachedItem.stackSize;
-                    self.cachedItem.stackSize = Math.min(self.cachedItem.maxStackSize, self.cachedItem.stackSize+amount); // there is a dupe exploit waiting to happen here
-                    self.removeItem(slot, self.cachedItem.stackSize-old);
-                }
-            } else {
-                self.cachedItem = cloneDeep(item);
-                self.cachedItem.slot = null;
-                self.cachedItem.stackSize = amount;
-                self.removeItem(slot, amount);
-            }
+            self.cachedItem = cloneDeep(item);
+            self.cachedItem.getData = function getData() {
+                return {
+                    id: self.cachedItem.id,
+                    slot: self.cachedItem.slot,
+                    enchantments: self.cachedItem.enchantments,
+                    stackSize: self.cachedItem.stackSize
+                };
+            };
+            self.cachedItem.slot = null;
+            self.cachedItem.stackSize = amount;
+            self.removeItem(slot, amount);
             self.refreshItem(slot);
             self.refreshCached();
         }
@@ -197,16 +206,48 @@ Inventory = function(socket, player) {
                 } else {
                     if (typeof slot == 'number') {
                         self.items[slot] = self.cachedItem;
+                        self.items[slot].getData = function getData() {
+                            return {
+                                id: self.items[slot].id,
+                                slot: self.items[slot].slot,
+                                enchantments: self.items[slot].enchantments,
+                                stackSize: self.items[slot].stackSize
+                            };
+                        };
                         self.items[slot].slot = slot;
                     } else {
                         self.equips[slot] = self.cachedItem;
+                        self.equips[slot].getData = function getData() {
+                            return {
+                                id: self.equips[slot].id,
+                                slot: self.equips[slot].slot,
+                                enchantments: self.equips[slot].enchantments,
+                                stackSize: self.equips[slot].stackSize
+                            };
+                        };
                         self.equips[slot].slot = slot;
                     }
                     self.cachedItem = item;
+                    self.cachedItem.getData = function getData() {
+                        return {
+                            id: self.cachedItem.id,
+                            slot: self.cachedItem.slot,
+                            enchantments: self.cachedItem.enchantments,
+                            stackSize: self.cachedItem.stackSize
+                        };
+                    };
                     self.cachedItem.slot = null;
                 }
             } else {
                 item = cloneDeep(self.cachedItem);
+                item.getData = function getData() {
+                    return {
+                        id: item.id,
+                        slot: item.slot,
+                        enchantments: item.enchantments,
+                        stackSize: item.stackSize
+                    };
+                };
                 if (typeof slot == 'number') {
                     self.items[slot] = item;
                 } else {
@@ -217,7 +258,6 @@ Inventory = function(socket, player) {
                 if (amount == self.cachedItem.stackSize) self.cachedItem = null;
             }
             self.refreshItem(slot);
-            self.refresh();
             self.refreshCached();
         }
     };
@@ -287,12 +327,14 @@ Inventory = function(socket, player) {
                     }
                     enchantsSame = false;
                 }
+                if (enchantsSame) return true;
             }
         }
+        return false;
     };
     self.getSaveData = function getSaveData() {
         try {
-            if (self.cachedItem) self.addItem(self.cachedItem.id, self.cachedItem.amount, self.cachedItem.enchantments);
+            if (self.cachedItem != null) self.addItem(self.cachedItem.id, self.cachedItem.amount, self.cachedItem.enchantments);
             var pack = {
                 items: [],
                 equips: []
@@ -349,7 +391,7 @@ Inventory = function(socket, player) {
 
     return self;
 };
-Inventory.Item = function (id, list, amount, enchantments) {
+Inventory.Item = function Item(id, list, amount, enchantments) {
     if (Inventory.items[id] == null) {
         id = 'missing';
     }
@@ -430,3 +472,39 @@ Inventory.Item = function (id, list, amount, enchantments) {
 };
 Inventory.items = require('./item.json');
 Inventory.enchantments = null;
+
+Shop = function(id, socket, inventory, player) {
+    var self = {
+        slots: []
+    };
+    self.buy = function buy(item) {
+        if (self.slots[item] != null) {
+            var canBuy = true;
+            for (var i in self.slots[item].costs) {
+                if (!inventory.contains(i, self.slots[item].costs[i])) canBuy = false;
+            }
+            if (canBuy) {
+                if (inventory.cachedItem) {
+                    if (inventory.isSameItem(inventory.cachedItem, new Inventory.Item(self.slots[item].item.id, [null], self.slots[item].item.amount, self.slots[item].item.enchantments))) {
+                        inventory.cachedItem.stackSize++;
+                        if (inventory.cachedItem.stackSize >= inventory.cachedItem.maxStackSize) {
+                            inventory.cachedItem.stackSize--;
+                            return;
+                        }
+                    } else {
+                        return;
+                    }
+                } else {
+                    inventory.cachedItem = new Inventory.Item(self.slots[item].item.id, [null], self.slots[item].item.amount, self.slots[item].item.enchantments);
+                }
+                for (var i in self.slots[item].costs) {
+
+                }
+            }
+        } else {
+            player.socketKick();
+        }
+    };
+
+    return self;
+};

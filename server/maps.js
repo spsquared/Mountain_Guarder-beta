@@ -260,7 +260,7 @@ function loadAll() {
     loadMap('The Void')
     loadMap('Outpost Cottage 1');
     loadMap('Outpost Cottage 2');
-    // loadMap('Outpost Trader\'s Store');
+    loadMap('Outpost Trader\'s Store');
 };
 loadAll();
 

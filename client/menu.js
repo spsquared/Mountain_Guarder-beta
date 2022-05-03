@@ -288,7 +288,7 @@ DraggableWindow = function(id) {
         tabs: [],
         currentTab: null
     };
-    self.renderWindow = function() {
+    self.renderWindow = function renderWindow() {
         self.x = Math.min(Math.max(self.x, 0), window.innerWidth-self.width-2);
         self.y = Math.min(Math.max(self.y, 0), window.innerHeight-self.height-3);
         self.window.style.left = self.x + 'px';
@@ -315,24 +315,24 @@ DraggableWindow = function(id) {
         self.hide();
     };
 
-    self.hide = function() {
+    self.hide = function hide() {
         self.window.style.display = 'none';
         self.open = false;
     };
-    self.show = function() {
+    self.show = function show() {
         self.window.style.display = 'block';
         resetZIndex();
         self.window.style.zIndex = 6;
         self.open = true;
     };
-    self.toggle = function() {
+    self.toggle = function toggle() {
         if (self.open) {
             self.hide();
         } else {
             self.show();
         }
     }
-    self.changeTab = function(tab) {
+    self.changeTab = function changeTab(tab) {
         for (var i in self.tabs) {
             document.getElementById(self.tabs[i]).style.display = 'none';
         }
@@ -376,7 +376,7 @@ var inventoryWindow = new DraggableWindow('inventory');
 var mapWindow = new DraggableWindow('map');
 var settingsWindow = new DraggableWindow('settings');
 debugConsoleWindow = new DraggableWindow('debugConsole');
-inventoryWindow.hide = function() {
+inventoryWindow.hide = function hide() {
     inventoryWindow.window.style.display = 'none';
     inventoryWindow.open = false;
     document.getElementById('invHoverTooltip').style.opacity = 0;

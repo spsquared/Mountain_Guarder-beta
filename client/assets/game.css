@@ -419,6 +419,8 @@
     padding-top: 3px;
     height: 24px;
     background-color: #2c2216;
+    border: none;
+    border-bottom: 1px solid black;
     cursor: move;
 }
 .window-close {
