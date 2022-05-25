@@ -372,10 +372,10 @@ function toggleDropdown() {
         menuopen = true;
     }
 };
-var inventoryWindow = new DraggableWindow('inventory');
-var mapWindow = new DraggableWindow('map');
-var settingsWindow = new DraggableWindow('settings');
-debugConsoleWindow = new DraggableWindow('debugConsole');
+const inventoryWindow = new DraggableWindow('inventory');
+const mapWindow = new DraggableWindow('map');
+const settingsWindow = new DraggableWindow('settings');
+const debugConsoleWindow = new DraggableWindow('debugConsole');
 inventoryWindow.hide = function hide() {
     inventoryWindow.window.style.display = 'none';
     inventoryWindow.open = false;
@@ -389,6 +389,15 @@ inventoryWindow.hide = function hide() {
     if (Inventory.currentDrag) Inventory.dropItem(null, Inventory.currentDrag.stackSize);
     Inventory.currentDrag = null;
     Inventory.currentHover = null;
+    if (Shop.currentShop) Shop.currentShop.close();
+};
+inventoryWindow.changeTab = function changeTab(tab) {
+    for (var i in inventoryWindow.tabs) {
+        document.getElementById(inventoryWindow.tabs[i]).style.display = 'none';
+    }
+    document.getElementById(tab).style.display = '';
+    inventoryWindow.currentTab = tab;
+    if (Shop.currentShop) Shop.currentShop.close();
 };
 mapWindow.width = mapWindow.height;
 settingsWindow.width = 500;
@@ -460,6 +469,7 @@ function updateSetting(setting) {
     switch (setting) {
         case 'fps':
             resetFPS();
+            tpsFpsRatio = settings.fps/20;
             indicatorText += 'fps';
             break;
         case 'renderDistance':
@@ -491,7 +501,7 @@ function updateSetting(setting) {
             } else {
                 indicatorText = 'off';
                 document.getElementById('crossHair').style.display = '';
-                if (pointerLocked) document.exitPointerLock();
+                document.exitPointerLock();
             }
             break;
         case 'useController':
@@ -542,6 +552,15 @@ function updateSetting(setting) {
             if (settings.debug) {
                 indicatorText = 'on';
             } else {
+                indicatorText = 'off';
+            }
+            break;
+        case 'fullscreen':
+            if (settings.fullscreen) {
+                if (document.hasFocus()) document.getElementById('gameContainer').requestFullscreen();
+                indicatorText = 'on';
+            } else {
+                if (document.hasFocus()) document.exitFullscreen();
                 indicatorText = 'off';
             }
             break;
@@ -602,6 +621,7 @@ try {
                 if (settings[i] != null) settings[i] = cookiesettings[i];
             }
             settings.debug = false;
+            settings.fullscreen = false;
             document.getElementById('fpsSlider').value = settings.fps;
             document.getElementById('renderDistanceSlider').value = settings.renderDistance;
             document.getElementById('renderQualitySlider').value = settings.renderQuality;
@@ -613,7 +633,7 @@ try {
             document.getElementById('chatSizeSlider').value = settings.chatSize;
             document.getElementById('highContrastToggle').checked = settings.highContrast;
             for (var i in settings) {
-                updateSetting(i);
+                if (i != 'fullscreen') try {updateSetting(i);} catch (err) {console.error(err);}
             }
         } else if (cookie.startsWith('controllerSettings=')) {
             cookiesettings = JSON.parse(cookie.replace('controllerSettings=', ''));

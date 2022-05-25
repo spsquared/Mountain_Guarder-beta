@@ -263,6 +263,7 @@ a:focus {
     background-color: black;
     text-align: center;
     animation-duration: 0.5s;
+    cursor: none;
     z-index: 100;
 }
 #loadingIcon {

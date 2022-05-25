@@ -882,9 +882,7 @@ Rig = function() {
         if (self.ai.entityTarget) {
             self.ai.path = [];
             try {
-                var x = self.x;
-                var y = self.y;
-                if (self.ai.entityTarget.layer != self.layer) {
+                if (false) {
                     // var openList = [];
                     // var closedList = [];
                     // for (var py in Layer.grid[self.map][self.layer]) {
@@ -1021,32 +1019,103 @@ Rig = function() {
         if (self.ai.posTarget) {
             self.ai.path = [];
             try {
-                if (self.getSquareGridDistance(self.ai.posTarget) < self.ai.maxRange) {
+                if (self.getSquareGridDistance({x: self.ai.posTarget.x, y: self.ai.posTarget.y}) < self.ai.maxRange) {
+                    self.ai.path = self.ai.pathtoTarget(self.ai.posTarget.x, self.ai.posTarget.y);
+                    if (self.ai.path[0] == null) {
+                        // create list of possible layer changers in order of closeness to target and closeness to self
+                        // rank by closeness to target and closeness to self, then add together, then sort again
+                        // start at highest ranked layer changer, and repeat for layer changers on that layer that haven't already been ranked in current layer changers
+                        // once the lowest distance is found backtrace the path
+                        var layers = [];
+                        var currlayer = self.layer;
+                        var curr = {
+                            x: self.gridx,
+                            y: self.gridy,
+                            layer: currlayer,
+                            dir: 0,
+                            parent: null,
+                            f: 1,
+                            g: 0,
+                            h: 0
+                        };
+                        var lastcurr = null;
+                        while (true) {
+                            if (layers[currlayer] == null) layers[currlayer] = [];
+                            for (var y in Layer.grid[self.map][currlayer]) {
+                                for (var x in Layer.grid[self.map][currlayer][y]) {
+                                    layers[currlayer].push({
+                                        x: parseInt(x),
+                                        y: parseInt(y),
+                                        layer: currlayer,
+                                        dir: Layer.getColDir(self.map, parseInt(x), parseInt(y), currlayer),
+                                        parent: curr,
+                                        f: 0,
+                                        g: 0,
+                                        h: 0
+                                    });
+                                }
+                            }
+                            var fromself = Array.from(layers[currlayer]).sort(function(a, b) {
+                                return self.getSquareGridDistance(a)-self.getSquareGridDistance(b);
+                            });
+                            var fromtarg = Array.from(layers[currlayer]).sort(function(a, b) {
+                                return Math.max(Math.abs(self.ai.posTarget.x-a.x), Math.abs(self.ai.posTarget.y-a.y)) - Math.max(Math.abs(self.ai.posTarget.x-b.x), Math.abs(self.ai.posTarget.y-b.y));
+                            });
+                            for (var i in fromself) {
+                                fromself[i].g = parseInt(i);
+                            }
+                            for (var i in fromtarg) {
+                                fromself[i].h = parseInt(i);
+                            }
+                            for (var i in layers[currlayer]) {
+                                layers[currlayer][i].f = layers[currlayer][i].g + layers[currlayer][i].h;
+                            }
+                            layers[currlayer].sort((a, b) => a.f - b.f);
+                            lastcurr = curr;
+                            curr = layers[currlayer][0];
+                            currlayer += curr.dir;
+                            // console.log(curr, lastcurr, currlayer)
+                            break;
+                        }
+                    }
+                }
+            } catch (err) {
+                error(err);
+            }
+        }
+        return self.ai.path;
+    };
+    self.ai.pathtoTarget = function pathtoTarget(x, y) {
+        if (typeof x == 'number' && typeof y == 'number') {
+            try {
+                var retpath = [];
+                if (self.getSquareGridDistance({x: x, y: y}) < self.ai.maxRange) {
                     var offsetx = self.gridx-self.ai.maxRange-1;
                     var offsety = self.gridy-self.ai.maxRange-1;
                     var x1 = self.ai.maxRange+1;
                     var y1 = self.ai.maxRange+1;
-                    var x2 = self.ai.posTarget.x-offsetx;
-                    var y2 = self.ai.posTarget.y-offsety;
+                    var x2 = x-offsetx;
+                    var y2 = y-offsety;
                     var size = self.ai.maxRange*2+1;
                     self.ai.grid = new PF.Grid(size, size);
-                    for (var y = 0; y < size; y++) {
-                        for (var x = 0; x < size; x++) {
-                            var checkx = x+offsetx;
-                            var checky = y+offsety;
+                    for (var writey = 0; writey < size; writey++) {
+                        for (var writex = 0; writex < size; writex++) {
+                            var checkx = writex+offsetx;
+                            var checky = writey+offsety;
                             if (Collision.grid[self.map][self.layer]) if (Collision.grid[self.map][self.layer][checky]) if (Collision.grid[self.map][self.layer][checky][checkx]) {
-                                self.ai.grid.setWalkableAt(x, y, false);
+                                self.ai.grid.setWalkableAt(writex, writey, false);
                             }
                         }
                     }
                     var path = self.ai.pathfinder.findPath(x1, y1, x2, y2, self.ai.grid);
                     path.shift();
-                    self.ai.path = PF.Util.compressPath(path);
-                    for (var i in self.ai.path) {
-                        self.ai.path[i][0] += offsetx;
-                        self.ai.path[i][1] += offsety;
+                    retpath = PF.Util.compressPath(path);
+                    for (var i in retpath) {
+                        retpath[i][0] += offsetx;
+                        retpath[i][1] += offsety;
                     }
                 }
+                return retpath;
             } catch (err) {
                 error(err);
             }
@@ -1293,33 +1362,38 @@ Npc = function(id, x, y, map) {
         knockback: 0
     };
     self.moveSpeed = 5;
-    var tempnpc = Npc.rawJson[id];
-    self.x = x*64+32;
-    self.y = y*64+32;
-    self.map = map;
-    self.gridx = Math.floor(self.x/64);
-    self.gridy = Math.floor(self.y/64);
-    self.chunkx = Math.floor(self.gridx/Collision.grid[self.map].chunkWidth);
-    self.chunky = Math.floor(self.gridy/Collision.grid[self.map].chunkHeight);
-    switch (tempnpc.type) {
-        case 'static':
-            self.moveSpeed = 0;
-            break;
-        case 'waypoint':
-            self.ai.idleMove = 'waypoints';
-            break;
-        case 'random':
-            self.ai.idleMove = 'random';
-            break;
-        default:
-            error('Invalid npc type ' + tempnpc.type);
-            break;
+    try {
+        var tempnpc = Npc.rawJson[id];
+        self.x = x*64+32;
+        self.y = y*64+32;
+        self.map = map;
+        self.gridx = Math.floor(self.x/64);
+        self.gridy = Math.floor(self.y/64);
+        self.chunkx = Math.floor(self.gridx/Collision.grid[self.map].chunkWidth);
+        self.chunky = Math.floor(self.gridy/Collision.grid[self.map].chunkHeight);
+        switch (tempnpc.type) {
+            case 'static':
+                self.moveSpeed = 0;
+                break;
+            case 'waypoint':
+                self.ai.idleMove = 'waypoints';
+                break;
+            case 'random':
+                self.ai.idleMove = 'random';
+                break;
+            default:
+                error('Invalid npc type ' + tempnpc.type);
+                break;
+        }
+        self.rightClickEvent = new Function('return ' + tempnpc.rightClickEvent)();
+        for (var i in tempnpc.data) {
+            self[i] = tempnpc.data[i];
+        }
+        tempnpc = null;
+    } catch (err) {
+        error(err);
+        return false;
     }
-    self.rightClickEvent = new Function('return ' + tempnpc.rightClickEvent)();
-    for (var i in tempnpc.data) {
-        self[i] = tempnpc.data[i];
-    }
-    tempnpc = null;
     self.aiControlled = true;
     self.collisionBoxSize = Math.max(self.width, self.height);
 
@@ -1335,8 +1409,9 @@ Npc = function(id, x, y, map) {
     self.endConversation = function endConversation() {
         self.ai.frozen = false;
     };
-    self.openShop = function openShop(player) {
+    self.openShop = function openShop(id, player) {
         self.ai.frozen = true;
+        new Shop(id, player.socket, player.inventory, player);
     };
     self.closeShop = function closeShop(player) {
         self.ai.frozen = false;
@@ -1439,6 +1514,7 @@ Player = function(socket) {
     self.currentConversation = null;
     self.talkingWith = null;
     self.talkedWith = null;
+    self.spectating = null;
     self.quests = new QuestHandler(socket, self);
     self.trackedData = {
         monstersKilled: [],
@@ -1504,18 +1580,19 @@ Player = function(socket) {
     };
     self.chatStyle = '';
     self.signUpAttempts = 0;
-    setInterval(function() {
+    const signupspamcheck = setInterval(async function() {
         self.signUpAttempts = Math.max(self.signUpAttempts-1, 0);
         if (self.signUpAttempts >= 1) {
-            insertChat(self.name + ' was kicked for sign up spam', 'anticheat');
-            socket.emit('disconnected');
-            socket.onevent = function(packet) {};
-            socket.disconnect();
+            log('User was kicked for sign up spam: IP-' + self.ip + ' WebGL Fingerprint-' + self.fingerprint.webgl);
+            await self.disconnect();
+            self.inventory.quit();
+            self.quests.quit();
         }
-    }, 3000);
+    }, 10000);
     self.signedIn = false;
     self.collisionBoxSize = Math.max(self.width, self.height);
     self.renderDistance = 1;
+    self.active = true;
 
     var maps = [];
     for (var i in Collision.grid) {
@@ -1572,6 +1649,7 @@ Player = function(socket) {
                                 self.name = self.creds.username;
                                 await self.loadData();
                                 socket.emit('signInState', 'signedIn');
+                                self.updateClient();
                                 insertChat(self.name + ' joined the game', 'server');
                                 self.invincible = false;
                                 self.canMove = true;
@@ -1581,7 +1659,16 @@ Player = function(socket) {
                             }
                             break;
                         case 'signUp':
-                            self.signUpAttempts++;
+                            for (var i in Player.list) {
+                                if (Player.list[i].ip == self.ip || Player.list[i].fingerprint.webgl == self.fingerprint.webgl) Player.list[i].signUpAttempts++;
+                            }
+                            if (self.signUpAttempts > 1) {
+                                log('User was kicked for sign up spam: IP-' + self.ip + ' WebGL Fingerprint-' + self.fingerprint.webgl);
+                                await self.disconnect();
+                                self.inventory.quit();
+                                self.quests.quit();
+                                return;
+                            }
                             var highest = 0;
                             for (var i in Player.list) {
                                 if (Player.list[i].ip == self.ip) highest = Math.max(highest, Player.list[i].signUpAttempts);
@@ -1836,17 +1923,14 @@ Player = function(socket) {
             }
         }
     });
-    var spamcheck = setInterval(function() {
+    const spamcheck = setInterval(async function() {
         charCount = Math.max(charCount-128, 0);
         msgCount = Math.max(msgCount-2, 0);
         if (charCount > 0 || msgCount > 0) {
-            if (self.name) {
-                insertChat(self.name + ' was kicked for spamming', 'anticheat');
-            }
-            socket.emit('disconnected');
-            socket.onevent = function(packet) {};
-            socket.disconnect();
-            clearInterval(spamcheck);
+            if (self.name) insertChat(self.name + ' was kicked for spamming', 'anticheat');
+            await self.disconnect();
+            self.inventory.quit();
+            self.quests.quit();
         }
     }, 1000);
 
@@ -1963,7 +2047,7 @@ Player = function(socket) {
     };
     self.updateClient = function updateClient() {
         var pack = {
-            id: self.id,
+            id: self.spectating ?? self.id,
             hp: self.hp,
             maxHP: self.maxHP,
             xp: self.xp,
@@ -2142,7 +2226,7 @@ Player = function(socket) {
                     if (x >= left && x <= right && y >= top && y <= bottom) {
                         if (!self.inventory.full()) {
                             var res = self.inventory.addItem(localdroppeditem.itemId, localdroppeditem.stackSize, localdroppeditem.enchantments);
-                            if (typeof res == 'number') {
+                            if (typeof res == 'object') {
                                 delete DroppedItem.list[i];
                             }
                         }
@@ -2225,6 +2309,13 @@ Player = function(socket) {
             }
         }
     });
+    self.spectate = function spectate(name) {
+        self.spectating = null;
+        for (var i in Player.list) {
+            if (Player.list[i].name === name) self.spectating = i; 
+        }
+        return self.spectating;
+    };
     self.saveData = async function saveData() {
         var trackedData = JSON.parse(JSON.stringify(self.trackedData));
         var progress = {
@@ -2236,7 +2327,8 @@ Player = function(socket) {
             },
             quests: self.quests.getSaveData(),
             trackedData: trackedData,
-            saveFormat: 1
+            saveFormat: 1,
+            lastLogin: Date.now()
         };
         var data = JSON.stringify(progress);
         await ACCOUNTS.saveProgress(self.creds.username, self.creds.password, data);
@@ -2295,12 +2387,57 @@ Player = function(socket) {
             self.inventory.addItem('simplewoodenbow');
         }
     };
-    self.socketKick = function socketKick() { 
-        if (self.name) insertChat(self.name + ' was kicked for socket.emit', 'anticheat');
-        socket.emit('disconnected');
-        socket.onevent = function(packet) {};
-        socket.disconnect(true);
+    socket.on('disconnect', function() {
+        clearInterval(signupspamcheck);
+        clearInterval(spamcheck);
+    });
+    socket.on('disconnected', function() {
+        clearInterval(signupspamcheck);
+        clearInterval(spamcheck);
+    });
+    socket.on('timeout', function() {
+        clearInterval(signupspamcheck);
+        clearInterval(spamcheck);
+    });
+    socket.on('error', function() {
+        clearInterval(signupspamcheck);
+        clearInterval(spamcheck);
+    });
+    self.disconnect = async function disconnect() {
+        clearInterval(signupspamcheck);
+        clearInterval(spamcheck);
+        if (self.name != null) {
+            await self.saveData();
+            insertChat(self.name + ' left the game', 'server');
+            self.inventory.quit();
+            self.quests.quit();
+        }
         delete Player.list[self.id];
+        socket.emit('disconnected');
+        socket.removeAllListeners();
+        socket.onevent = function(packet) {};
+        socket.disconnect();
+        self.active = false;
+        self = null;
+        socket = null;
+    };
+    self.socketKick = async function socketKick() {
+        clearInterval(signupspamcheck);
+        clearInterval(spamcheck);
+        if (self.name) {
+            await self.saveData();
+            insertChat(self.name + ' was kicked for socket.emit', 'anticheat');
+            self.inventory.quit();
+            self.quests.quit();
+        }
+        delete Player.list[self.id];
+        socket.emit('disconnected');
+        socket.removeAllListeners();
+        socket.onevent = function(packet) {};
+        socket.disconnect();
+        self.active = false;
+        self = null;
+        socket = null;
     };
 
     Player.list[self.id] = self;
@@ -2399,7 +2536,7 @@ Monster = function(type, x, y, map, layer) {
         tempmonster = null
     } catch (err) {
         error(err);
-        return;
+        return false;
     }
     self.collisionBoxSize = Math.max(self.width, self.height);
     self.active = false;
@@ -2568,7 +2705,7 @@ Monster = function(type, x, y, map, layer) {
         if (self.targetMonsters) {
             var lowest;
             for (var i in Monster.list) {
-                if (Monster.list[i].map == self.map && self.getGridDistance(Monster.list[i]) < self.ai.maxRange && !self.rayCast(Monster.list[i].x, Monster.list[i].y) && i != self.id && !Monster.list[i].region.nomonster && Monster.list[i].alive) {
+                if (Monster.list[i].map == self.map && self.getGridDistance(Monster.list[i]) < self.ai.maxRange && (!self.rayCast(Monster.list[i].x, Monster.list[i].y) || self.getGridDistance(Monster.list[i]) < 4) && i != self.id && !Monster.list[i].region.nomonster && Monster.list[i].alive) {
                     if (lowest == null) lowest = i;
                     if (lowest) if (self.getGridDistance(Monster.list[i]) < self.getGridDistance(Monster.list[lowest])) {
                         lowest = i;
@@ -2586,7 +2723,7 @@ Monster = function(type, x, y, map, layer) {
         } else {
             var lowest;
             for (var i in Player.list) {
-                if (Player.list[i].map == self.map && self.getGridDistance(Player.list[i]) < self.ai.maxRange  && !self.rayCast(Player.list[i].x, Player.list[i].y) && !Player.list[i].region.nomonster && Player.list[i].alive) {
+                if (Player.list[i].map == self.map && self.getGridDistance(Player.list[i]) < self.ai.maxRange  && (!self.rayCast(Player.list[i].x, Player.list[i].y) || self.getGridDistance(Player.list[i]) < 4) && !Player.list[i].region.nomonster && Player.list[i].alive) {
                     if (lowest == null) lowest = i;
                     if (lowest) if (self.getGridDistance(Player.list[i]) < self.getGridDistance(Player.list[lowest])) {
                         lowest = i;
@@ -2957,7 +3094,7 @@ Projectile = function(type, angle, parentID) {
         tempprojectile = null;
     } catch (err) {
         error(err);
-        return;
+        return false;
     }
     self.angle = angle;
     self.parentID = parentID;
@@ -2979,7 +3116,7 @@ Projectile = function(type, angle, parentID) {
         self.moveSpeed *= parent.stats.projectileSpeed;
     } catch (err) {
         error(err);
-        return;
+        return false;
     }
     self.traveltime = 0;
     self.sinAngle = Math.sin(self.angle);

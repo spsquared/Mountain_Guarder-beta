@@ -68,7 +68,7 @@ Inventory = function(socket, player) {
                 self.refreshItem(newitem.modifiedSlots[i]);
             }
             if (newitem.overflow) return newitem.overflow;
-            return newitem.modifiedSlots[newitem.modifiedSlots.length-1];
+            return newitem.modifiedSlots;
         } else {
             var angle = Math.random()*2*Math.PI;
             var distance = Math.random()*32;
@@ -77,19 +77,37 @@ Inventory = function(socket, player) {
             return new DroppedItem(player.map, x, y, id, enchantments ?? [], amount);
         }
     };
-    self.removeItem = function removeItem(slot, amount) {
+    self.removeItem = function removeItem(id, amount) {
+        var modifiedSlots = [];
+        for (var i in self.items) {
+            if (self.items[i]) if (self.items[i].id == id) {
+                self.items[i].stackSize -= amount || 1;
+                if (self.items[i].stackSize < 1) self.items[i] = null;
+                modifiedSlots.push(i);
+            }
+        }
+        for (var i in modifiedSlots) {
+            self.refreshItem(i);
+        }
+        return modifiedSlots;
+    };
+    self.removeItemSlot = function removeItemSlot(slot, amount) {
+        var size = 0;
         if (typeof slot == 'number') {
             if (self.items[slot]) {
                 self.items[slot].stackSize -= amount || 1;
+                size = Math.max(self.items[slot].stackSize, 0);
                 if (self.items[slot].stackSize < 1) self.items[slot] = null;
             }
         } else {
             if (self.equips[slot]) {
                 self.equips[slot].stackSize -= amount || 1;
+                size = Math.max(self.equips[slot].stackSize, 0);
                 if (self.equips[slot].stackSize < 1) self.equips[slot] = null;
             }
         }
         self.refreshItem(slot);
+        return size;
     };
     self.full = function full() {
         for (var i = 0; i < self.maxItems; i++) {
@@ -173,8 +191,29 @@ Inventory = function(socket, player) {
     };
     self.takeItem = function takeItem(slot, amount) {
         var item;
-        if (typeof slot == 'number') item = self.items[slot];
-        else item = self.equips[slot];
+        if (typeof slot == 'number') {
+            item = self.items[slot];
+            var valid = false;
+            for (var i in self.items) {
+                if (slot === parseInt(i)) valid = true;
+            }
+            if (!valid) {
+                player.socketKick();
+                return;
+            }
+        }
+        else if (typeof slot == 'string') {
+            item = self.equips[slot];
+            var valid = false;
+            for (var i in self.equips) {
+                if (slot === i) valid = true;
+            }
+            if (!valid) {
+                player.socketKick();
+                return;
+            }
+        }
+        else player.socketKick();
         if (item) {
             self.cachedItem = cloneDeep(item);
             self.cachedItem.getData = function getData() {
@@ -187,23 +226,45 @@ Inventory = function(socket, player) {
             };
             self.cachedItem.slot = null;
             self.cachedItem.stackSize = amount;
-            self.removeItem(slot, amount);
+            self.removeItemSlot(slot, amount);
             self.refreshItem(slot);
             self.refreshCached();
         }
     };
     self.placeItem = function placeItem(slot, amount) {
         var item;
-        if (typeof slot == 'number') item = self.items[slot];
-        else item = self.equips[slot];
+        if (typeof slot == 'number') {
+            item = self.items[slot];
+            var valid = false;
+            for (var i in self.items) {
+                if (slot === parseInt(i)) valid = true;
+            }
+            if (!valid) {
+                player.socketKick();
+                return;
+            }
+        }
+        else if (typeof slot == 'string') {
+            item = self.equips[slot];
+            var valid = false;
+            for (var i in self.equips) {
+                if (slot === i) valid = true;
+            }
+            if (!valid) {
+                player.socketKick();
+                return;
+            }
+        }
+        else player.socketKick();
         if (typeof self.cachedItem == 'object' && self.cachedItem != null) {
             if (item) {
-                if (self.isSameItem(self.cachedItem, item)) {
+                if (self.isSameItem(self.cachedItem, item) && typeof slot == 'number') {
                     var old = item.stackSize;
                     item.stackSize = Math.min(item.maxStackSize, item.stackSize+amount); // there is a dupe exploit waiting to happen here
                     self.cachedItem.stackSize -= item.stackSize-old;
                     if (self.cachedItem.stackSize < 1) self.cachedItem = null;
                 } else {
+                    var canSwap = true;
                     if (typeof slot == 'number') {
                         self.items[slot] = self.cachedItem;
                         self.items[slot].getData = function getData() {
@@ -216,46 +277,56 @@ Inventory = function(socket, player) {
                         };
                         self.items[slot].slot = slot;
                     } else {
-                        self.equips[slot] = self.cachedItem;
-                        self.equips[slot].getData = function getData() {
+                        if (self.cachedItem.slotType != slot && self.cachedItem.slotType != 'weapon2') canSwap = false;
+                        if (self.cachedItem.stackSize == 1 && canSwap) {
+                            self.equips[slot] = self.cachedItem;
+                            self.equips[slot].getData = function getData() {
+                                return {
+                                    id: self.equips[slot].id,
+                                    slot: self.equips[slot].slot,
+                                    enchantments: self.equips[slot].enchantments,
+                                    stackSize: self.equips[slot].stackSize
+                                };
+                            };
+                            self.equips[slot].slot = slot;
+                        }
+                    }
+                    if ((typeof slot == 'number' || self.cachedItem.stackSize == 1) && canSwap) {
+                        self.cachedItem = item;
+                        self.cachedItem.getData = function getData() {
                             return {
-                                id: self.equips[slot].id,
-                                slot: self.equips[slot].slot,
-                                enchantments: self.equips[slot].enchantments,
-                                stackSize: self.equips[slot].stackSize
+                                id: self.cachedItem.id,
+                                slot: self.cachedItem.slot,
+                                enchantments: self.cachedItem.enchantments,
+                                stackSize: self.cachedItem.stackSize
                             };
                         };
-                        self.equips[slot].slot = slot;
+                        self.cachedItem.slot = null;
                     }
-                    self.cachedItem = item;
-                    self.cachedItem.getData = function getData() {
-                        return {
-                            id: self.cachedItem.id,
-                            slot: self.cachedItem.slot,
-                            enchantments: self.cachedItem.enchantments,
-                            stackSize: self.cachedItem.stackSize
-                        };
-                    };
-                    self.cachedItem.slot = null;
                 }
             } else {
-                item = cloneDeep(self.cachedItem);
-                item.getData = function getData() {
-                    return {
-                        id: item.id,
-                        slot: item.slot,
-                        enchantments: item.enchantments,
-                        stackSize: item.stackSize
+                var canPlace = true;
+                if (typeof slot == 'string' && (self.cachedItem.slotType != slot && self.cachedItem.slotType != 'weapon2')) canPlace = false;
+                if ((typeof slot == 'number' || amount == 1) && canPlace) {
+                    item = cloneDeep(self.cachedItem);
+                    item.getData = function getData() {
+                        return {
+                            id: item.id,
+                            slot: item.slot,
+                            enchantments: item.enchantments,
+                            stackSize: item.stackSize
+                        };
                     };
-                };
-                if (typeof slot == 'number') {
-                    self.items[slot] = item;
-                } else {
-                    self.equips[slot] = item;
+                    if (typeof slot == 'number') {
+                        self.items[slot] = item;
+                    } else {
+                        self.equips[slot] = item;
+                    }
+                    item.stackSize = amount;
+                    item.slot = slot;
+                    self.cachedItem.stackSize -= amount;
+                    if (self.cachedItem.stackSize <= 0) self.cachedItem = null;
                 }
-                item.stackSize = amount;
-                item.slot = slot;
-                if (amount == self.cachedItem.stackSize) self.cachedItem = null;
             }
             self.refreshItem(slot);
             self.refreshCached();
@@ -313,7 +384,7 @@ Inventory = function(socket, player) {
                     if (item.stackSize < 1) self.cachedItem = null;
                     self.refreshCached();
                 }
-                else self.removeItem(item.slot, amount);
+                else self.removeItemSlot(item.slot, amount);
             }
         }
     };
@@ -387,6 +458,11 @@ Inventory = function(socket, player) {
                 error(err);
             }
         }
+    };
+    self.quit = function quit() {
+        self = null;
+        player = null;
+        socket = null;
     };
 
     return self;
@@ -475,8 +551,51 @@ Inventory.enchantments = null;
 
 Shop = function(id, socket, inventory, player) {
     var self = {
+        id: id,
         slots: []
     };
+    try {
+        self.slots = Shop.shops[id].slots;
+    } catch (err) {
+        error(err);
+        return false;
+    }
+    player.attacking = false;
+    player.canMove = false;
+    player.invincible = true;
+    player.controls = {
+        up: false,
+        down: false,
+        left: false,
+        right: false,
+        xaxis: 0,
+        yaxis: 0,
+        x: 0,
+        y: 0,
+        heal: false
+    };
+    player.animationDirection = 'facing';
+    
+    socket.once('shop', function listener(data) {
+        var valid = false;
+        if (typeof data == 'object' && data != null) if (data.action != null) valid = true;
+        if (valid) {
+            switch (data.action) {
+                case 'close':
+                    self.close();
+                    break;
+                case 'buy':
+                    self.buy(data.slot);
+                    break;
+                default:
+                    error('Invalid item action ' + data.action);
+                    break;
+            }
+        } else {
+            player.socketKick();
+        }
+        socket.once('shop', listener);
+    });
     self.buy = function buy(item) {
         if (self.slots[item] != null) {
             var canBuy = true;
@@ -496,15 +615,24 @@ Shop = function(id, socket, inventory, player) {
                     }
                 } else {
                     inventory.cachedItem = new Inventory.Item(self.slots[item].item.id, [null], self.slots[item].item.amount, self.slots[item].item.enchantments);
+                    inventory.refreshCached();
                 }
                 for (var i in self.slots[item].costs) {
-
+                    inventory.removeItem(parseInt(i), self.slots[item].costs[i]);
                 }
             }
         } else {
             player.socketKick();
         }
     };
+    self.close = function close() {
+        player.canMove = true;
+        player.invincible = false;
+    };
+    socket.emit('shop', {
+        id: self.id
+    });
 
     return self;
 };
+Shop.shops = require('./../client/shop.json');

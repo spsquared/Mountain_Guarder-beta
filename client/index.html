@@ -12,7 +12,7 @@
         <meta name="description" content="Meadow Guarder Old's sister game! Mountain Guarder is a free-to-play online multiplayer fantasy RPG">
         <meta name="url" content="https://mountainguarder.herokuapp.com">
         <meta name="image" content="https://mountainguarder.herokuapp.com/client/img/loading.png">
-        <link rel="icon" href="/client/assets/faviconbeta.ico" type="image/x-icon">
+        <link rel="icon" href="/client/assets/favicon.ico" type="image/x-icon">
         <noscript><meta http-equiv="refresh" content="0; url=/client/nojs.html"/></noscript>
         <script src="/socket.io/socket.io.js"></script>
         <script>socket = io();</script>
@@ -63,8 +63,8 @@
                     </tbody></table>
                     <div style="margin-top: 8px;">
                         <button id="signIn" class="ui-lightbutton" onclick="signIn();">Sign In</button>
-                        <!-- <button id="createAccount" class="ui-lightbutton" onclick="createAccount();">Create Account</button>
-                        <button id="deleteAccount" class="ui-lightbutton" onclick="deleteAccount();">Delete Account</button> -->
+                        <button id="createAccount" class="ui-lightbutton" onclick="createAccount();">Create Account</button>
+                        <button id="deleteAccount" class="ui-lightbutton" onclick="deleteAccount();">Delete Account</button>
                         <button id="changePassword" class="ui-lightbutton" onclick="changePassword();">Change Password</button>
                         <div id="signInError"></div>
                     </div>
@@ -956,7 +956,7 @@
                         <a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder" target="_blank">GitHub repository</a><br>
                         <a href="https://discord.gg/jKwmKkKmGc" target="_blank">Join our Discord!</a><br>
                         <br>
-                        <a href="./client/license.html" target="_blank" class="ui-lighttext">&copy; Radioactive64 2022</a><br>
+                        <a href="./client/license.html" target="_blank" class="ui-lighttext">Mountain Guarder Copyright &copy; Radioactive64 2022</a><br>
                         <br>
                         Would you like to contribute? Contributing can range from <a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder/issues/new?assignees=&labels=bug&template=bug-report.md&title=BUG+-+%5BSummary+here%5D" target="_blank">submitting a bug report</a> or <a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder/issues/new?assignees=&labels=suggestion&template=feature_request.md&title=SUGGESTION+-+%5BSummary+here%5D" target="_blank">creating a suggestion</a> to sending a pull request stating the reason the pull request was created and what it changes. For more information visit the <a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder" target="_blank">GitHub repository</a>.<br>
                         <br>
@@ -1104,13 +1104,15 @@
                         <div>Crafting</div>
                         <div id="inventoryCraftingBody" class="ui-block inventory-body"></div>
                     </div>
-                    <div id="inventoryShop" class="window-body inventory-right" style="display: none;">
-                        <div>Shop Name</div>
-                        <div id="inventoryShopBody" class="ui-block inventory-body"></div>
+                    <div id="inventoryShop" class="window-body inventory-right">
+                        <div id="inventoryShopName">Shop Name</div>
+                        <div id="inventoryShopBody" class="ui-block inventory-body">
+                        </div>
                     </div>
                     <div id="inventorySelect" class="window-select">
                         <button id="inventoryEquipsSelect" class="window-select-button ui-lightbutton">Equips</button>
                         <button id="inventoryCraftingSelect" class="window-select-button ui-lightbutton">Crafting</button>
+                        <span id="inventoryShopSelect" style="display: none;"></span>
                     </div>
                 </div>
                 <div id="map" class="window ui-block ui-lighttext noSelect">
@@ -1295,6 +1297,20 @@
                                 </td>
                                 <td>
                                     <div id="debugIndicator" class="ui-lighttext">off</div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: right;">
+                                    Fullscreen:
+                                </td>
+                                <td>
+                                    <label class="ui-toggle">
+                                        <input type="checkbox" id="fullscreenToggle" class="ui-toggleInput" onclick="toggle('fullscreen');">
+                                        <span class="ui-toggleSlider"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <div id="fullscreenIndicator" class="ui-lighttext">off</div>
                                 </td>
                             </tr>
                         </tbody></table>

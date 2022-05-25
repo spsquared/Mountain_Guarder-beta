@@ -74,7 +74,7 @@
     border: 2px solid #000000;
     margin-right: -50%;
     padding: 8px 20px;
-    animation-duration: 2s;
+    animation-duration: 1s;
     cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
     z-index: 1;
 }
@@ -119,7 +119,7 @@
     height: 100vh;
     background-color: black;
     animation-duration: 0.5s;
-    cursor: url('/client/img/assets/crosshair.png') 11 11, crosshair;
+    cursor: none;
     z-index: 2;
 }
 
@@ -482,6 +482,7 @@
     width: 100%;
     height: 100%;
     overflow-y: scroll;
+    overflow-x: hidden;
 }
 .inventory-right {
     left: 478px;
@@ -599,6 +600,77 @@
     position: absolute;
     top: 338px;
     left: 105px;
+}
+
+/* shops */
+.shopBlock {
+    width: 260px;
+    height: 54px;
+    display: block;
+    border: 1px solid black;
+    margin: 8px 8px;
+}
+.shopCosts {
+    display: inline-flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    width: 162px;
+    height: 54px;
+    border-right: 1px solid black;
+}
+.costItemBlock {
+    display: flex;
+    width: 48px;
+    height: fit-content;
+    margin: auto;
+    margin-left: 2px;
+    margin-right: 2px;
+    aspect-ratio: 1;
+    border: 1px solid black;
+}
+.costItemImg {
+    width: 48px;
+}
+.shopArrow {
+    display: inline-block;
+    position: relative;
+    right: -12px;
+    width: 0px;
+    height: 0px;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-left: 10px solid white;
+    margin-top: auto;
+    margin-bottom: auto;
+    transform: translate(12px, -5px);
+}
+.shopArrow::before {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 4px;
+    background-color: white;
+    transform: translate(-24px, -16px);
+}
+.shopItemBlock {
+    display: inline-flex;
+    position: relative;
+    right: -34px;
+    width: 48px;
+    height: 48px;
+    margin: 2px 2px;
+    aspect-ratio: 1;
+    border: 1px solid black;
+    cursor: grab;
+}
+.shopItemImg {
+    width: 48px;
+}
+.shopCount {
+    position: relative;
+    bottom: -28px;
+    left: -16px;
+    text-align: right;
 }
 
 /* world map */

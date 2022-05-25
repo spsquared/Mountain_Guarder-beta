@@ -102,6 +102,11 @@ QuestHandler = function(socket, player) {
     self.loadSaveData = function loadSaveData(data) {
         self.done = data.done;
     };
+    self.quit = function quit() {
+        self = null;
+        player = null;
+        socket = null;
+    };
 
     return self;
 };
@@ -215,4 +220,4 @@ QuestData = function(id) {
 
     return self;
 };
-QuestData.quests = require('./quests.json');
+QuestData.quests = require('./../client/quests.json');

@@ -29,7 +29,7 @@
     },
     "adicyte": {
         "type": "static",
-        "rightClickEvent": "function(player, self) {self.openShop(player);};",
+        "rightClickEvent": "function(player, self) {self.openShop('outposttrader', player);};",
         "data": {
             "name": "Adicyte",
             "characterStyle": {

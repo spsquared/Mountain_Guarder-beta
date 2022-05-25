@@ -1,8 +1,22 @@
 // Copyright (C) 2022 Radioactive64
-// Go to README.md for more information
+/*
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-const version = 'v0.11.0-A01';
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+const version = 'v0.11.0';
 console.info('\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022');
+console.info('For more information, type "copyright-details".');
 require('./server/log.js');
 appendLog('Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022', 'log');
 logColor('Starting server...', '\x1b[32m', 'log');
@@ -12,7 +26,6 @@ const server = require('http').Server(app);
 const vm = require('vm');
 const ivm = require('isolated-vm');
 const readline = require('readline');
-const prompt = readline.createInterface({input: process.stdin, output: process.stdout});
 const rateLimit = require('express-rate-limit');
 const limiter = rateLimit({
     windowMs: 100,
@@ -45,6 +58,7 @@ ENV = {
     pvp: false,
     difficulty: 1,
     itemDespawnTime: 5,
+    autoSaveInterval: require('./config.json').autoSaveInterval,
     isBetaServer: false
 };
 if (process.env.IS_BETA == 'true') ENV.isBetaServer = true;
@@ -79,54 +93,65 @@ function start() {
 };
 logColor('Connecting to database...', '\x1b[32m', 'log');
 ACCOUNTS.connect();
-io = require('socket.io')(server, {upgradeTimeout: 1200000});
+io = require('socket.io')(server, {pingTimeout: 10000, upgradeTimeout: 300000});
 io.on('connection', function(socket) {
     if (started) {
         socket.id = Math.random();
         var player = new Player(socket);
-        socket.on('_0x7f0334', function(id) {player.fingerprint.webgl = id; Object.freeze(player.fingerprint); if (player.fingerprint.webgl == '27890ce4adea96d91cfec1ebedc0200ee9d9683f0e9c65696e4badb7f83db268') {
-            socket.emit('disconnected');
-            socket.onevent = function(packet) {};
-            socket.disconnect(true);
-            delete Player.list[player.id];
-        }});
-        setTimeout(function() {socket.emit('checkReconnect');}, 1000);
+        socket.on('_0x7f0334', function(id) {
+            player.fingerprint.webgl = id; Object.freeze(player.fingerprint);
+        });
+        const checkReconnect = setTimeout(function() {socket.emit('checkReconnect');}, 1000);
         // connection
         socket.on('disconnect', async function() {
-            if (player.name) {
-                player.name == null;
-                await player.saveData();
-                insertChat(player.name + ' left the game', 'server');
-            }
-            delete Player.list[player.id];
+            clearInterval(timeoutcheck);
+            clearInterval(debugspamcheck);
+            clearInterval(packetcheck);
+            clearTimeout(checkReconnect);
+            await player.disconnect();
+            socket = null;
+            player = null;
         });
         socket.on('disconnected', async function() {
-            if (player.name) {
-                player.name == null;
-                await player.saveData();
-                insertChat(player.name + ' left the game', 'server');
-            }
-            delete Player.list[player.id];
-            socket.emit('disconnected');
+            clearInterval(timeoutcheck);
+            clearInterval(debugspamcheck);
+            clearInterval(packetcheck);
+            clearTimeout(checkReconnect);
+            await player.disconnect();
+            socket = null;
+            player = null;
         });
         socket.on('timeout', async function() {
-            if (player.name) {
-                player.name == null;
-                await player.saveData();
-                insertChat(player.name + ' left the game', 'server');
-            }
-            delete Player.list[player.id];
-            socket.emit('disconnected');
+            clearInterval(timeoutcheck);
+            clearInterval(debugspamcheck);
+            clearInterval(packetcheck);
+            clearTimeout(checkReconnect);
+            await player.disconnect();
+            socket = null;
+            player = null;
         });
         socket.on('error', async function() {
-            if (player.name) {
-                player.name == null;
-                await player.saveData();
-                insertChat(player.name + ' left the game', 'server');
-            }
-            delete Player.list[player.id];
-            socket.emit('disconnected');
+            clearInterval(timeoutcheck);
+            clearInterval(debugspamcheck);
+            clearInterval(packetcheck);
+            clearTimeout(checkReconnect);
+            await player.disconnect();
+            socket = null;
+            player = null;
         });
+        var timeout = 0;
+        const timeoutcheck = setInterval(async function() {
+            timeout++;
+            if (timeout > 300) {
+                clearInterval(timeoutcheck);
+                clearInterval(debugspamcheck);
+                clearInterval(packetcheck);
+                clearTimeout(checkReconnect);
+                await player.disconnect();
+                socket = null;
+                player = null;
+            }
+        }, 1000);
         // debug
         var debugcount = 0;
         socket.on('debugInput', function(input) {
@@ -173,7 +198,7 @@ io.on('connection', function(socket) {
                             if (s[cmd]) {
                                 try {
                                     var self = player;
-                                    var msg = s[cmd](args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15]);
+                                    var msg = s[cmd](self, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15]);
                                     if (msg != null) msg = msg.toString();
                                     socket.emit('debugLog', {color:'lime', msg:msg});
                                     logColor(msg, '\x1b[33m', 'log');
@@ -253,16 +278,17 @@ io.on('connection', function(socket) {
             }
             if (player.name != 'Sampleprovider(sp)') debugcount++;
         });
-        setInterval(function() {
+        const debugspamcheck = setInterval(async function() {
             debugcount = Math.max(debugcount-1, 0);
             if (debugcount > 0) {
-                if (player.name) {
-                    insertChat(player.name + ' was kicked for debug spam', 'anticheat');
-                }
-                delete Player.list[player.id];
-                socket.emit('disconnected');
-                socket.onevent = function(packet) {};
-                socket.disconnect();
+                clearInterval(timeoutcheck);
+                clearInterval(debugspamcheck);
+                clearInterval(packetcheck);
+                clearTimeout(checkReconnect);
+                if (player.name) insertChat(player.name + ' was kicked for debug spam', 'anticheat');
+                await player.disconnect();
+                socket = null;
+                player = null;
             }
         }, 500);
         // performance metrics
@@ -279,18 +305,20 @@ io.on('connection', function(socket) {
                 socket.disconnect();
             }
             onevent.call(this, packet);
+            timeout = 0;
             packetCount++;
         };
-        setInterval(function() {
+        const packetcheck = setInterval(async function() {
             packetCount = Math.max(packetCount-200, 0);
             if (packetCount > 0) {
-                if (player.name) {
-                    insertChat(player.name + ' was kicked for socket.io DOS', 'anticheat');
-                }
-                socket.emit('disconnected');
-                socket.onevent = function(packet) {};
-                socket.disconnect(true);
-                delete Player.list[player.id];
+                clearInterval(timeoutcheck);
+                clearInterval(debugspamcheck);
+                clearInterval(packetcheck);
+                clearTimeout(checkReconnect);
+                if (player.name) insertChat(player.name + ' was kicked for socket.io DOS', 'anticheat');
+                await player.disconnect();
+                socket = null;
+                player = null;
             }
         }, 1000);
     } else {
@@ -300,9 +328,10 @@ io.on('connection', function(socket) {
 });
 
 // console inputs
+const prompt = readline.createInterface({input: process.stdin, output: process.stdout});
 var active = true;
 s = {
-    help: function() {
+    help: function(self) {
         var str = '';
         for (var i in s) {
             str += i;
@@ -312,46 +341,56 @@ s = {
     },
     findPlayer: function(username) {
         for (var i in Player.list) {
-            if (Player.list[i].name == username) return Player.list[i];
+            if (Player.list[i].name == username && username != null) return Player.list[i];
         }
         return false;
     },
-    kill: function(username) {
+    kill: function(self, username) {
         var player = s.findPlayer(username);
         if (player) player.onDeath(null, 'debug');
         else return 'No player with username ' + username;
     },
-    kick: function(username) {
+    kick: function(self, username) {
         var player = s.findPlayer(username);
         if (player) player.socket.emit('disconnected');
         else return 'No player with username ' + username;
     },
-    kickAll: function() {
+    kickAll: function(self) {
         io.emit('disconnected');
     },
-    tp: function(name1, name2) {
+    tp: function(self, name1, name2) {
         var player1 = s.findPlayer(name1);
-        var player2 = s.findPlayer(name1);
+        var player2 = s.findPlayer(name2);
+        console.log(name1, name2, player1, player2)
         if (player1) {
             if (player2) {
                 player1.teleport(player2.map, player2.gridx, player2.gridy, player2.layer);
+                return 'Whoosh!';
+            } else if (name2 == null) {
+                self.teleport(player1.map, player1.gridx, player1.gridy, player1.layer);
+                return 'Whoosh!';
             } else return 'No player with username ' + name2;
         } else return 'No player with username ' + name1;
     },
-    bc: function(text) {
+    spectate: function(self, name) {
+        var res = self.spectate(name);
+        if (res != null) return 'Spectating ' + Player.list[res].name;
+        return 'Ended spectating';
+    },
+    bc: function(self, text) {
         insertChat('[BC]: ' + text, 'server');
     },
-    spawnMonster: function(type, x, y, map, layer) {
+    spawnMonster: function(self, type, x, y, map, layer) {
         var monster = new Monster(type, parseInt(x), parseInt(y), map, parseInt(layer));
         return monster;
     },
-    slaughter: function() {
+    slaughter: function(self) {
         for (var i in Monster.list) {
             Monster.list[i].onDeath();
         }
         return 'Slaughtered all monsters';
     },
-    nuke: function(username) {
+    nuke: function(self, username) {
         var player = s.findPlayer(username);
         if (player) {
             for (var i = 0; i < 50; i++) {
@@ -359,26 +398,26 @@ s = {
             }
         } else return 'No player with username ' + username;
     },
-    give: function(username, item, amount) {
+    give: function(self, username, item, amount) {
         var player = s.findPlayer(username);
         if (player) player.inventory.addItem(item, parseInt(amount));
         else return 'No player with username ' + username;
     },
-    rickroll: function(username) {
+    rickroll: function(self, username) {
         var player = s.findPlayer(username);
         if (player) {
             player.socket.emit('rickroll');
             insertChat(username + ' got rickrolled.', 'fun');
         } else return 'No player with username ' + username;
     },
-    audioRickroll: function(username) {
+    audioRickroll: function(self, username) {
         var player = s.findPlayer(username);
         if (player) {
             player.socket.emit('loudrickroll');
             insertChat(username + ' got rickrolled.', 'fun');
         } else return 'No player with username ' + username;
     },
-    lag: function(username) {
+    lag: function(self, username) {
         var player = s.findPlayer(username);
         if (player) {
             player.socket.emit('lag');
@@ -388,6 +427,26 @@ s = {
 };
 prompt.on('line', async function(input) {
     if (active && input != '') {
+        if (input == 'copyright-details') {
+            console.log('+-----------------------------------------------------------------------+');
+            console.log('|   Mountain Guarder                                                    |');
+            console.log('|   Copyright (C) 2022 Radioactive64                                    |');
+            console.log('|                                                                       |');
+            console.log('| This program is free software: you can redistribute it and/or modify  |');
+            console.log('| it under the terms of the GNU General Public License as published by  |');
+            console.log('| the Free Software Foundation, either version 3 of the License, or     |');
+            console.log('| (at your option) any later version.                                   |');
+            console.log('|                                                                       |');
+            console.log('| This program is distributed in the hope that it will be useful, but   |');
+            console.log('| WITHOUT ANY WARRANTY; without even the implied warranty of            |');
+            console.log('| MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU     |');
+            console.log('| GNU General Public License for more details.                          |');
+            console.log('|                                                                       |');
+            console.log('| You should have received a copy of the GNU General Public License     |');
+            console.log('| along with this program. If not, see <https://www.gnu.org/licenses/>. |');
+            console.log('+-----------------------------------------------------------------------+');
+            return;
+        }
         try {
             appendLog('s: ' + input, 'log');
             if (ENV.useDiscordWebhook) postDebugDiscord('DBG', 'SERV-> ' + input);
@@ -407,16 +466,10 @@ prompt.on('close', async function() {
         insertChat('[!] SERVER IS CLOSING [!]', 'server');
         logColor('Stopping Server...', '\x1b[32m', 'log');
         clearInterval(updateTicks);
+        clearInterval(autoSave);
         started = false;
         for (var i in Player.list) {
-            var player = Player.list[i];
-            if (player.name) {
-                player.name == null;
-                await player.saveData();
-                insertChat(player.name + ' left the game', 'server');
-            }
-            delete Player.list[player.id];
-            player.socket.emit('disconnected');
+            await Player.list[i].disconnect();
         }
         await ACCOUNTS.disconnect();
         server.close();
@@ -429,15 +482,10 @@ process.on('SIGTERM', function() {
     insertChat('[!] SERVER IS CLOSING [!]', 'server');
     logColor('Stopping Server...', '\x1b[32m', 'log');
     clearInterval(updateTicks);
+    clearInterval(autoSave);
     started = false;
     for (var i in Player.list) {
-        var player = Player.list[i];
-        if (player.name) {
-            player.saveData();
-            insertChat(player.name + ' left the game', 'server');
-        }
-        delete Player.list[player.id];
-        player.socket.emit('disconnected');
+        Player.list[i].disconnect();
     }
     ACCOUNTS.disconnect();
     server.close();
@@ -449,15 +497,10 @@ process.on('SIGINT', function() {
     insertChat('[!] SERVER IS CLOSING [!]', 'server');
     logColor('Stopping Server...', '\x1b[32m', 'log');
     clearInterval(updateTicks);
+    clearInterval(autoSave);
     started = false;
     for (var i in Player.list) {
-        var player = Player.list[i];
-        if (player.name) {
-            player.saveData();
-            insertChat(player.name + ' left the game', 'server');
-        }
-        delete Player.list[player.id];
-        player.socket.emit('disconnected');
+        Player.list[i].disconnect();
     }
     ACCOUNTS.disconnect();
     server.close();
@@ -572,26 +615,36 @@ setInterval(async function() {
     tpscounter = 0;
 }, 1000);
 
+// autosave
+const autoSave = setInterval(function() {
+    for (var i in Player.list) {
+        Player.list[i].saveData();
+    }
+}, ENV.autoSaveInterval*60000);
+
 // critical errors
 var quitting = false;
-forceQuit = function(err, code) {
+forceQuit = async function(err, code) {
     if (!quitting) {
         try {
             quitting = true;
             error('SERVER ENCOUNTERED A CATASTROPHIC ERROR. STOP CODE:');
             console.error(err);
             appendLog(err, 'error');
-            insertChat('[!] SERVER ENCOUNTERED A TORNADO ERROR. [!]', 'error');
+            insertChat('[!] SERVER ENCOUNTERED A CATASTROPHIC ERROR. [!]', 'error');
             if (err) if (!err.message.includes('https://discord.com/api/webhooks/')) insertChat(err.message, 'error');
             appendLog('Error code ' + code, 'error');
             error('STOP.');
             clearInterval(updateTicks);
-            io.emit('disconnected');
+            clearInterval(autoSave);
+            for (var i in Player.list) {
+                await Player.list[i].disconnect();
+            }
             started = false;
-            ACCOUNTS.disconnect();
+            await ACCOUNTS.disconnect();
             server.close();
             active = false;
-            console.error('\x1b[33m%s\x1b[0m', 'If this issue persists, please submit a bug report on GitHub with a screenshot of this screen and/or logfiles before this.');
+            console.error('\x1b[33m%s\x1b[0m', 'If this issue persists, consult README.md for troubleshooting information.');
             console.error('\x1b[33m%s\x1b[0m', 'Press ENTER or CTRL+C to exit.');
             const stopprompt = readline.createInterface({input: process.stdin, output: process.stdout});
             stopprompt.on('line', function(input) {

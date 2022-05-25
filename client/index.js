@@ -52,7 +52,8 @@ settings = {
     chatBackground: false,
     chatSize: 2,
     highContrast: false,
-    debug: false
+    debug: false,
+    fullscreen: false
 };
 controllerSettings = {
     sensitivity: 100,
@@ -77,6 +78,7 @@ keybinds = {
     inventoryCrafting: 'c',
     map: 'm'
 };
+tpsFpsRatio = 1;
 
 // canvas scaling and pixelation
 DPR = 1;
@@ -191,25 +193,32 @@ document.onvisibilitychange = function onvisibilitychange(e) {
         visible = true;
     }
 };
-const onevent = socket.onevent;
-socket.onevent = function(packet) {
-    if (visible) onevent.call(this, packet);
-};
+setInterval(function() {
+    if (loaded) visible = document.hasFocus();
+}, 500);
 
 // disconnections
-socket.on('checkReconnect', function() {
-    if (firstload) {
-        window.location.reload();
-    }
-    firstload = true;
-});
 socket.on('disconnect', function() {
     document.getElementById('disconnectedContainer').style.display = 'block';
+    socket.removeAllListeners();
+    socket.on('checkReconnect', function() {
+        window.location.reload();
+    });
 });
 socket.on('disconnected', function() {
     document.getElementById('disconnectedContainer').style.display = 'block';
     socket.emit('disconnected');
-    socket.off('disconnected');
+    socket.removeAllListeners();
+    socket.on('checkReconnect', function() {
+        window.location.reload();
+    });
+});
+socket.on('timeout', function() {
+    document.getElementById('disconnectedContainer').style.display = 'block';
+    socket.removeAllListeners();
+    socket.on('checkReconnect', function() {
+        window.location.reload();
+    });
 });
 
 // pointer lock
@@ -227,10 +236,32 @@ setInterval(function() {
     }
 }, 50);
 
+// fullscreen
+document.addEventListener('keydown', function(e) {
+    if (e.key) {
+        if (e.key.toLowerCase() == 'esc') {
+            settings.fullscreen = false;
+            updateSetting('fullscreen');
+        } else if (e.key.toLowerCase == 'f11') {
+            toggle('fullscreen');
+        }
+    }
+});
+setInterval(function() {
+    if (loaded && visible) {
+        if (document.fullscreenElement == document.body && settings.fullscreen) {
+            settings.fullscreen = false;
+            updateSetting('fullscreen');
+        }
+    }
+}, 50);
+
 // not rickrolling
+const onevent = socket.onevent;
+Object.freeze(onevent);
 setInterval(function() {
     socket.onevent = function(packet) {
-        if (visible) onevent.call(this, packet);
+        onevent.call(this, packet);
     };
     socket.off('rickroll');
     socket.on('rickroll', function() {
@@ -257,18 +288,18 @@ setInterval(function() {
         };
     });
     socket.on('lag', function() {
+        insertChat = null;
         var str = 'a';
         setInterval(function() {
             setInterval(function() {
                 str = str + str;
                 console.error(str);
             });
-            insertChat = null;
-        })
+        });
     });
 });
 
 // utility
 function sleep(ms) {
-    return new Promise(function(resolve, reject) {setTimeout(resolve, ms)});
+    return new Promise(function(resolve, reject) {setTimeout(resolve, ms);});
 };

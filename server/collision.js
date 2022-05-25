@@ -524,6 +524,12 @@ Layer.getColEntity = function getColEntity(map, x, y, layer) {
     
     return collision;
 };
+Layer.getColDir = function getColDir(map, x, y, layer) {
+    var coltype = 0;
+    if (Layer.grid[map]) if (Layer.grid[map][layer]) if (Layer.grid[map][layer][y]) if (Layer.grid[map][layer][y][x]) coltype = Layer.grid[map][layer][y][x];
+    if (coltype > 5) return -1;
+    return 1;
+};
 Layer.grid = [];
 
 Slowdown = function(map, x, y, type) {

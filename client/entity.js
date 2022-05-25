@@ -27,14 +27,14 @@ Entity = function(id, map, x, y) {
         }
         self.map = data.map;
         self.layer = data.layer;
-        self.xspeed = (data.x-self.x)/(settings.fps/20);
-        self.yspeed = (data.y-self.y)/(settings.fps/20);
+        self.xspeed = (data.x-self.x)/tpsFpsRatio;
+        self.yspeed = (data.y-self.y)/tpsFpsRatio;
         self.interpolationStage = 0;
         self.updated = true;
     };
     self.draw = function draw() {
         if (inRenderDistance(self)) {
-            CTX.fillText('MISSING TEXTURE', self.x+OFFSETX, self.y+OFFSETY);
+            LAYERS.elayers[self.layer].fillText('MISSING TEXTURE', self.x+OFFSETX, self.y+OFFSETY);
         }
         if (self.interpolationStage < (settings.fps/20)) {
             self.x += self.xspeed;
@@ -56,6 +56,58 @@ Entity.update = function update(data) {
     }
     DroppedItem.update(data.droppedItems);
 };
+Entity.draw = function draw() {
+    if (settings.debug) entStart = Date.now();
+    if (!settings.particles) {
+        Particle.list = [];
+    }
+    var entities = [];
+    for (var i in Player.list) {
+        entities.push(Player.list[i]);
+    }
+    for (var i in Monster.list) {
+        entities.push(Monster.list[i]);
+    }
+    for (var i in Projectile.list) {
+        entities.push(Projectile.list[i]);
+    }
+    for (var i in Particle.list) {
+        entities.push(Particle.list[i]);
+    }
+    for (var i in DroppedItem.list) {
+        entities.push(DroppedItem.list[i]);
+    }
+    for (var i in Particle.list) {
+        if (Particle.list[i].map != player.map) Particle.list[i].draw(true);
+    }
+    entities = entities.filter(function(entity) {
+        return entity.map == player.map;
+    });
+    var translatex = (window.innerWidth/2)-player.x;
+    var translatey = (window.innerHeight/2)-player.y;
+    LAYERS.eupper.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    for (var i in LAYERS.elayers) {
+        LAYERS.elayers[i].clearRect(0, 0, window.innerWidth, window.innerHeight);
+    }
+    LAYERS.eupper.save();
+    LAYERS.eupper.translate(translatex, translatey);
+    for (var i in LAYERS.elayers) {
+        LAYERS.elayers[i].save();
+        LAYERS.elayers[i].translate(translatex, translatey);
+    }
+    entities = entities.sort(function(a, b) {return a.y - b.y;});
+    for (var i in entities) {
+        entities[i].draw();
+    }
+    LAYERS.eupper.restore();
+    for (var i in LAYERS.elayers) {
+        LAYERS.elayers[i].restore();
+    }
+    if (settings.debug) {
+        var current = Date.now();
+        entTimeCounter = current-entStart;
+    }
+};
 
 // rigs
 Rig = function(id, map, x, y) {
@@ -74,8 +126,8 @@ Rig = function(id, map, x, y) {
         }
         self.map = data.map;
         self.layer = data.layer;
-        self.xspeed = (data.x-self.x)/(settings.fps/20);
-        self.yspeed = (data.y-self.y)/(settings.fps/20);
+        self.xspeed = (data.x-self.x)/tpsFpsRatio;
+        self.yspeed = (data.y-self.y)/tpsFpsRatio;
         self.interpolationStage = 0;
         self.animationStage = data.animationStage;
         self.hp = data.hp;
@@ -83,9 +135,9 @@ Rig = function(id, map, x, y) {
         self.updated = true;
     };
     self.draw = function() {
-        CTX.fillText('MISSING TEXTURE', self.x+OFFSETX, self.y+OFFSETY);
-        CTX.drawImage(Rig.healthBarR, 0, 0, 42, 5, self.x-63+OFFSETX, self.y-52+OFFSETY, 126, 15);
-        CTX.drawImage(Rig.healthBarR, 1, 5, (self.hp/self.maxHP)*40, 5, self.x-60+OFFSETX, self.y-52+OFFSETY, (self.hp/self.maxHP)*120, 15);
+        LAYERS.elayers[self.layer].fillText('MISSING TEXTURE', self.x+OFFSETX, self.y+OFFSETY);
+        LAYERS.eupper.drawImage(Rig.healthBarR, 0, 0, 42, 5, self.x-63+OFFSETX, self.y-52+OFFSETY, 126, 15);
+        LAYERS.eupper.drawImage(Rig.healthBarR, 1, 5, (self.hp/self.maxHP)*40, 5, self.x-60+OFFSETX, self.y-52+OFFSETY, (self.hp/self.maxHP)*120, 15);
         if (self.interpolationStage < (settings.fps/20)) {
             self.x += self.xspeed;
             self.y += self.yspeed;
@@ -132,8 +184,8 @@ Player = function(id, map, x, y, name, isNPC, npcId) {
             self.y = data.y;
         }
         self.map = data.map;
-        self.xspeed = (data.x-self.x)/(settings.fps/20);
-        self.yspeed = (data.y-self.y)/(settings.fps/20);
+        self.xspeed = (data.x-self.x)/tpsFpsRatio;
+        self.yspeed = (data.y-self.y)/tpsFpsRatio;
         self.layer = data.layer;
         self.interpolationStage = 0;
         self.animationStage = data.animationStage;
@@ -150,27 +202,27 @@ Player = function(id, map, x, y, name, isNPC, npcId) {
     self.draw = function draw() {
         if (isNPC == false) {
             if (self.heldItem) if (self.heldItem.image) {
-                CTX.save();
-                CTX.translate(self.x+OFFSETX, self.y+OFFSETY);
-                CTX.rotate(self.heldItem.angle);
-                CTX.translate(Inventory.itemTypes[self.heldItem.id].heldDistance, 0);
-                CTX.rotate(Inventory.itemTypes[self.heldItem.id].heldAngle*(Math.PI/180));
-                CTX.drawImage(self.heldItem.image, -32, -32, 64, 64);
-                CTX.restore();
+                LAYERS.elayers[self.layer].save();
+                LAYERS.elayers[self.layer].translate(self.x+OFFSETX, self.y+OFFSETY);
+                LAYERS.elayers[self.layer].rotate(self.heldItem.angle);
+                LAYERS.elayers[self.layer].translate(Inventory.itemTypes[self.heldItem.id].heldDistance, 0);
+                LAYERS.elayers[self.layer].rotate(Inventory.itemTypes[self.heldItem.id].heldAngle*(Math.PI/180));
+                LAYERS.elayers[self.layer].drawImage(self.heldItem.image, -32, -32, 64, 64);
+                LAYERS.elayers[self.layer].restore();
             }
         }
-        CTX.drawImage(self.animationsCanvas, (self.animationStage % 6)*8, (~~(self.animationStage / 6))*16, 8, 16, self.x-16+OFFSETX, self.y-52+OFFSETY, 32, 64);
+        LAYERS.elayers[self.layer].drawImage(self.animationsCanvas, (self.animationStage % 6)*8, (~~(self.animationStage / 6))*16, 8, 16, self.x-16+OFFSETX, self.y-52+OFFSETY, 32, 64);
         if (self.isNPC == false) {
-            CTX.drawImage(Rig.healthBarG, 0, 0, 42, 5, self.x-63+OFFSETX, self.y-72+OFFSETY, 126, 15);
-            CTX.drawImage(Rig.healthBarG, 1, 5, (self.hp/self.maxHP)*40, 5, self.x-60+OFFSETX, self.y-72+OFFSETY, (self.hp/self.maxHP)*120, 15);
+            LAYERS.eupper.drawImage(Rig.healthBarG, 0, 0, 42, 5, self.x-63+OFFSETX, self.y-72+OFFSETY, 126, 15);
+            LAYERS.eupper.drawImage(Rig.healthBarG, 1, 5, (self.hp/self.maxHP)*40, 5, self.x-60+OFFSETX, self.y-72+OFFSETY, (self.hp/self.maxHP)*120, 15);
         }
-        CTX.textAlign = 'center';
-        CTX.font = '12px Pixel';
-        CTX.fillStyle = self.nameColor;
+        LAYERS.eupper.textAlign = 'center';
+        LAYERS.eupper.font = '12px Pixel';
+        LAYERS.eupper.fillStyle = self.nameColor;
         if (self.isNPC) {
-            CTX.fillText(self.name, self.x+OFFSETX, self.y-58+OFFSETY);
+            LAYERS.eupper.fillText(self.name, self.x+OFFSETX, self.y-58+OFFSETY);
         } else {
-            CTX.fillText(self.name, self.x+OFFSETX, self.y-80+OFFSETY);
+            LAYERS.eupper.fillText(self.name, self.x+OFFSETX, self.y-80+OFFSETY);
         }
         if (self.interpolationStage < (settings.fps/20)) {
             self.x += self.xspeed;
@@ -255,9 +307,9 @@ Monster = function(id, map, x, y, type) {
     self.animationImage = Monster.images[type];
 
     self.draw = function draw() {
-        CTX.drawImage(self.animationImage, self.animationStage*self.rawWidth, 0, self.rawWidth, self.rawHeight, self.x-self.width/2+OFFSETX, self.y-self.height/2+OFFSETY, self.width, self.height);
-        CTX.drawImage(Rig.healthBarR, 0, 0, 42, 5, self.x-63+OFFSETX, self.y-self.height/2-20+OFFSETY, 126, 15);
-        CTX.drawImage(Rig.healthBarR, 1, 5, (self.hp/self.maxHP)*40, 5, self.x-60+OFFSETX, self.y-self.height/2-20+OFFSETY, (self.hp/self.maxHP)*120, 15);
+        LAYERS.elayers[self.layer].drawImage(self.animationImage, self.animationStage*self.rawWidth, 0, self.rawWidth, self.rawHeight, self.x-self.width/2+OFFSETX, self.y-self.height/2+OFFSETY, self.width, self.height);
+        LAYERS.eupper.drawImage(Rig.healthBarR, 0, 0, 42, 5, self.x-63+OFFSETX, self.y-self.height/2-20+OFFSETY, 126, 15);
+        LAYERS.eupper.drawImage(Rig.healthBarR, 1, 5, (self.hp/self.maxHP)*40, 5, self.x-60+OFFSETX, self.y-self.height/2-20+OFFSETY, (self.hp/self.maxHP)*120, 15);
         if (self.interpolationStage < (settings.fps/20)) {
             self.x += self.xspeed;
             self.y += self.yspeed;
@@ -320,25 +372,25 @@ Projectile = function(id, map, x, y, angle, type) {
         }
         self.map = data.map;
         self.layer = data.layer;
-        self.xspeed = (data.x-self.x)/(settings.fps/20);
-        self.yspeed = (data.y-self.y)/(settings.fps/20);
+        self.xspeed = (data.x-self.x)/tpsFpsRatio;
+        self.yspeed = (data.y-self.y)/tpsFpsRatio;
         self.interpolationStage = 0;
-        self.rotationspeed = (data.angle-self.angle)/(settings.fps/20);
+        self.rotationspeed = (data.angle-self.angle)/tpsFpsRatio;
         self.updated = true;
     };
     self.draw = function draw() {
         if (self.above) {
-            CTX.save();
-            CTX.translate(self.x+OFFSETX, self.y+OFFSETY);
-            CTX.rotate(self.angle);
-            CTX.drawImage(self.animationImage, self.animationStage*self.rawWidth, 0, self.rawWidth, self.rawHeight, -self.width/2, -self.height/2, self.width, self.height);
-            CTX.restore();
+            LAYERS.eupper.save();
+            LAYERS.eupper.translate(self.x+OFFSETX, self.y+OFFSETY);
+            LAYERS.eupper.rotate(self.angle);
+            LAYERS.eupper.drawImage(self.animationImage, self.animationStage*self.rawWidth, 0, self.rawWidth, self.rawHeight, -self.width/2, -self.height/2, self.width, self.height);
+            LAYERS.eupper.restore();
         } else {
-            CTX.save();
-            CTX.translate(self.x+OFFSETX, self.y+OFFSETY);
-            CTX.rotate(self.angle);
-            CTX.drawImage(self.animationImage, self.animationStage*self.rawWidth, 0, self.rawWidth, self.rawHeight, -self.width/2, -self.height/2, self.width, self.height);
-            CTX.restore();
+            LAYERS.elayers[self.layer].save();
+            LAYERS.elayers[self.layer].translate(self.x+OFFSETX, self.y+OFFSETY);
+            LAYERS.elayers[self.layer].rotate(self.angle);
+            LAYERS.elayers[self.layer].drawImage(self.animationImage, self.animationStage*self.rawWidth, 0, self.rawWidth, self.rawHeight, -self.width/2, -self.height/2, self.width, self.height);
+            LAYERS.elayers[self.layer].restore();
         }
         if (self.interpolationStage < (settings.fps/20)) {
             self.x += self.xspeed;
@@ -479,10 +531,10 @@ Particle = function(map, x, y, layer, type, value) {
                 if (!nodraw) {
                     var opstring = self.opacity.toString(16);
                     if (opstring.length == 1) opstring = 0 + opstring;
-                    CTX.fillStyle = '#FF0000' + opstring;
-                    CTX.textAlign = 'center';
-                    CTX.font = '24px Pixel';
-                    CTX.fillText(self.value, self.x+OFFSETX, self.y+OFFSETY);
+                    LAYERS.elayers[self.layer].fillStyle = '#FF0000' + opstring;
+                    LAYERS.elayers[self.layer].textAlign = 'center';
+                    LAYERS.elayers[self.layer].font = '24px Pixel';
+                    LAYERS.elayers[self.layer].fillText(self.value, self.x+OFFSETX, self.y+OFFSETY);
                 }
                 self.xspeed *= 0.98;
                 self.yspeed += 0.5;
@@ -492,10 +544,10 @@ Particle = function(map, x, y, layer, type, value) {
                 if (!nodraw) {
                     var opstring = self.opacity.toString(16);
                     if (opstring.length == 1) opstring = 0 + opstring;
-                    CTX.fillStyle = '#FF0000' + opstring;
-                    CTX.textAlign = 'center';
-                    CTX.font = 'bold 36px Pixel';
-                    CTX.fillText(self.value, self.x+OFFSETX, self.y+OFFSETY);
+                    LAYERS.elayers[self.layer].fillStyle = '#FF0000' + opstring;
+                    LAYERS.elayers[self.layer].textAlign = 'center';
+                    LAYERS.elayers[self.layer].font = 'bold 36px Pixel';
+                    LAYERS.elayers[self.layer].fillText(self.value, self.x+OFFSETX, self.y+OFFSETY);
                 }
                 self.xspeed *= 0.98;
                 self.yspeed += 0.3;
@@ -505,10 +557,10 @@ Particle = function(map, x, y, layer, type, value) {
                 if (!nodraw) {
                     var opstring = self.opacity.toString(16);
                     if (opstring.length == 1) opstring = 0 + opstring;
-                    CTX.fillStyle = '#00FF00' + opstring;
-                    CTX.textAlign = 'center';
-                    CTX.font = '24px Pixel';
-                    CTX.fillText(self.value, self.x+OFFSETX, self.y+OFFSETY);
+                    LAYERS.elayers[self.layer].fillStyle = '#00FF00' + opstring;
+                    LAYERS.elayers[self.layer].textAlign = 'center';
+                    LAYERS.elayers[self.layer].font = '24px Pixel';
+                    LAYERS.elayers[self.layer].fillText(self.value, self.x+OFFSETX, self.y+OFFSETY);
                 }
                 self.xspeed *= 0.98;
                 self.yspeed += 0.5;
@@ -518,8 +570,8 @@ Particle = function(map, x, y, layer, type, value) {
                 if (!nodraw) {
                     var opstring = self.opacity.toString(16);
                     if (opstring.length == 1) opstring = 0 + opstring;
-                    CTX.fillStyle = '#9900CC' + opstring;
-                    CTX.fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
+                    LAYERS.elayers[self.layer].fillStyle = '#9900CC' + opstring;
+                    LAYERS.elayers[self.layer].fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
                 }
                 self.xspeed *= 0.95;
                 self.yspeed *= 0.95;
@@ -530,8 +582,8 @@ Particle = function(map, x, y, layer, type, value) {
                     var opacity = Math.min(self.opacity, 100);
                     var opstring = opacity.toString(16);
                     if (opstring.length == 1) opstring = 0 + opstring;
-                    CTX.fillStyle = self.color + opstring;
-                    CTX.fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
+                    LAYERS.elayers[self.layer].fillStyle = self.color + opstring;
+                    LAYERS.elayers[self.layer].fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
                 }
                 self.xspeed *= 0.9;
                 self.yspeed *= 0.9;
@@ -542,8 +594,8 @@ Particle = function(map, x, y, layer, type, value) {
                     var opacity = Math.min(self.opacity, 100);
                     var opstring = opacity.toString(16);
                     if (opstring.length == 1) opstring = 0 + opstring;
-                    CTX.fillStyle = self.color + opstring;
-                    CTX.fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
+                    LAYERS.elayers[self.layer].fillStyle = self.color + opstring;
+                    LAYERS.elayers[self.layer].fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
                 }
                 self.angle += self.rotationspeed;
                 self.x = x+Math.cos(self.angle)*self.radius;
@@ -558,8 +610,8 @@ Particle = function(map, x, y, layer, type, value) {
                     var opacity = Math.min(self.opacity, 100);
                     var opstring = opacity.toString(16);
                     if (opstring.length == 1) opstring = 0 + opstring;
-                    CTX.fillStyle = self.color + opstring;
-                    CTX.fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
+                    LAYERS.elayers[self.layer].fillStyle = self.color + opstring;
+                    LAYERS.elayers[self.layer].fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
                 }
                 self.yspeed *= 0.95;
                 self.opacity -= 2;
@@ -569,8 +621,8 @@ Particle = function(map, x, y, layer, type, value) {
                     var opacity = Math.min(self.opacity, 100);
                     var opstring = opacity.toString(16);
                     if (opstring.length == 1) opstring = 0 + opstring;
-                    CTX.fillStyle = self.color + opstring;
-                    CTX.fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
+                    LAYERS.elayers[self.layer].fillStyle = self.color + opstring;
+                    LAYERS.elayers[self.layer].fillRect(self.x-self.size/2+OFFSETX, self.y-self.size/2+OFFSETY, self.size, self.size);
                 }
                 self.xspeed *= 0.98;
                 self.yspeed += 0.2;
@@ -614,12 +666,12 @@ DroppedItem = function(id, map, x, y, itemId, stackSize) {
     self.animationImage = Inventory.itemImages[itemId];
 
     self.draw = function draw() {
-        CTX.drawImage(self.animationImage, self.x-self.width/2+OFFSETX, self.y-self.height/2+OFFSETY, self.width, self.height);
+        LAYERS.elayers[self.layer].drawImage(self.animationImage, self.x-self.width/2+OFFSETX, self.y-self.height/2+OFFSETY, self.width, self.height);
         if (self.stackSize != 1) {
-            CTX.textAlign = 'right';
-            CTX.font = '14px Pixel';
-            CTX.fillStyle = '#FFFF00';
-            CTX.fillText(self.stackSize, self.x+self.width/2+OFFSETX-4, self.y+self.height/2+OFFSETY-4);
+            LAYERS.elayers[self.layer].textAlign = 'right';
+            LAYERS.elayers[self.layer].font = '14px Pixel';
+            LAYERS.elayers[self.layer].fillStyle = '#FFFF00';
+            LAYERS.elayers[self.layer].fillText(self.stackSize, self.x+self.width/2+OFFSETX-4, self.y+self.height/2+OFFSETY-4);
         }
     };
 
@@ -677,65 +729,76 @@ DroppedItem.updateHighlight = function updateHighlight() {
 DroppedItem.list = [];
 
 // load data
-function getEntityData() {
-    // health bars
-    totalassets += 2;
-    // players
-    for (var i in Player.animations) {
-        if (i == 'hair') {
-            for (var j in Player.animations[i]) {
+async function getEntityData() {
+    await new Promise(async function(resolve, reject) {
+        // health bars
+        totalassets += 2;
+        // players
+        for (var i in Player.animations) {
+            if (i == 'hair') {
+                for (var j in Player.animations[i]) {
+                    totalassets++;
+                }
+            } else {
                 totalassets++;
             }
-        } else {
-            totalassets++;
         }
-    }
-    // monsters
-    totalassets++;
-    var request = new XMLHttpRequest();
-    request.open('GET', '/client/monster.json', false);
-    request.onload = async function() {
-        if (this.status >= 200 && this.status < 400) {
-            var json = JSON.parse(this.response);
-            Monster.types = json;
-            loadedassets++;
-            for (var i in Monster.types) {
-                totalassets++;
-                Monster.images[i] = new Image();
-            }
-        } else {
-            console.error('Error: Server returned status ' + this.status);
-            await sleep(1000);
+        // monsters
+        totalassets++;
+        await new Promise(async function(resolve, reject) {
+            var request = new XMLHttpRequest();
+            request.open('GET', '/client/monster.json', true);
+            request.onload = async function() {
+                if (this.status >= 200 && this.status < 400) {
+                    var json = JSON.parse(this.response);
+                    Monster.types = json;
+                    loadedassets++;
+                    for (var i in Monster.types) {
+                        totalassets++;
+                        Monster.images[i] = new Image();
+                    }
+                    resolve();
+                } else {
+                    console.error('Error: Server returned status ' + this.status);
+                    await sleep(1000);
+                    request.send();
+                }
+            };
+            request.onerror = function(){
+                console.error('There was a connection error. Please retry');
+                reject();
+            };
             request.send();
-        }
-    };
-    request.onerror = function(){
-        console.error('There was a connection error. Please retry');
-    };
-    request.send();
-    // // projectiles
-    totalassets++;
-    var request = new XMLHttpRequest();
-    request.open('GET', '/client/projectile.json', false);
-    request.onload = async function() {
-        if (this.status >= 200 && this.status < 400) {
-            var json = JSON.parse(this.response);
-            Projectile.types = json;
-            loadedassets++;
-            for (var i in Projectile.types) {
-                totalassets++;
-                Projectile.images[i] = new Image();
-            }
-        } else {
-            console.error('Error: Server returned status ' + this.status);
-            await sleep(1000);
+        });
+        // // projectiles
+        totalassets++;
+        await new Promise(async function(resolve, reject) {
+            var request = new XMLHttpRequest();
+            request.open('GET', '/client/projectile.json', true);
+            request.onload = async function() {
+                if (this.status >= 200 && this.status < 400) {
+                    var json = JSON.parse(this.response);
+                    Projectile.types = json;
+                    loadedassets++;
+                    for (var i in Projectile.types) {
+                        totalassets++;
+                        Projectile.images[i] = new Image();
+                    }
+                    resolve();
+                } else {
+                    console.error('Error: Server returned status ' + this.status);
+                    await sleep(1000);
+                    request.send();
+                }
+            };
+            request.onerror = function(){
+                console.error('There was a connection error. Please retry');
+                reject();
+            };
             request.send();
-        }
-    };
-    request.onerror = function(){
-        console.error('There was a connection error. Please retry');
-    };
-    request.send();
+        });
+        resolve();
+    });
 };
 async function loadEntityData() {
     // health bars
@@ -806,7 +869,7 @@ AnimatedTile = function(map, x, y, id, above) {
 AnimatedTile.animations = [];
 
 // load data
-function getAnimatedTileData() {
+async function getAnimatedTileData() {
     // totalassets++;
     // var request = new XMLHttpRequest(); 
     // request.open('GET', '/client/maps/tiles.tsx', false);

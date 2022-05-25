@@ -1,5 +1,6 @@
 // Copyright (C) 2022 Radioactive64
 
+// inventory
 const inventoryItems = document.getElementById('inventoryItemsBody');
 const inventoryEquips = document.getElementById('inventoryEquipsBody');
 const dragDiv = document.getElementById('invDrag');
@@ -7,7 +8,7 @@ const dragImg = document.getElementById('invDragImg');
 const dragStackSize = document.getElementById('invDragStackSize');
 const tooltip = document.getElementById('invHoverTooltip');
 
-// inventory structure
+// inventory
 Inventory = {
     items: [],
     equips: {
@@ -146,6 +147,13 @@ Inventory.enchantSlot = function enchantSlot(slot, enchantments) {
         Inventory.equips[slot].enchant(enchantments);
     }
     Inventory.refreshSlot(slot);
+};
+Inventory.contains = function contains(id, amount) {
+    var count = 0;
+    for (var i in Inventory.items) {
+        if (Inventory.items[i].item) if (Inventory.items[i].item.id == id) count += Inventory.items[i].item.stackSize;
+    }
+    return count >= amount;
 };
 Inventory.getRarityColor = function getRarityColor(rarity) {
     var str = '';
@@ -410,36 +418,101 @@ function loadTooltip(slot) {
 Inventory.itemTypes = [];
 Inventory.itemImages = [];
 Inventory.itemHighlightImages = [];
-function getInventoryData() {
-    totalassets++;
-    var request = new XMLHttpRequest();
-    request.open('GET', '/client/item.json', false);
-    request.onload = async function() {
-        if (this.status >= 200 && this.status < 400) {
-            var json = JSON.parse(this.response);
-            Inventory.itemTypes = json;
-            loadedassets++;
-            for (var i in Inventory.itemTypes) {
-                totalassets += 2;
-                Inventory.itemImages[i] = new Image();
-                Inventory.itemHighlightImages[i] = new Image();
-            }
-            totalassets++;
-            Inventory.itemImages['empty'] = new Image();
-        } else {
-            console.error('Error: Server returned status ' + this.status);
-            await sleep(1000);
-            request.send();
-        }
-    };
-    request.onerror = function(){
-        console.error('There was a connection error. Please retry');
-    };
-    request.send();
-    for (var i in Inventory.equips) {
-        totalassets++;
-        Inventory.itemImages[i] = new Image();
+
+// io
+Inventory.takeItem = function takeItem(slot, amount) {
+    socket.emit('item', {
+        action: 'takeItem',
+        slot: slot,
+        amount: amount
+    });
+};
+Inventory.placeItem = function placeItem(slot, amount) {
+    socket.emit('item', {
+        action: 'placeItem',
+        slot: slot,
+        amount: amount
+    });
+};
+Inventory.dropItem = function dropItem(slot, amount) {
+    socket.emit('item', {
+        action: 'dropItem',
+        slot: slot,
+        amount: amount
+    });
+};
+socket.on('dragging', function(data) {
+    Inventory.currentDrag = data;
+    if (data) {
+        dragDiv.style.display = 'block';
+        dragDiv.style.left = mouseX+window.innerWidth/2-32 + 'px';
+        dragDiv.style.top = mouseY+window.innerHeight/2-32 + 'px';
+        if (data.stackSize != 1) dragStackSize.innerText = data.stackSize;
+        dragImg.src = '/client/img/item/' + data.id + '.png';
+        document.getElementById('gameContainer').style.cursor = 'grabbing';
+    } else {
+        dragDiv.style.display = 'none';
+        dragStackSize.innerText = '';
+        dragImg.src = '/client/img/item/empty.png';
+        document.getElementById('gameContainer').style.cursor = '';
     }
+});
+socket.on('item', function(data) {
+    switch (data.action) {
+        case 'maxItems':
+            Inventory.maxItems = data.slots;
+            for (var i = 0; i < Inventory.maxItems; i++) {
+                new Inventory.Slot();
+            }
+            break;
+        case 'add':
+            Inventory.addItem(data.data.id, data.data.slot, data.data.stackSize, data.data.enchantments);
+            break;
+        case 'remove':
+            Inventory.removeItem(data.data.slot);
+            break;
+        default:
+            console.error('Invalid item action ' + data.action);
+            break;
+    }
+    if (Shop.currentShop) Shop.currentShop.updateAffordability();
+});
+
+// loading
+async function getInventoryData() {
+    await new Promise(function(resolve, reject) {
+        totalassets++;
+        var request = new XMLHttpRequest();
+        request.open('GET', '/client/item.json', true);
+        request.onload = async function() {
+            if (this.status >= 200 && this.status < 400) {
+                var json = JSON.parse(this.response);
+                Inventory.itemTypes = json;
+                loadedassets++;
+                for (var i in Inventory.itemTypes) {
+                    totalassets += 2;
+                    Inventory.itemImages[i] = new Image();
+                    Inventory.itemHighlightImages[i] = new Image();
+                }
+                totalassets++;
+                Inventory.itemImages['empty'] = new Image();
+                for (var i in Inventory.equips) {
+                    totalassets++;
+                    Inventory.itemImages[i] = new Image();
+                }
+                resolve();
+            } else {
+                console.error('Error: Server returned status ' + this.status);
+                await sleep(1000);
+                request.send();
+            }
+        };
+        request.onerror = function(){
+            console.error('There was a connection error. Please retry');
+            reject();
+        };
+        request.send();
+    });
 };
 async function loadInventoryData() {
     for (var i in Inventory.itemTypes) {
@@ -483,58 +556,140 @@ async function loadInventoryData() {
     }
 };
 
-// io
-Inventory.takeItem = function takeItem(slot, amount) {
-    socket.emit('item', {
-        action: 'takeItem',
-        slot: slot,
-        amount: amount
-    });
-};
-Inventory.placeItem = function placeItem(slot, amount) {
-    socket.emit('item', {
-        action: 'placeItem',
-        slot: slot,
-        amount: amount
-    });
-};
-Inventory.dropItem = function dropItem(slot, amount) {
-    socket.emit('item', {
-        action: 'dropItem',
-        slot: slot,
-        amount: amount
-    });
-};
-socket.on('dragging', function(data) {
-    Inventory.currentDrag = data;
-    if (data) {
-        dragDiv.style.display = 'block';
-        dragDiv.style.left = mouseX+window.innerWidth/2-32 + 'px';
-        dragDiv.style.top = mouseY+window.innerHeight/2-32 + 'px';
-        if (data.stackSize != 1) dragStackSize.innerText = data.stackSize;
-        dragImg.src = '/client/img/item/' + data.id + '.png';
-    } else {
-        dragDiv.style.display = 'none';
-        dragStackSize.innerText = '';
-        dragImg.src = '/client/img/item/empty.png';
+// crafting
+
+
+// shops
+const inventoryShop = document.getElementById('inventoryShopBody');
+const shopName = document.getElementById('inventoryShopName');
+
+// shops
+Shop = function(id) {
+    var self = Object.assign({}, Shop.shops[id]);
+    self.id = id;
+    self.divs = [];
+    inventoryShop.innerHTML = '';
+    shopName.innerText = self.name;
+    for (var i in self.slots) {
+        const block = document.createElement('div');
+        block.className = 'shopBlock';
+        const costs = document.createElement('div');
+        costs.className = 'shopCosts';
+        block.appendChild(costs);
+        var counts = [];
+        for (var j in self.slots[i].costs) {
+            const costblock = document.createElement('div');
+            costblock.className = 'costItemBlock';
+            const cost = new Image();
+            cost.className = 'costItemImg';
+            cost.src = '/client/img/item/' + j + '.png';
+            costblock.appendChild(cost);
+            const costcount = document.createElement('div');
+            costcount.className = 'shopCount';
+            costcount.innerText = self.slots[i].costs[j] != 1 ? self.slots[i].costs[j] : '';
+            costblock.appendChild(costcount);
+            costs.appendChild(costblock);
+            counts[j] = costcount;
+        }
+        const arrow = document.createElement('div');
+        arrow.className = 'shopArrow';
+        block.appendChild(arrow);
+        const itemblock = document.createElement('div');
+        itemblock.className = 'shopItemBlock';
+        const item = new Image();
+        item.className = 'shopItemImg';
+        itemblock.appendChild(item);
+        item.src = '/client/img/item/' + self.slots[i].item.id + '.png';
+        const itemcount = document.createElement('div');
+        itemcount.className = 'shopCount';
+        itemcount.innerText = self.slots[i].item.amount != 1 ? self.slots[i].item.amount : '';
+        itemblock.appendChild(itemcount);
+        block.appendChild(itemblock);
+        const slot = parseInt(i);
+        itemblock.onclick = function() {
+            socket.emit('shop', {
+                action: 'buy',
+                slot: slot
+            });
+        };
+        inventoryShop.appendChild(block);
+        self.divs[i] = {
+            costcounts: counts,
+            itemblock: itemblock,
+            item: item,
+        };
     }
-});
-socket.on('item', function(data) {
-    switch (data.action) {
-        case 'maxItems':
-            Inventory.maxItems = data.slots;
-            for (var i = 0; i < Inventory.maxItems; i++) {
-                new Inventory.Slot();
+    
+    self.updateAffordability = function() {
+        for (var i in self.slots) {
+            var hasAll = true;
+            for (var j in self.slots[i].costs) {
+                if (Inventory.contains(j, self.slots[i].costs[j])) {
+                    self.divs[i].costcounts[j].style.color = '';
+                } else {
+                    self.divs[i].costcounts[j].style.color = 'red';
+                    hasAll = false;
+                }
             }
-            break;
-        case 'add':
-            Inventory.addItem(data.data.id, data.data.slot, data.data.stackSize, data.data.enchantments);
-            break;
-        case 'remove':
-            Inventory.removeItem(data.data.slot);
-            break;
-        default:
-            console.error('Invalid item action ' + data.action);
-            break;
+            if (hasAll) {
+                self.divs[i].item.style.filter = '';
+                self.divs[i].itemblock.style.cursor = '';
+            } else {
+                self.divs[i].item.style.filter = 'saturate(0)';
+                self.divs[i].itemblock.style.cursor = 'not-allowed';
+            }
+        }
+    };
+    self.close = function() {
+        socket.emit('shop', {
+            action: 'close'
+        });
+        inventoryShop.innerHTML = '';
+        shopName.innerText = 'How Did You Get Here?';
+        self = null;
+        Shop.currentShop = null;
     }
+
+    self.updateAffordability();
+    
+    inventoryWindow.changeTab('inventoryShop');
+    inventoryWindow.show();
+    Shop.currentShop = self;
+    return self;
+};
+Shop.currentShop = null;
+Shop.shops = [];
+
+// io
+socket.on('shop', function(data) {
+    new Shop(data.id);
 });
+
+// loading
+async function getShopData() {
+    await new Promise(function(resolve, reject) {
+        totalassets++;
+        var request = new XMLHttpRequest();
+        request.open('GET', '/client/shop.json', true);
+        request.onload = async function() {
+            if (this.status >= 200 && this.status < 400) {
+                var json = JSON.parse(this.response);
+                Shop.shops = json;
+                loadedassets++;
+                resolve();
+            } else {
+                console.error('Error: Server returned status ' + this.status);
+                await sleep(1000);
+                request.send();
+            }
+        };
+        request.onerror = function(){
+            console.error('There was a connection error. Please retry');
+            reject();
+        };
+        request.send();
+    });
+};
+async function loadShopData() {
+
+};
