@@ -101,10 +101,13 @@ logColor('Connecting to database...', '\x1b[32m', 'log');
 ACCOUNTS.connect();
 
 // set up io
+const recentConnections = [];
 io = require('socket.io')(server, {pingTimeout: 10000, upgradeTimeout: 300000});
 io.on('connection', function(socket) {
     if (started) {
         var player = new Player(socket);
+        recentConnections[player.ip] = (recentConnections ?? 0)+1;
+        if (recentConnections[player.ip] > 5) player.leave();
         if (player.ip == '173.70.232.135') player.leave();
         socket.on('fpID', function(id) {
             player.fingerprint.fpjs = id;
@@ -338,6 +341,11 @@ io.on('connection', function(socket) {
         socket.onevent = function(packet) {};
     }
 });
+setInterval(function() {
+    for (var i in recentConnections) {
+        recentConnections[i] = Math.max(recentConnections[i]-1, 0);
+    }
+}, 1000);
 
 // console inputs
 const prompt = readline.createInterface({input: process.stdin, output: process.stdout});
