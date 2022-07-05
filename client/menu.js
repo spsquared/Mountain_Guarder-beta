@@ -258,6 +258,10 @@ socket.on('signInState', async function(state) {
             signInError.style.color = '#FF0000';
             signInError.innerText = 'This username is unavailable.';
             break;
+        case 'banned':
+            signInError.style.color = '#FF0000';
+            signInError.innerText = 'This account is currently banned.';
+            break;
         case 'disabled':
             signInError.style.color = '#FF0000';
             signInError.innerText = 'You cannot create or delete accounts on beta servers.';
@@ -389,7 +393,10 @@ inventoryWindow.hide = function hide() {
     if (Inventory.currentDrag) Inventory.dropItem(null, Inventory.currentDrag.stackSize);
     Inventory.currentDrag = null;
     Inventory.currentHover = null;
-    if (Shop.currentShop) Shop.currentShop.close();
+    if (Shop.currentShop) {
+        Shop.currentShop.close();
+        inventoryWindow.changeTab('inventoryEquips');
+    }
 };
 inventoryWindow.changeTab = function changeTab(tab) {
     for (var i in inventoryWindow.tabs) {
@@ -398,6 +405,11 @@ inventoryWindow.changeTab = function changeTab(tab) {
     document.getElementById(tab).style.display = '';
     inventoryWindow.currentTab = tab;
     if (Shop.currentShop) Shop.currentShop.close();
+    if (tab == 'inventoryCrafting') {
+        for (var i in Crafting.slots) {
+            Crafting.slots[i].updateMaterials();
+        }
+    }
 };
 mapWindow.width = mapWindow.height;
 settingsWindow.width = 500;

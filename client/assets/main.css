@@ -26,6 +26,7 @@ canvas {
 ::-webkit-scrollbar {
     width: 20px;
     height: 20px;
+    cursor: default;
 }
 ::-webkit-scrollbar-track {
     background: rgba(40, 40, 40, 0.5); 
@@ -341,4 +342,17 @@ a:focus {
 }
 #disconnected:active {
     background-color: rgb(255, 0, 0);
+}
+
+/* dark mode for whatever reason */
+@media (prefers-color-scheme: light) {
+    #loadingContainer {
+        background-color: white;
+    }
+    #fade {
+        background-color: white;
+    }
+}
+@media (prefers-color-scheme: light) {
+    
 }

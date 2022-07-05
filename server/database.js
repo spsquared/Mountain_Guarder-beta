@@ -19,7 +19,7 @@ const database = new Client({
 });
 url = null;
 
-const chars = ['A', 'B', 'C',  'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',  'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y',  'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',  'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6',  '7', '8', '9', '0', '`', '-', '=', '!', '@', '#', '$',  '%', '^', '&', '*', '(', ')', '_', '+', '[', ']', '\\', '{', '}', '|', ';', "'", ':', '"', ',', '.', '/', '?'];
+const chars = ['A', 'B', 'C',  'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',  'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y',  'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',  'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u',  'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6',  '7', '8', '9', '0', '`', '-', '=', '!', '@', '#', '$',  '%', '^', '&', '*', '(', ')', '_', '+', '[', ']', '{', '}', '|', ';', "'", ':', '"', ',', '.', '/', '?'];
 
 ACCOUNTS = {
     connected: false,
@@ -32,7 +32,6 @@ ACCOUNTS = {
                 try {
                     await database.connect();
                     ACCOUNTS.connected = true;
-                    database.query('ALTER TABLE users ALTER COLUMN data TYPE varchar(1048576)');
                 } catch (err) {
                     forceQuit(err, 2);
                 }
@@ -73,6 +72,9 @@ ACCOUNTS = {
         var cred = await getCredentials(username);
         if (cred) {
             if (bcrypt.compareSync(password, cred.password)) {
+                if (await getBanned(username)) {
+                    return 3;
+                }
                 return 0;
             }
             return 1;
@@ -84,15 +86,14 @@ ACCOUNTS = {
         var cred = await getCredentials(username);
         if (cred) {
             if (bcrypt.compareSync(password, cred.password)) {
+                if (await getBanned(username)) return 1;
                 var status = await deleteCredentials(username);
                 if (status) {
                     return 0;
-                } else {
-                    return 3;
                 }
-            } else {
-                return 1;
+                return 3;
             }
+            return 1;
         }
         return 2;
     },
@@ -156,16 +157,35 @@ ACCOUNTS = {
         }
         warn('Failed to save progress!');
         return false;
+    },
+    ban: async function ban(username) {
+        if (ENV.offlineMode) return true;
+        var status = await setBanned(username, true);
+        if (status) {
+            return true;
+        }
+        warn('Failed to ban user!');
+        return false;
+    },
+    unban: async function unban(username) {
+        if (ENV.offlineMode) return true;
+        var status = await setBanned(username, false);
+        if (status) {
+            return true;
+        }
+        warn('Failed to ban user!');
+        return false;
     }
 };
-
 // /*
 dbDebug = {
     list: function() {
         try {
-            database.query('SELECT username FROM users;', function(err, res) {
+            database.query('SELECT username FROM users;', async function(err, res) {
                 if (err) forceQuit(err);
-                console.log(res.rows);
+                for (var i in res.rows) {
+                    console.log(res.rows[i].username);
+                }
             });
         } catch (err) {
             forceQuit(err, 2);
@@ -277,32 +297,32 @@ dbDebug = {
     removeOld: function() {
         try {
             database.query('SELECT username, data FROM users;', async function(err, res) {
-                logColor('Purging old (>1 year no login) accounts... This may take a while.', '\x1b[33m', 'log');
-                var count = 0;
+                logColor('Purging old (>1 year no login) and unused (no data / <10 minutes playtime) accounts... This may take a while.', '\x1b[33m', 'log');
                 var purged = 0;
                 if (err) forceQuit(err);
                 var updates = setInterval(function() {
                     logColor('Purged ' + purged + ' accounts', '\x1b[33m', 'log');
+                    purged = 0;
                 }, 10000);
                 for (var i in res.rows) {
                     var toremove = false;
-                    if (res.rows[i].data == '') toremove = true;
+                    if (res.rows[i].data == null) toremove = true;
                     var data = JSON.parse(res.rows[i].data);
                     if (data) {
                         var lastLogin = data.lastLogin;
-                        if (lastLogin == null) {if (Date.now()-1652043631075 > 31536000) toremove = true;}
+                        if (lastLogin == null && Date.now()-1652043631075 > 31536000) toremove = true;
                         if (Date.now()-lastLogin > 31536000) toremove = true;
+                        if (data.playTime < 300000 || data.playTime == null) toremove = true;
                     }
                     if (toremove) {
-                        count++;
+                        purged++;
                         try {
                             await database.query('DELETE FROM users WHERE username=$1;', [res.rows[i].username]);
-                            purged++;
                         } catch (err) {
                             error(err);
                         }
                     }
-                    // await new Promise(function(resolve, reject) {setTimeout(resolve, 5);});
+                    await new Promise(function(resolve, reject) {setTimeout(resolve, 10);});
                 }
                 logColor('Purged ' + purged + ' accounts', '\x1b[33m', 'log');
                 clearInterval(updates);
@@ -310,7 +330,7 @@ dbDebug = {
         } catch (err) {
             forceQuit(err, 2);
         }
-    }
+    },
 };
 // */
 
@@ -391,6 +411,26 @@ async function updateProgress(username, password, data) {
         } else {
             warn('WARNING: Unauthorized attempt to change user data!');
         }
+    }
+    return false;
+};
+async function getBanned(username) {
+    try {
+        var data = await database.query('SELECT banned FROM users WHERE username=$1;', [username]);
+        if (data.rows[0]) {
+            if (data.rows[0].banned) return true;
+        }
+    } catch (err) {
+        forceQuit(err, 2);
+    }
+    return false;
+};
+async function setBanned(username, banned) {
+    try {
+        await database.query('UPDATE users SET banned=$2 WHERE username=$1;', [username, banned.toString()]);
+        return true;
+    } catch (err) {
+        forceQuit(err, 2);
     }
     return false;
 };

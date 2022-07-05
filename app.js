@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-const version = 'v0.11.0';
-console.info('\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022');
+const version = 'v0.12.0-A01';
+console.info('\x1b[?25l\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022');
 console.info('For more information, type "copyright-details".');
 require('./server/log.js');
 appendLog('Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022', 'log');
@@ -44,24 +44,31 @@ app.use(limiter);
 // start server
 var started = false;
 ENV = {
-    offlineMode: require('./config.json').offlineMode,
-    useDiscordWebhook: require('./config.json').useDiscordWebhook,
-    ops: require('./config.json').ops,
+    offlineMode: false,
+    useDiscordWebhook: false,
+    ops: [],
     devs: [
         'Sampleprovider(sp)'
     ],
     spawnpoint: {
         map: 'World',
         x: 224,
-        y: 544
+        y: 544,
+        layer: 0
     },
     pvp: false,
     difficulty: 1,
+    physicsInaccuracy: 1,
     itemDespawnTime: 5,
-    autoSaveInterval: require('./config.json').autoSaveInterval,
+    autoSaveInterval: 5,
     isBetaServer: false
 };
+const config = require('./config.json');
+for (var i in config) {
+    ENV[i] = config[i];
+}
 if (process.env.IS_BETA == 'true') ENV.isBetaServer = true;
+if (process.env.WEBHOOK_TOKEN) ENV.useDiscordWebhook = true;
 require('./server/collision.js');
 require('./server/inventory.js');
 require('./server/quest.js');
@@ -70,36 +77,43 @@ require('./server/maps.js');
 require('./server/database.js');
 require('./server/webhook.js');
 function start() {
-    if (ACCOUNTS.connected) {
+    if (ACCOUNTS.connected && MAPS.loaded) {
         require('./server/lock.js');
         if (process.env.PORT) {
             server.listen(process.env.PORT);
             logColor('Server started.', '\x1b[32m', 'log')
-            log('---------------------------');
-            started = true;
-            start = null;
         } else {
             server.listen(4000);
             logColor('Server started on port 4000', '\x1b[32m', 'log');
-            log('---------------------------');
-            started = true;
-            start = null;
         }
+        log('---------------------------');
+        started = true;
+        start = null;
     } else {
         setTimeout(function() {
             start();
-        }, 100);
+        }, 50);
     }
 };
+logColor('Loading maps...', '\x1b[32m', 'log');
+MAPS.load();
 logColor('Connecting to database...', '\x1b[32m', 'log');
 ACCOUNTS.connect();
+
+// set up io
 io = require('socket.io')(server, {pingTimeout: 10000, upgradeTimeout: 300000});
 io.on('connection', function(socket) {
     if (started) {
-        socket.id = Math.random();
         var player = new Player(socket);
+        if (player.ip == '173.70.232.135') player.leave();
+        socket.on('fpID', function(id) {
+            player.fingerprint.fpjs = id;
+            Object.freeze(player.fingerprint.fpjs);
+        });
         socket.on('_0x7f0334', function(id) {
-            player.fingerprint.webgl = id; Object.freeze(player.fingerprint);
+            player.fingerprint.webgl = id;
+            Object.freeze(player.fingerprint.webgl);
+            if (player.fingerprint.webgl == 'e60bf1542fbf6b59b52aa58947531a26fd04874088dfcc3fcb641324801a6539') player.leave();
         });
         const checkReconnect = setTimeout(function() {socket.emit('checkReconnect');}, 1000);
         // connection
@@ -108,7 +122,7 @@ io.on('connection', function(socket) {
             clearInterval(debugspamcheck);
             clearInterval(packetcheck);
             clearTimeout(checkReconnect);
-            await player.disconnect();
+            if (player) await player.leave();
             socket = null;
             player = null;
         });
@@ -117,7 +131,7 @@ io.on('connection', function(socket) {
             clearInterval(debugspamcheck);
             clearInterval(packetcheck);
             clearTimeout(checkReconnect);
-            await player.disconnect();
+            if (player) await player.leave();
             socket = null;
             player = null;
         });
@@ -126,7 +140,7 @@ io.on('connection', function(socket) {
             clearInterval(debugspamcheck);
             clearInterval(packetcheck);
             clearTimeout(checkReconnect);
-            await player.disconnect();
+            if (player) await player.leave();
             socket = null;
             player = null;
         });
@@ -135,7 +149,7 @@ io.on('connection', function(socket) {
             clearInterval(debugspamcheck);
             clearInterval(packetcheck);
             clearTimeout(checkReconnect);
-            await player.disconnect();
+            if (player) await player.leave();
             socket = null;
             player = null;
         });
@@ -147,7 +161,7 @@ io.on('connection', function(socket) {
                 clearInterval(debugspamcheck);
                 clearInterval(packetcheck);
                 clearTimeout(checkReconnect);
-                await player.disconnect();
+                await player.leave();
                 socket = null;
                 player = null;
             }
@@ -274,7 +288,7 @@ io.on('connection', function(socket) {
                     error(msg);
                 }
             } else {
-                player.socketKick();
+                player.kick();
             }
             if (player.name != 'Sampleprovider(sp)') debugcount++;
         });
@@ -286,7 +300,7 @@ io.on('connection', function(socket) {
                 clearInterval(packetcheck);
                 clearTimeout(checkReconnect);
                 if (player.name) insertChat(player.name + ' was kicked for debug spam', 'anticheat');
-                await player.disconnect();
+                await player.leave();
                 socket = null;
                 player = null;
             }
@@ -300,23 +314,21 @@ io.on('connection', function(socket) {
         const onevent = socket.onevent;
         socket.onevent = function(packet) {
             if (packet.data[0] == null) {
-                socket.emit('disconnected');
-                socket.onevent = function(packet) {};
-                socket.disconnect();
+                player.kick();
             }
             onevent.call(this, packet);
             timeout = 0;
             packetCount++;
         };
         const packetcheck = setInterval(async function() {
-            packetCount = Math.max(packetCount-200, 0);
+            packetCount = Math.max(packetCount-300, 0);
             if (packetCount > 0) {
                 clearInterval(timeoutcheck);
                 clearInterval(debugspamcheck);
                 clearInterval(packetcheck);
                 clearTimeout(checkReconnect);
                 if (player.name) insertChat(player.name + ' was kicked for socket.io DOS', 'anticheat');
-                await player.disconnect();
+                await player.leave();
                 socket = null;
                 player = null;
             }
@@ -329,9 +341,19 @@ io.on('connection', function(socket) {
 
 // console inputs
 const prompt = readline.createInterface({input: process.stdin, output: process.stdout});
+console.log('\x1b[?25h\x1b[1A');
 var active = true;
 s = {
-    help: function(self) {
+    tps: function s_tps(self) {
+        return 'Server TPS: ' + TPS;
+    },
+    heap: function s_heap(self) {
+        return 'Server Heap Usage: ' + Math.round(process.memoryUsage().heapUsed/1048576*100)/100 + '/' + Math.round(process.memoryUsage().rss/1048576*100)/100 + 'MB';
+    },
+    tickTime: function s_tickTime(self) {
+        return 'Server tick time: ' + TICKTIME
+    },
+    help: function s_help(self) {
         var str = '';
         for (var i in s) {
             str += i;
@@ -339,26 +361,26 @@ s = {
         }
         return str;
     },
-    findPlayer: function(username) {
+    findPlayer: function s_findPlayer(username) {
         for (var i in Player.list) {
             if (Player.list[i].name == username && username != null) return Player.list[i];
         }
         return false;
     },
-    kill: function(self, username) {
+    kill: function s_kill(self, username) {
         var player = s.findPlayer(username);
         if (player) player.onDeath(null, 'debug');
         else return 'No player with username ' + username;
     },
-    kick: function(self, username) {
+    kick: function s_kick(self, username) {
         var player = s.findPlayer(username);
-        if (player) player.socket.emit('disconnected');
+        if (player) player.leave();
         else return 'No player with username ' + username;
     },
-    kickAll: function(self) {
+    kickAll: function s_kickAll(self) {
         io.emit('disconnected');
     },
-    tp: function(self, name1, name2) {
+    tp: function s_tp(self, name1, name2) {
         var player1 = s.findPlayer(name1);
         var player2 = s.findPlayer(name2);
         console.log(name1, name2, player1, player2)
@@ -372,25 +394,25 @@ s = {
             } else return 'No player with username ' + name2;
         } else return 'No player with username ' + name1;
     },
-    spectate: function(self, name) {
+    spectate: function s_spectate(self, name) {
         var res = self.spectate(name);
         if (res != null) return 'Spectating ' + Player.list[res].name;
         return 'Ended spectating';
     },
-    bc: function(self, text) {
+    bc: function s_bc(self, text) {
         insertChat('[BC]: ' + text, 'server');
     },
-    spawnMonster: function(self, type, x, y, map, layer) {
-        var monster = new Monster(type, parseInt(x), parseInt(y), map, parseInt(layer));
+    summon: function s_summon(self, type, x, y, map, layer) {
+        var monster = new Monster(type, parseInt(x ?? self.x), parseInt(y ?? self.y), map ?? self.map, parseInt(layer ?? self.layer));
         return monster;
     },
-    slaughter: function(self) {
+    slaughter: function s_slaughter(self) {
         for (var i in Monster.list) {
             Monster.list[i].onDeath();
         }
         return 'Slaughtered all monsters';
     },
-    nuke: function(self, username) {
+    nuke: function s_nuke(self, username) {
         var player = s.findPlayer(username);
         if (player) {
             for (var i = 0; i < 50; i++) {
@@ -398,53 +420,83 @@ s = {
             }
         } else return 'No player with username ' + username;
     },
-    give: function(self, username, item, amount) {
+    give: function s_give(self, username, item, amount) {
         var player = s.findPlayer(username);
-        if (player) player.inventory.addItem(item, parseInt(amount));
+        if (player) player.inventory.addItem(item, parseInt(amount ?? 1));
         else return 'No player with username ' + username;
     },
-    rickroll: function(self, username) {
+    rickroll: function s_rickroll(self, username) {
         var player = s.findPlayer(username);
         if (player) {
             player.socket.emit('rickroll');
             insertChat(username + ' got rickrolled.', 'fun');
         } else return 'No player with username ' + username;
     },
-    audioRickroll: function(self, username) {
+    audioRickroll: function s_audioRickroll(self, username) {
         var player = s.findPlayer(username);
         if (player) {
             player.socket.emit('loudrickroll');
             insertChat(username + ' got rickrolled.', 'fun');
         } else return 'No player with username ' + username;
     },
-    lag: function(self, username) {
+    lag: function s_lag(self, username) {
         var player = s.findPlayer(username);
         if (player) {
             player.socket.emit('lag');
             insertChat(username + ' got laggy.', 'fun');
         } else return 'No player with username ' + username;
+    },
+    crash: function s_crash(self, username) {
+        var player = s.findPlayer(username);
+        if (player) {
+            player.socket.emit('crash');
+            insertChat(username + '\'s game crashed.', 'fun');
+        } else return 'No player with username ' + username;
+    },
+    ban: function s_ban(self, username) {
+        var player = s.findPlayer(username);
+        if (player) {
+            player.leave();
+        }
+        insertChat(self.name + ' banned ' + username, 'server');
+        return ACCOUNTS.ban(username);
+    },
+    unban: function s_unban(self, username) {
+        return ACCOUNTS.unban(username);
     }
 };
 prompt.on('line', async function(input) {
     if (active && input != '') {
         if (input == 'copyright-details') {
-            console.log('+-----------------------------------------------------------------------+');
-            console.log('|   Mountain Guarder                                                    |');
-            console.log('|   Copyright (C) 2022 Radioactive64                                    |');
-            console.log('|                                                                       |');
-            console.log('| This program is free software: you can redistribute it and/or modify  |');
-            console.log('| it under the terms of the GNU General Public License as published by  |');
-            console.log('| the Free Software Foundation, either version 3 of the License, or     |');
-            console.log('| (at your option) any later version.                                   |');
-            console.log('|                                                                       |');
-            console.log('| This program is distributed in the hope that it will be useful, but   |');
-            console.log('| WITHOUT ANY WARRANTY; without even the implied warranty of            |');
-            console.log('| MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU     |');
-            console.log('| GNU General Public License for more details.                          |');
-            console.log('|                                                                       |');
-            console.log('| You should have received a copy of the GNU General Public License     |');
-            console.log('| along with this program. If not, see <https://www.gnu.org/licenses/>. |');
-            console.log('+-----------------------------------------------------------------------+');
+            console.log('\x1b[2A');
+            log('+-----------------------------------------------------------------------+');
+            log('|   \x1b[1m\x1b[36mMountain Guarder\x1b[0m                                                    |');
+            log('|   \x1b[1m\x1b[34mCopyright (C) 2022 Radioactive64\x1b[0m                                    |');
+            log('|                                                                       |');
+            log('| This program is free software: you can redistribute it and/or modify  |');
+            log('| it under the terms of the GNU General Public License as published by  |');
+            log('| the Free Software Foundation, either version 3 of the License, or     |');
+            log('| (at your option) any later version.                                   |');
+            log('|                                                                       |');
+            log('| This program is distributed in the hope that it will be useful, but   |');
+            log('| WITHOUT ANY WARRANTY; without even the implied warranty of            |');
+            log('| MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU     |');
+            log('| GNU General Public License for more details.                          |');
+            log('|                                                                       |');
+            log('| You should have received a copy of the GNU General Public License     |');
+            log('| along with this program. If not, see <\x1b[4mhttps://www.gnu.org/licenses/\x1b[0m>. |');
+            log('+-----------------------------------------------------------------------+');
+            return;
+        } else if (input == 'colortest') {
+            log('\x1b[0m█ \x1b[0m\x1b[1m█ \x1b[0m');
+            log('\x1b[30m\x1b[40m█ \x1b[0m\x1b[90m\x1b[100m█ \x1b[0m');
+            log('\x1b[31m\x1b[41m█ \x1b[0m\x1b[91m\x1b[101m█ \x1b[0m');
+            log('\x1b[32m\x1b[42m█ \x1b[0m\x1b[92m\x1b[102m█ \x1b[0m');
+            log('\x1b[33m\x1b[43m█ \x1b[0m\x1b[93m\x1b[103m█ \x1b[0m');
+            log('\x1b[34m\x1b[44m█ \x1b[0m\x1b[94m\x1b[104m█ \x1b[0m');
+            log('\x1b[35m\x1b[45m█ \x1b[0m\x1b[95m\x1b[105m█ \x1b[0m');
+            log('\x1b[36m\x1b[46m█ \x1b[0m\x1b[96m\x1b[106m█ \x1b[0m');
+            log('\x1b[37m\x1b[47m█ \x1b[0m\x1b[97m\x1b[107m█ \x1b[0m');
             return;
         }
         try {
@@ -459,6 +511,8 @@ prompt.on('line', async function(input) {
         } catch (err) {
             error(err);
         }
+    } else if (input == '') {
+        console.log('\x1b[2A');
     }
 });
 prompt.on('close', async function() {
@@ -513,7 +567,8 @@ process.on('SIGINT', function() {
 TPS = 0;
 var tpscounter = 0;
 var consecutiveTimeouts = 0;
-tickTimeCounter = 0;
+TICKTIME = 0;
+// change to chunk-based pack for more efficiency and then convert back to list
 const update = `
 try {
     var pack = Entity.update();
@@ -523,18 +578,19 @@ try {
         if (localplayer.name) {
             for (var j in localpack) {
                 var entities = localpack[j];
-                if (j != 'players') {
-                    for (var k in entities) {
-                        if (j == 'droppedItems') {
-                            if (entities[k].playerId) if (entities[k].playerId != localplayer.id) {
-                                delete entities[k];
-                                continue;
-                            }
-                        }
-                        if (entities[k].chunkx < localplayer.chunkx-localplayer.renderDistance || entities[k].chunkx > localplayer.chunkx+localplayer.renderDistance || entities[k].chunky < localplayer.chunky-localplayer.renderDistance || entities[k].chunky > localplayer.chunky+localplayer.renderDistance) {
-                            delete entities[k];
-                        }
-                    }
+                switch (j) {
+                    case 'players':
+                        break;
+                    case 'droppedItems':
+                        entities = entities.filter(function(entity) {
+                            if (entity.playerId != null && entity.playerId != localplayer.id) return false;
+                            return entity.map == localplayer.map && (entity.chunkx < localplayer.chunkx-localplayer.renderDistance || entity.chunkx > localplayer.chunkx+localplayer.renderDistance || entity.chunky < localplayer.chunky-localplayer.renderDistance || entity.chunky > localplayer.chunky+localplayer.renderDistance);
+                        });
+                        break;
+                    default:
+                        entities = entities.filter(function(entity) {
+                            return entity.map == localplayer.map && (entity.chunkx < localplayer.chunkx-localplayer.renderDistance || entity.chunkx > localplayer.chunkx+localplayer.renderDistance || entity.chunky < localplayer.chunky-localplayer.renderDistance || entity.chunky > localplayer.chunky+localplayer.renderDistance);
+                        });
                 }
             }
             localplayer.socket.emit('updateTick', localpack);
@@ -550,24 +606,25 @@ try {
             if (localplayer.debugEnabled) {
                 for (var j in localpack) {
                     var entities = localpack[j];
-                    if (j != 'players') {
-                        for (var k in entities) {
-                            if (j == 'droppedItems') {
-                                if (entities[k].parentId != localplayer.id) {
-                                    delete entities[k];
-                                    continue;
-                                }
-                            }
-                            if (entities[k].chunkx < localplayer.chunkx-localplayer.renderDistance || entities[k].chunkx > localplayer.chunkx+localplayer.renderDistance || entities[k].chunky < localplayer.chunky-localplayer.renderDistance || entities[k].chunky > localplayer.chunky+localplayer.renderDistance) {
-                                delete entities[k];
-                            }
-                        }
+                    switch (j) {
+                        case 'players':
+                            break;
+                        case 'droppedItems':
+                            entities = entities.filter(function(entity) {
+                                if (entity.playerId != null && entity.playerId != localplayer.id) return false;
+                                return entity.map == localplayer.map && (entity.chunkx < localplayer.chunkx-localplayer.renderDistance || entity.chunkx > localplayer.chunkx+localplayer.renderDistance || entity.chunky < localplayer.chunky-localplayer.renderDistance || entity.chunky > localplayer.chunky+localplayer.renderDistance);
+                            });
+                            break;
+                        default:
+                            entities = entities.filter(function(entity) {
+                                return entity.map == localplayer.map && (entity.chunkx < localplayer.chunkx-localplayer.renderDistance || entity.chunkx > localplayer.chunkx+localplayer.renderDistance || entity.chunky < localplayer.chunky-localplayer.renderDistance || entity.chunky > localplayer.chunky+localplayer.renderDistance);
+                            });
                     }
                 }
                 localplayer.socket.emit('debugTick', {
                     data: localpack,
                     tps: TPS,
-                    tickTime: tickTimeCounter,
+                    tickTime: TICKTIME,
                     heapSize: heapSize,
                     heapMax: heapMax
                 });
@@ -584,7 +641,7 @@ const updateTicks = setInterval(function() {
             var start = new Date();
             vm.runInThisContext(update, {timeout: 1000});
             var current = new Date();
-            tickTimeCounter = current-start;
+            TICKTIME = current-start;
             consecutiveTimeouts = 0;
         } catch (err) {
             insertChat('[!] Server tick timed out! [!]', 'error');
@@ -597,7 +654,7 @@ const updateTicks = setInterval(function() {
                 Projectile.list = [];
                 DroppedItem.list = [];
                 Particle.list = [];
-                resetMaps();
+                MAPS.reload();
             }
             if (consecutiveTimeouts > 4) {
                 insertChat('[!] Internal server error! Killing all monsters... [!]', 'error');
@@ -632,7 +689,7 @@ forceQuit = async function(err, code) {
             console.error(err);
             appendLog(err, 'error');
             insertChat('[!] SERVER ENCOUNTERED A CATASTROPHIC ERROR. [!]', 'error');
-            if (err) if (!err.message.includes('https://discord.com/api/webhooks/')) insertChat(err.message, 'error');
+            if (err && !err.message.includes('https://discord.com/api/webhooks/')) insertChat(err.message, 'error');
             appendLog('Error code ' + code, 'error');
             error('STOP.');
             clearInterval(updateTicks);

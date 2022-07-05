@@ -37,14 +37,42 @@
     "wood": {
         "name": "Wood",
         "description": "Some raw uncut lumber, ready for crafting",
-        "slotType": "none",
+        "slotType": "material",
         "rarity": 0,
         "effects": []
     },
     "planks": {
         "name": "Planks",
         "description": "Standard wood planks",
-        "slotType": "none",
+        "slotType": "material",
+        "rarity": 0,
+        "effects": []
+    },
+    "sticks": {
+        "name": "Sticks",
+        "description": "It would probably be more fitting to call it a rod",
+        "slotType": "material",
+        "rarity": 0,
+        "effects": []
+    },
+    "coal": {
+        "name": "Coal",
+        "description": "Bituminous coal, good for smelting",
+        "slotType": "material",
+        "rarity": 0,
+        "effects": []
+    },
+    "ironore": {
+        "name": "Iron Ore",
+        "description": "Raw iron in the form of a lump",
+        "slotType": "material",
+        "rarity": 0,
+        "effects": []
+    },
+    "iron": {
+        "name": "Iron Ingot",
+        "description": "A 5 lb cast iron ingot",
+        "slotType": "material",
         "rarity": 0,
         "effects": []
     },
@@ -197,11 +225,11 @@
         "description": "A simple bow forged from steel",
         "slotType": "weapon",
         "rarity": 1,
-        "damage": 10,
+        "damage": 12,
         "damageType": "ranged",
         "critChance": 0.04,
-        "critPower": 0.05,
-        "knockback": 0.1,
+        "critPower": 0.1,
+        "knockback": 1.5,
         "useTime": 10,
         "manaCost": 0,
         "heldAngle": -45,
@@ -348,12 +376,28 @@
             }
         ]
     },
-    "titaniumstaff": {
-        "name": "Titanium Staff",
-        "description": "A lightweight version of the steel staff. The higher quality means the Purple can phase through solid matter.",
+    "titaniumbow": {
+        "name": "Titanium Bow",
+        "description": "A titanium cast of the Steel Bow. The higher quality allows it to shoot fast piercing arrows.",
         "slotType": "weapon",
         "rarity": 2,
-        "damage": 11,
+        "damage": 14,
+        "damageType": "ranged",
+        "critChance": 0.04,
+        "critPower": 0.15,
+        "knockback": 1.5,
+        "useTime": 11,
+        "manaCost": 0,
+        "heldAngle": -45,
+        "heldDistance": 32,
+        "effects": []
+    },
+    "titaniumstaff": {
+        "name": "Titanium Staff",
+        "description": "A titanium version of the Steel Staff. The higher quality allows the Purple to phase through solid matter.",
+        "slotType": "weapon",
+        "rarity": 2,
+        "damage": 14,
         "damageType": "magic",
         "critChance": 0.1,
         "critPower": 0.3,
@@ -363,6 +407,46 @@
         "heldAngle": 45,
         "heldDistance": 64,
         "effects": []
+    },
+    "ialiteshard": {
+        "name": "Ialite Shard",
+        "description": "A mysterious piece of an unknown sort of crystal. It seems to have some Purple essence...",
+        "slotType": "material",
+        "rarity": 3,
+        "effects": []
+    },
+    "ialitecrystal": {
+        "name": "Ialite Crystal",
+        "description": "A powerful crystal made of Purple-infused Ialite. When used, the crystal blasts waves of Purple.",
+        "slotType": "crystal",
+        "rarity": 3,
+        "damage": 24,
+        "damageType": "magic",
+        "critChance": 0.2,
+        "critPower": 0.2,
+        "knockback": 1,
+        "useTime": 30,
+        "manaCost": 12,
+        "heldAngle": -45,
+        "heldDistance": 32,
+        "effects": [
+            {
+                "id": "health",
+                "value": 1.05
+            },
+            {
+                "id": "damage",
+                "value": 1.02
+            },
+            {
+                "id": "magicDamage",
+                "value": 1.02
+            },
+            {
+                "id": "critPower",
+                "value": 1.01
+            }
+        ]
     },
     "raresteak": {
         "name": "Rare Steak",

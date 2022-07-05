@@ -26,17 +26,19 @@ if (ENV.useDiscordWebhook) {
         }
     };
     postDebugDiscord = async function postDebugDiscord(code, text) {
-        var time = new Date();
-        var minute = '' + time.getUTCMinutes();
-        if(minute.length == 1){
-            minute = '' + 0 + minute;
-        }
-        if(minute == '0') {
-            minute = '00';
-        }
-        if (typeof text == 'string' && typeof code == 'string') {
-            text = text.replace(/\`/g, '\'');
-            debugwebhook.send('`' + code + ' [' + time.getUTCHours() + ':' + minute + '] ' + text + '`');
+        if (debugtoken) {
+            var time = new Date();
+            var minute = '' + time.getUTCMinutes();
+            if(minute.length == 1){
+                minute = '' + 0 + minute;
+            }
+            if(minute == '0') {
+                minute = '00';
+            }
+            if (typeof text == 'string' && typeof code == 'string') {
+                text = text.replace(/\`/g, '\'');
+                debugwebhook.send('`' + code + ' [' + time.getUTCHours() + ':' + minute + '] ' + text + '`');
+            }
         }
     };
 }

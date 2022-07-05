@@ -17,6 +17,7 @@ Entity = function(id, map, x, y) {
         rotation: 0,
         interpolationStage: 0,
         animationImage: new Image(),
+        animationImage2: null,
         updated: true
     };
 
@@ -112,6 +113,14 @@ Entity.draw = function draw() {
 // rigs
 Rig = function(id, map, x, y) {
     var self = new Entity(id, map, x, y);
+    self.characterStyle = {
+        hair: 1,
+        hairColor: '#000000',
+        bodyColor: '#FFF0B4',
+        shirtColor: '#FF3232',
+        pantsColor: '#6464FF',
+        texture: null
+    };
     self.rawWidth = 0;
     self.rawHeight = 0;
     self.hp = 0;
@@ -130,12 +139,23 @@ Rig = function(id, map, x, y) {
         self.yspeed = (data.y-self.y)/tpsFpsRatio;
         self.interpolationStage = 0;
         self.animationStage = data.animationStage;
+        if (data.characterStyle.hair != self.characterStyle.hair || data.characterStyle.hairColor != self.characterStyle.hairColor || data.characterStyle.bodyColor != self.characterStyle.bodyColor || data.characterStyle.shirtColor != self.characterStyle.shirtColor || data.characterStyle.pantsColor != self.characterStyle.pantsColor || data.characterStyle.texture != self.characterStyle.texture) {
+            self.characterStyle = data.characterStyle;
+            if (self.characterStyle.texture) {
+                self.animationImage2 = self.animationImage;
+                self.animationImage = new Image();
+                self.animationImage.src = '/client/img' + self.characterStyle.texture;
+            } else {
+                if (self.animationImage2) self.animationImage = self.animationImage2;
+                self.animationImage2 = null;
+            }
+        }
         self.hp = data.hp;
         self.maxHP = data.maxHP;
         self.updated = true;
     };
     self.draw = function() {
-        LAYERS.elayers[self.layer].fillText('MISSING TEXTURE', self.x+OFFSETX, self.y+OFFSETY);
+        LAYERS.elayers[self.layer].drawImage(self.animationImage, self.x-self.animationImage.width*2+OFFSETX, self.y-self.animationImage.height*2+OFFSETY, self.animationImage.width*4, self.animationImage.height*4);
         LAYERS.eupper.drawImage(Rig.healthBarR, 0, 0, 42, 5, self.x-63+OFFSETX, self.y-52+OFFSETY, 126, 15);
         LAYERS.eupper.drawImage(Rig.healthBarR, 1, 5, (self.hp/self.maxHP)*40, 5, self.x-60+OFFSETX, self.y-52+OFFSETY, (self.hp/self.maxHP)*120, 15);
         if (self.interpolationStage < (settings.fps/20)) {
@@ -157,15 +177,8 @@ Player = function(id, map, x, y, name, isNPC, npcId) {
     var self = new Rig(id, map, x, y);
     self.layer = 0;
     self.animationImage = null;
-    self.animationsCanvas = createCanvas(48, 128);
-    self.animationsContext = self.animationsCanvas.getContext('2d');
-    self.characterStyle = {
-        hair: 1,
-        hairColor: '#000000',
-        bodyColor: '#FFF0B4',
-        shirtColor: '#FF3232',
-        pantsColor: '#6464FF'
-    };
+    self.animationCanvas = createCanvas(48, 128);
+    self.animationContext = self.animationCanvas.getContext('2d');
     self.heldItem = {
         id: null,
         angle: 0,
@@ -189,9 +202,16 @@ Player = function(id, map, x, y, name, isNPC, npcId) {
         self.layer = data.layer;
         self.interpolationStage = 0;
         self.animationStage = data.animationStage;
-        if (data.characterStyle.hair != self.characterStyle.hair || data.characterStyle.hairColor != self.characterStyle.hairColor || data.characterStyle.bodyColor != self.characterStyle.bodyColor || data.characterStyle.shirtColor != self.characterStyle.shirtColor || data.characterStyle.pantsColor != self.characterStyle.pantsColor) {
+        if (data.characterStyle.hair != self.characterStyle.hair || data.characterStyle.hairColor != self.characterStyle.hairColor || data.characterStyle.bodyColor != self.characterStyle.bodyColor || data.characterStyle.shirtColor != self.characterStyle.shirtColor || data.characterStyle.pantsColor != self.characterStyle.pantsColor || data.characterStyle.texture != self.characterStyle.texture) {
             self.characterStyle = data.characterStyle;
-            self.updateAnimationCanvas();
+            if (self.characterStyle.texture) {
+                self.animationImage = new Image();
+                self.animationImage.src = '/client/img' + self.characterStyle.texture;
+            } else {
+                self.animationImage = null;
+                self.updateAnimationCanvas();
+            }
+            
         }
         self.hp = data.hp;
         self.maxHP = data.maxHP;
@@ -211,7 +231,8 @@ Player = function(id, map, x, y, name, isNPC, npcId) {
                 LAYERS.elayers[self.layer].restore();
             }
         }
-        LAYERS.elayers[self.layer].drawImage(self.animationsCanvas, (self.animationStage % 6)*8, (~~(self.animationStage / 6))*16, 8, 16, self.x-16+OFFSETX, self.y-52+OFFSETY, 32, 64);
+        if (self.animationImage) LAYERS.elayers[self.layer].drawImage(self.animationImage, self.x-self.animationImage.width*2+OFFSETX, self.y-self.animationImage.height*2+OFFSETY, self.animationImage.width*4, self.animationImage.height*4);
+        else LAYERS.elayers[self.layer].drawImage(self.animationCanvas, (self.animationStage % 6)*8, (~~(self.animationStage / 6))*16, 8, 16, self.x-16+OFFSETX, self.y-52+OFFSETY, 32, 64);
         if (self.isNPC == false) {
             LAYERS.eupper.drawImage(Rig.healthBarG, 0, 0, 42, 5, self.x-63+OFFSETX, self.y-72+OFFSETY, 126, 15);
             LAYERS.eupper.drawImage(Rig.healthBarG, 1, 5, (self.hp/self.maxHP)*40, 5, self.x-60+OFFSETX, self.y-72+OFFSETY, (self.hp/self.maxHP)*120, 15);
@@ -233,11 +254,11 @@ Player = function(id, map, x, y, name, isNPC, npcId) {
         }
     };
     self.updateAnimationCanvas = async function updateAnimationCanvas() {
-        self.animationsContext.clearRect(0, 0, 48, 128);
-        self.animationsContext.drawImage(self.drawTintedCanvas('body'), 0, 0);
-        self.animationsContext.drawImage(self.drawTintedCanvas('shirt'), 0, 0);
-        self.animationsContext.drawImage(self.drawTintedCanvas('pants'), 0, 0);
-        self.animationsContext.drawImage(self.drawTintedCanvas('hair'), 0, 0);
+        self.animationContext.clearRect(0, 0, 48, 128);
+        self.animationContext.drawImage(self.drawTintedCanvas('body'), 0, 0);
+        self.animationContext.drawImage(self.drawTintedCanvas('shirt'), 0, 0);
+        self.animationContext.drawImage(self.drawTintedCanvas('pants'), 0, 0);
+        self.animationContext.drawImage(self.drawTintedCanvas('hair'), 0, 0);
     };
     self.drawTintedCanvas = function drawTintedCanvas(asset) {
         var buffer = createCanvas(48, 128);
@@ -706,11 +727,11 @@ DroppedItem.updateHighlight = function updateHighlight() {
     for (var i in DroppedItem.list) {
         DroppedItem.list[i].animationImage = Inventory.itemImages[DroppedItem.list[i].itemId];
     }
-    var x = mouseX+OFFSETX;
-    var y = mouseY+OFFSETY;
+    var x = mouseX-OFFSETX;
+    var y = mouseY-OFFSETY;
     if (settings.useController) {
-        x = axes.aimx+OFFSETX;
-        y = axes.aimy+OFFSETY
+        x = axes.aimx-OFFSETX;
+        y = axes.aimy-OFFSETY;
     }
     for (var i in DroppedItem.list) {
         var localdroppeditem = DroppedItem.list[i];
@@ -764,7 +785,7 @@ async function getEntityData() {
                     request.send();
                 }
             };
-            request.onerror = function(){
+            request.onerror = function() {
                 console.error('There was a connection error. Please retry');
                 reject();
             };
@@ -791,7 +812,7 @@ async function getEntityData() {
                     request.send();
                 }
             };
-            request.onerror = function(){
+            request.onerror = function() {
                 console.error('There was a connection error. Please retry');
                 reject();
             };
@@ -890,7 +911,7 @@ async function getAnimatedTileData() {
     //         request.send();
     //     }
     // };
-    // request.onerror = function(){
+    // request.onerror = function() {
     //     console.error('There was a connection error. Please retry');
     // };
     // request.send();

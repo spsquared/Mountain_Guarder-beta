@@ -7,6 +7,22 @@
         "damage": 1,
         "range": 3,
         "knockback": 0.5,
+        "damageType": "ranged",
+        "invincibilityFrame": 0,
+        "piercing": false,
+        "noCollision": false
+    },
+    "piercingarrow": {
+        "width": 120,
+        "height": 15,
+        "speed": 40,
+        "pattern": "none",
+        "damage": 1,
+        "range": 3,
+        "knockback": 0.3,
+        "damageType": "ranged",
+        "invincibilityFrame": 1,
+        "piercing": true,
         "noCollision": false
     },
     "magicball": {
@@ -17,6 +33,9 @@
         "damage": 1,
         "range": 5,
         "knockback": 0,
+        "damageType": "magic",
+        "invincibilityFrame": 0,
+        "piercing": false,
         "noCollision": false
     },
     "magicballnoclip": {
@@ -27,6 +46,9 @@
         "damage": 1,
         "range": 5,
         "knockback": 0,
+        "damageType": "magic",
+        "invincibilityFrame": 0,
+        "piercing": false,
         "noCollision": true
     },
     "homingmagicball": {
@@ -37,6 +59,9 @@
         "damage": 1,
         "range": 5,
         "knockback": 0,
+        "damageType": "magic",
+        "invincibilityFrame": 0,
+        "piercing": false,
         "noCollision": false
     },
     "homingmagicballnoclip": {
@@ -47,6 +72,9 @@
         "damage": 1,
         "range": 5,
         "knockback": 0,
+        "damageType": "magic",
+        "invincibilityFrame": 0,
+        "piercing": false,
         "noCollision": true
     },
     "meleedamage": {
@@ -57,6 +85,9 @@
         "damage": 1,
         "range": 1,
         "knockback": 0.8,
+        "damageType": "melee",
+        "invincibilityFrame": 10,
+        "piercing": true,
         "noCollision": true
     },
     "ninjastar": {
@@ -67,6 +98,9 @@
         "damage": 5,
         "range": 4,
         "knockback": 0.2,
+        "damageType": "ranged",
+        "invincibilityFrame": 1,
+        "piercing": false,
         "noCollision": false
     },
     "snowball": {
@@ -77,6 +111,9 @@
         "damage": 5,
         "range": 3,
         "knockback": 0.3,
+        "damageType": "ranged",
+        "invincibilityFrame": 1,
+        "piercing": false,
         "noCollision": false
     },
     "fastsnowball": {
@@ -87,6 +124,9 @@
         "damage": 10,
         "range": 4,
         "knockback": 0.3,
+        "damageType": "ranged",
+        "invincibilityFrame": 1,
+        "piercing": false,
         "noCollision": false
     },
     "christmas2021": {
@@ -96,7 +136,10 @@
         "pattern": "homing2",
         "damage": 8,
         "range": 10,
-        "knockback": 0.8,
+        "knockback": 0.5,
+        "damageType": "ranged",
+        "invincibilityFrame": 1,
+        "piercing": false,
         "noCollision": true
     }
 }

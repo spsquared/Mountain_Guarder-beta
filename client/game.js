@@ -29,6 +29,7 @@ function load(data) {
     setTimeout(async function() {
         await getEntityData();
         await getInventoryData();
+        await getCraftingData();
         await getShopData();
         await getQuestData();
         await getNpcDialogues();
@@ -57,6 +58,7 @@ function load(data) {
         }, 5);
         await loadEntityData();
         await loadInventoryData();
+        await loadCraftingData();
         await loadShopData();
         await loadQuestData();
         await loadNpcDialogues();
@@ -73,7 +75,7 @@ async function loadMap(name) {
         await new Promise(async function(resolve, reject) {
             var request = new XMLHttpRequest();
             request.open('GET', '/client/maps/' + name + '.json', true);
-            request.onload = function() {
+            request.onload = function() {   
                 if (this.status >= 200 && this.status < 400) {
                     var json = JSON.parse(this.response);
                     MAPS[name] = {
@@ -138,7 +140,7 @@ async function loadMap(name) {
                 }
                 resolve();
             };
-            request.onerror = function(){
+            request.onerror = function() {
                 console.error('There was a connection error. Please retry');
                 reject();
             };
@@ -352,14 +354,12 @@ function renderChunk(x, y, map) {
     for (var i in MAPS[player.map].chunkJSON[y][x]) {
         var above = false;
         var variable = -1;
-        var vindex = 0;
         if (i.includes('Above')) above = true;
         if (i.includes('Variable')) {
             variable = parseInt(i.replace('Variable', ''));
-            vindex = tempvariables.length;
-            tempvariables.push(createCanvas(MAPS[map].chunkwidth * 64, MAPS[map].chunkheight * 64));
-            tvariables.push(tempvariables[vindex].getContext('2d'));
-            resetCanvas(tempvariables[vindex]);
+            tempvariables[variable] = createCanvas(MAPS[map].chunkwidth * 64, MAPS[map].chunkheight * 64);
+            tvariables[variable] = tempvariables[variable].getContext('2d');
+            resetCanvas(tempvariables[variable]);
         }
         for (var j in MAPS[player.map].chunkJSON[y][x][i]) {
             var tileid = MAPS[player.map].chunkJSON[y][x][i][j];
@@ -372,7 +372,7 @@ function renderChunk(x, y, map) {
                 if (above) {
                     tupper.drawImage(tileset, imgx, imgy, 16, 16, dx*4, dy*4, 64, 64);
                 } else if (variable != -1) {
-                    tvariables[vindex].drawImage(tileset, imgx, imgy, 16, 16, dx*4, dy*4, 64, 64);
+                    tvariables[variable].drawImage(tileset, imgx, imgy, 16, 16, dx*4, dy*4, 64, 64);
                 } else {
                     tlower.drawImage(tileset, imgx, imgy, 16, 16, dx*4, dy*4, 64, 64);
                 }
@@ -646,7 +646,7 @@ socket.on('debugTick', function(debug) {
         serverHeapMax = debug.heapMax;
     }
 });
-document.onkeydown = function(e) {
+document.onkeydown = function onkeydown(e) {
     if (loaded) {
         if (!e.isTrusted) {
             socket.emit('timeout');
@@ -712,7 +712,7 @@ document.onkeydown = function(e) {
         }
     }
 };
-document.onkeyup = function(e) {
+document.onkeyup = function onkeyup(e) {
     if (loaded) {
         var key = e.key.toLowerCase();
         if (!e.isTrusted) {
@@ -744,7 +744,7 @@ document.onkeyup = function(e) {
         }
     }
 };
-document.onmousedown = function(e) {
+document.onmousedown = function onmousedown(e) {
     if (loaded) {
         if (!e.isTrusted) {
             socket.emit('timeout');
@@ -766,7 +766,7 @@ document.onmousedown = function(e) {
         if (!pointerLocked && settings.pointerLock) document.body.requestPointerLock();
     }
 };
-document.onmouseup = function(e) {
+document.onmouseup = function onmouseup(e) {
     if (loaded) {
         if (!e.isTrusted) {
             socket.emit('timeout');
@@ -787,7 +787,7 @@ document.onmouseup = function(e) {
         }
     }
 };
-document.onmousemove = function(e) {
+document.onmousemove = function onmousemove(e) {
     if (loaded && visible) {
         if (!e.isTrusted) {
             socket.emit('timeout');
@@ -848,24 +848,31 @@ socket.on('region', async function(name) {
         }, 4000);
     }
 });
+var teleporting = false;
 socket.on('teleport1', function() {
-    document.getElementById('fade').style.display = 'block';
-    document.getElementById('fade').style.animationName = 'fadeIn';
-    document.getElementById('fade').onanimationend = function() {
-        socket.emit('teleport');
-        document.getElementById('fade').onanimationend = function() {};
-    };
+    if (!teleporting) {
+        teleporting = true;
+        document.getElementById('fade').style.display = 'block';
+        document.getElementById('fade').style.animationName = 'fadeIn';
+        document.getElementById('fade').onanimationend = function() {
+            socket.emit('teleport1');
+            document.getElementById('fade').onanimationend = function() {};
+        };
+    }
 });
 socket.on('teleport2', function(pos) {
-    player.map = pos.map;
-    player.x = pos.x;
-    player.y = pos.y;
-    document.getElementById('fade').style.animationName = 'fadeOut';
-    document.getElementById('fade').onanimationend = function() {
-        document.getElementById('fade').style.display = 'none';
-        socket.emit('teleport2');
-        document.getElementById('fade').onanimationend = function() {};
-    };
+    if (teleporting) {
+        player.map = pos.map;
+        player.x = pos.x;
+        player.y = pos.y;
+        document.getElementById('fade').style.animationName = 'fadeOut';
+        document.getElementById('fade').onanimationend = function() {
+            document.getElementById('fade').style.display = 'none';
+            socket.emit('teleport2');
+            document.getElementById('fade').onanimationend = function() {};
+            teleporting = false;
+        };
+    }
 });
 socket.on('playerDied', function() {
     document.getElementById('respawnButton').style.display = 'none';
@@ -906,8 +913,9 @@ document.onvisibilitychange = function() {
 
 // npc prompts
 const promptContainer = document.getElementById('promptContainer');
-socket.on('prompt', async function(id) {
-    var data = Prompts[id];
+socket.on('prompt', async function(conversation) {
+    var data = Prompts[conversation.id][conversation.i];
+    console.log(data)
     promptContainer.style.display = 'block';
     await sleep((11-settings.dialogueSpeed)*10);
     var optionDivs = [];
@@ -965,7 +973,7 @@ async function getNpcDialogues() {
                 request.send();
             }
         };
-        request.onerror = function(){
+        request.onerror = function() {
             console.error('There was a connection error. Please retry');
             reject();
         };
@@ -1034,9 +1042,13 @@ function updateCameraShake() {
     OFFSETX += cameraShake.x;
     OFFSETY += cameraShake.y;
 };
+socket.on('cameraShake', function(intensity) {
+    startCameraShake(intensity);
+});
 
 // chat
 var inchat = false;
+var messages = [];
 const chatInput = document.getElementById('chatInput');
 chatInput.onfocus = function() {
     inchat = true;
@@ -1078,6 +1090,8 @@ function insertChat(data) {
     if (document.getElementById('chatText').scrollTop + document.getElementById('chatText').clientHeight >= document.getElementById('chatText').scrollHeight - 5) scroll = true;
     document.getElementById('chatText').appendChild(msg);
     if (scroll) document.getElementById('chatText').scrollTop = document.getElementById('chatText').scrollHeight;
+    messages.unshift(msg);
+    if (messages.length >= 100) messages.pop().remove();
 };
 
 // world map
@@ -1112,14 +1126,14 @@ map.onmousemove = function(e) {
         updateWorldMap();
     }
 };
-map.onwheel = function(e) {
+map.addEventListener('wheel', function(e) {
     worldMap.scale -= e.deltaY/5000;
     worldMap.scale = Math.max(0.1, Math.min(worldMap.scale, 2));
     worldMap.x += ((mouseX+window.innerWidth/2)-worldMap.x)/(map.width*worldMap.scale)*(-e.deltaY/5000);
     worldMap.y += ((mouseY+window.innerHeight/2)-worldMap.y)/(map.height*worldMap.scale)*(-e.deltaY/5000);
     console.log(((mouseX+window.innerWidth/2)-worldMap.x)/(map.width*worldMap.scale))
     updateWorldMap();
-};
+}, {passive: true});
 updateWorldMap();
 
 // performance metrics

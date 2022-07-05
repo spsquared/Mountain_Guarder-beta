@@ -532,9 +532,10 @@
     position: absolute;
     top: 0px;
     left: 0px;
+    max-width: 200px;
     opacity: 0;
     padding: 0px 4px;
-    max-width: 150px;
+    padding-bottom: 4px;
     transition: opacity 0.2s linear;
     pointer-events: none;
     z-index: 7;
@@ -600,6 +601,34 @@
     position: absolute;
     top: 338px;
     left: 105px;
+}
+
+/* inventory crafting */
+.craftingTile {
+    display: inline-block;
+    position: relative;
+    top: 0px;
+    left: 0px;
+    width: 58px;
+    height: 58px;
+    margin: 6px 6px;
+    margin-right: 1px;
+    margin-bottom: 1px;
+}
+.craftingImage {
+    position: relative;
+    top: 5px;
+    left: 5px;
+    width: 48px;
+    height: 48px;
+    cursor: grab;
+}
+.craftingAmount {
+    position: absolute;
+    bottom: 0px;
+    right: 4px;
+    font-size: 14px;
+    pointer-events: none;
 }
 
 /* shops */

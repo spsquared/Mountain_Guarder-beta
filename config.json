@@ -1,10 +1,12 @@
 {
     "offlineMode": false,
-    "useDiscordWebhook": true,
+    "useDiscordWebhook": false,
     "ops": [
         "Sampleprovider(sp)",
         "sp",
         "suvanth"
     ],
+    "physicsInaccuracy": 1,
+    "itemDespawnTime": 5,
     "autoSaveInterval": 5
 }

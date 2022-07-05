@@ -4,7 +4,7 @@ const {lock} = require('object-property-lock');
 // node
 lock(global, ['setInterval', 'setTimeout', 'setImmediate']);
 // app.js
-lock(ENV, ['ops', 'devs', 'offlineMode']);
+lock(ENV, ['ops', 'devs', 'offlineMode', 'useDiscordWebhook', 'autoSaveInterval', 'isBetaServer']);
 lock(io);
 lock(s);
 lock(global, ['forceQuit', 'cloneDeep']);

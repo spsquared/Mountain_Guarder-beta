@@ -7,11 +7,11 @@
         <meta content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=2.0, minimum-scale=1.0, user-scalable=no">
         <meta id="viewport" name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=2.0, minimum-scale=1.0, user-scalable=no">
         <meta charset="utf-8">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://meadowguarderold.herokuapp.com/ 'unsafe-eval' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; script-src-elem 'self' 'unsafe-eval' 'unsafe-inline'; frame-src 'self' https://www.youtube.com/ https://meadowguarderold.herokuapp.com/ 'unsafe-eval' 'unsafe-inline'">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-eval' 'unsafe-inline'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; script-src-elem 'self' https://fpcdn.io/v3/CJTViLlhvUta54Qov3Ha https://openfpcdn.io/fingerprintjs/v3 'unsafe-eval' 'unsafe-inline'; frame-src 'self' https://www.youtube.com/ https://meadowguarderold.herokuapp.com/ https://www.herokucdn.com/error-pages/application-error.html 'unsafe-eval' 'unsafe-inline'; connect-src 'self' https://tls-use1.fpapi.io/ https://api.fpjs.io/ 'unsafe-eval' 'unsafe-inline';">
         <meta name="title" content="Mountain Guarder">
-        <meta name="description" content="Meadow Guarder Old's sister game! Mountain Guarder is a free-to-play online multiplayer fantasy RPG">
-        <meta name="url" content="https://mountainguarder.herokuapp.com">
-        <meta name="image" content="https://mountainguarder.herokuapp.com/client/img/loading.png">
+        <meta name="description" content="Mountain Guarder - A free-to-play indie RPG.">
+        <meta name="url" content="https://mountainguarder-beta.herokuapp.com">
+        <meta name="image" content="https://mountainguarder-beta.herokuapp.com/client/img/banner_small.png">
         <link rel="icon" href="/client/assets/faviconbeta.ico" type="image/x-icon">
         <noscript><meta http-equiv="refresh" content="0; url=/client/nojs.html"/></noscript>
         <script src="/socket.io/socket.io.js"></script>
@@ -35,36 +35,36 @@
             <div id="menuTitle">Mountain Guarder</div>
             <div id="stackLeft">
                 <div class="stack ui-block ui-lighttext">
+                    <form onsubmit="void(0);">
                     <table><tbody>
-                        <tr>
-                            <td style="text-align: right;">
-                                <label for="username">Username:</label><br>
-                            </td>
-                            <td>
-                                <input type="text" id="username" class="ui-textInput" name="username" autocapitalize="off" autocomplete="off" maxlength="20"><br>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="text-align: right;">
-                                <label for="password">Password:</label><br>
-                            </td>
-                            <td>
-                                <input type="password" id="password" class="ui-textInput" name="password" autocapitalize="off" autocomplete="off" maxlength="100"><br>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="text-align: right;">
-                                <label id="newpasswordLabel" for="newpassword" style="display: none;">New Password:</label>
-                            </td>
-                            <td>
-                                <input type="password" id="newpassword" class="ui-textInput" name="newpassword" autocapitalize="off" autocomplete="off" style="display: none;">
-                            </td>
-                        </tr>
-                    </tbody></table>
+                            <tr>
+                                <td style="text-align: right;">
+                                    <label for="username">Username:</label><br>
+                                </td>
+                                <td>
+                                    <input type="text" id="username" class="ui-textInput" name="username" autocapitalize="off" required autocomplete="username" maxlength="20"><br>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: right;">
+                                    <label for="password">Password:</label><br>
+                                </td>
+                                <td>
+                                    <input type="password" id="password" class="ui-textInput" name="password" autocapitalize="off" required autocomplete="current-password" maxlength="100"><br>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: right;">
+                                    <label id="newpasswordLabel" for="newpassword" style="display: none;">New Password:</label>
+                                </td>
+                                <td>
+                                    <input type="password" id="newpassword" class="ui-textInput" name="newpassword" autocapitalize="off" autocomplete="new-password" style="display: none;">
+                                </td>
+                            </tr>
+                        </tbody></table>
+                    </form>
                     <div style="margin-top: 8px;">
                         <button id="signIn" class="ui-lightbutton" onclick="signIn();">Sign In</button>
-                        <!-- <button id="createAccount" class="ui-lightbutton" onclick="createAccount();">Create Account</button>
-                        <button id="deleteAccount" class="ui-lightbutton" onclick="deleteAccount();">Delete Account</button> -->
                         <button id="changePassword" class="ui-lightbutton" onclick="changePassword();">Change Password</button>
                         <div id="signInError"></div>
                     </div>
@@ -77,6 +77,77 @@
                         insert changes here
                     </div>
                 </div> -->
+                <div class="stack ui-block ui-lighttext">
+                    <div class="ui-lighttext stackHeader">
+                        v0.12.0-A01 - 7/5/22
+                    </div>
+                    <div class="ui-lighttext stackBody">
+                        Long time no see! Remember to report all bugs to the beta repository or post it in the beta chat on Discord!
+                        <ul>
+                            <li>Expanded map and added Abandoned Mineshaft</li>
+                            <li>Added new monsters - Cave Bird and Sentient Rock</li>
+                            <li>Added Ialite</li>
+                            <li>Item balancing</li>
+                            <li>Added new materials</li>
+                            <li>Bob's forge can now be used to craft some weapons and armor</li>
+                            <li>Added invincibility frames</li>
+                            <li>Optimizations and lots of unfinished stuff</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="stack ui-block ui-lighttext">
+                    <div class="ui-lighttext stackHeader">
+                        v0.11.0 - 6/10/22
+                    </div>
+                    <div class="ui-lighttext stackBody">
+                        Sampleprovider(sp) made an oopsie! Anyways, bug fixes.
+                        <ul>
+                            <li>Switched to correct collision script</li>
+                            <li>Fixed pathfinding</li>
+                            <li>Patched negative item dropping</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="stack ui-block ui-lighttext">
+                    <div class="ui-lighttext stackHeader">
+                        v0.11.0 - 6/10/22
+                    </div>
+                    <div class="ui-lighttext stackBody">
+                        Mountain Guarder isn't dead!<br>Introducing crafting & shops! Another important update as well as multiple small changes and some fixes.
+                        <ul>
+                            <li>Added the Outpost Trader's Store (with Adicyte)</li>
+                            <li>Added stores and crafting</li>
+                            <li>Added (some) crafting materials (logs, planks)</li>
+                            <li>Changed inventory drag-and-drop to click-and-more-click</li>
+                            <li>Monsters no longer deaggro within 4 tiles of players</li>
+                            <li><a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder/issues/233" target="_blank">NPCs stop walking while in conversation (Issue #233)</a></li>
+                            <li><a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder/issues/229" target="_blank">Fixed walking animations playing while in conversation (Issue #229)</a></li>
+                            <li>Fixed getting stuck in black screen while teleporting</li>
+                            <li><a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder/issues/237" target="_blank">Fixed username HTML injection (Issue #237)</a></li>
+                            <li>Particle movement speed is no longer dependent on fps</li>
+                            <li><a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder/issues/211" target="_blank">Fixed incorrect item highlighting (Issue #211)</a></li>
+                            <li>Patched bug related to changing regions with region sign still on screen</li>
+                            <li><a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder/issues/235" target="_blank">Patched memory leaks from undeleted sockets and players (Issue #235)</a></li>
+                            <li>Fixed physics</li>
+                            <li>Add autosave</li>
+                            <li>Optimizations</li>
+                            <li>Patched exploits related to spam checking</li>
+                            <li>Internal code formatting</li>
+                            <li>Fixed SEO</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="stack ui-block ui-lighttext">
+                    <div class="ui-lighttext stackHeader">
+                        v0.10.1 - 6/5/22
+                    </div>
+                    <div class="ui-lighttext stackBody">
+                        A VERY needed update patching account creation spam.
+                        <ul>
+                            <li><a href="https://github.com/definitely-nobody-is-here/Mountain_Guarder/issues/234" target="_blank">Patched account creation spam with temporary IP tracking and browser fingerprinting (#234)</a></li>
+                        </ul>
+                    </div>
+                </div>
                 <div class="stack ui-block ui-lighttext">
                     <div class="ui-lighttext stackHeader">
                         v0.10.0 - 4/15/22
@@ -1106,8 +1177,7 @@
                     </div>
                     <div id="inventoryShop" class="window-body inventory-right">
                         <div id="inventoryShopName">Shop Name</div>
-                        <div id="inventoryShopBody" class="ui-block inventory-body">
-                        </div>
+                        <div id="inventoryShopBody" class="ui-block inventory-body"></div>
                     </div>
                     <div id="inventorySelect" class="window-select">
                         <button id="inventoryEquipsSelect" class="window-select-button ui-lightbutton">Equips</button>

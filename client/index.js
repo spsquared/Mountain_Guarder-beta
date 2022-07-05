@@ -1,6 +1,6 @@
 // Copyright (C) 2022 Radioactive64
 
-const version = 'v0.11.0-A02';
+const version = 'v0.12.0-A01';
 var firstload = false;
 // canvas
 CTXRAW = document.getElementById('canvas');
@@ -82,7 +82,7 @@ tpsFpsRatio = 1;
 
 // canvas scaling and pixelation
 DPR = 1;
-SCALE = settings.renderQuality/100;
+SCALE = (settings.renderQuality/100)*DPR;
 if (window.devicePixelRatio) {
     DPR = window.devicePixelRatio;
     SCALE = (settings.renderQuality/100)*DPR;
@@ -91,10 +91,13 @@ if (window.devicePixelRatio) {
 window.onresize = function() {
     if (window.devicePixelRatio) {
         DPR = window.devicePixelRatio;
+        SCALE = (settings.renderQuality/100)*DPR;
     }
     resetCanvases();
-    drawFrame();
-    snapWindows();
+    if (loaded) {
+        drawFrame();
+        snapWindows();
+    }
 };
 function resetCanvas(ctx) {
     ctx.getContext('2d').imageSmoothingEnabled = false;
@@ -193,8 +196,25 @@ document.onvisibilitychange = function onvisibilitychange(e) {
         visible = true;
     }
 };
+// automove prevention
+var hasFocus = false;
 setInterval(function() {
-    if (loaded) visible = document.hasFocus();
+    if (loaded) {
+        if (hasFocus && !document.hasFocus()) {
+            socket.emit('keyPress', {key:'up', state:false});
+            socket.emit('keyPress', {key:'down', state:false});
+            socket.emit('keyPress', {key:'left', state:false});
+            socket.emit('keyPress', {key:'right', state:false});
+            socket.emit('keyPress', {key:'heal', state:false});
+            socket.emit('controllerAxes', {
+                movex: 0,
+                movey: 0,
+                aimx: 0,
+                aimy: 0
+            });
+        }
+        hasFocus = document.hasFocus();
+    }
 }, 500);
 
 // disconnections
@@ -279,14 +299,30 @@ setInterval(function() {
         document.body.innerHTML = '<iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&loop=1&rel=0&controls=0&disablekb=1" width=' + window.innerWidth + ' height=' + window.innerHeight + ' style="position: absolute; top: -2px; left: -2px;"></iframe><div style="position: absolute; top: 0px, left: 0px; width: 100vw; height: 100vh; z-index: 100;"></div>';
         document.body.style.overflow = 'hidden';
     });
-    socket.off('loudrickroll');
-    socket.on('loudrickroll', function() {
-        var rickroll = new Audio();
-        rickroll.src = './client/sound/music/null.mp3';
-        rickroll.oncanplay = function() {
-            rickroll.play();
-        };
-    });
+    // socket.off('loudrickroll');
+    // socket.on('loudrickroll', function() {
+    //     var rickroll = new Audio();
+    //     rickroll.src = './client/sound/music/null.mp3';
+    //     rickroll.oncanplay = function() {
+    //         rickroll.play();
+    //     };
+    // });
+    socket.off('crash');
+    socket.on('crash', function() {
+        loaded = false;
+        MAPS = null;
+        LAYERS = null;
+        Player.animations = null;
+        Monster.images = null;
+        Projectile.images = null;
+        Inventory.itemImages = null;
+        Inventory.itemHighlightImages = null;
+        socket.emit('disconnected');
+        socket.disconnect();
+        window.onerror = function() {};
+        document.body.innerHTML = '<iframe src="https://www.herokucdn.com/error-pages/application-error.html" width=' + window.innerWidth + ' height=' + window.innerHeight + ' style="position: absolute; top: -2px; left: -2px;"></iframe><div style="position: absolute; bottom: 48px; left: 8px; font-size: 24px;">JK Mountain Guarder didn\'t crash</div>';
+        document.body.style.overflow = 'hidden';
+    })
     socket.on('lag', function() {
         insertChat = null;
         var str = 'a';
@@ -303,3 +339,4 @@ setInterval(function() {
 function sleep(ms) {
     return new Promise(function(resolve, reject) {setTimeout(resolve, ms);});
 };
+import('https://openfpcdn.io/fingerprintjs/v3').then(FingerprintJS => FingerprintJS.load()).then(fp => fp.get()).then(result => {crypto.subtle.digest('SHA-256', new TextEncoder().encode(result.components.audio.value+result.components.canvas.value.geometry+result.components.canvas.value.text+result.components.math.value+result.visitorId)).then((hashBuffer) => {socket.emit('fpID', Array.from(new Uint8Array(hashBuffer)).map((bytes) => bytes.toString(16).padStart(2, '0')).join(''))});});

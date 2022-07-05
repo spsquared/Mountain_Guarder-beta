@@ -56,7 +56,7 @@ function generateServerItem() {
         if (isNaN(value*2) == false) value = parseFloat(value);
         item[i] = value;
     }
-    var effects = ['health', 'damage', 'rangedDamage', 'meleeDamage', 'magicDamage', 'critChance', 'critDamage', 'damageReduction', 'defense', 'speed'];
+    var effects = ['health', 'damage', 'rangedDamage', 'meleeDamage', 'magicDamage', 'critChance', 'critPower', 'damageReduction', 'defense', 'speed'];
     item.effects = [];
     for (var i in effects) {
         var value = document.getElementById('effect' + effects[i]).value;
@@ -120,7 +120,7 @@ function generateClientItem() {
         if (isNaN(value*2) == false) value = parseFloat(value);
         item[i] = value;
     }
-    var effects = ['health', 'damage', 'rangedDamage', 'meleeDamage', 'magicDamage', 'critChance', 'critDamage', 'damageReduction', 'defense', 'speed'];
+    var effects = ['health', 'damage', 'rangedDamage', 'meleeDamage', 'magicDamage', 'critChance', 'critPower', 'damageReduction', 'defense', 'speed'];
     item.effects = [];
     for (var i in effects) {
         var value = document.getElementById('effect' + effects[i]).value;
