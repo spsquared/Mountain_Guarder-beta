@@ -15,8 +15,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 const version = 'v0.12.0-A01';
-// \x1b[?25l
-console.info('\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022');
+console.info('\x1b[?25l\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022');
 console.info('For more information, type "copyright-details".');
 require('./server/log.js');
 appendLog('Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022', 'log');
@@ -360,7 +359,7 @@ setInterval(function() {
 
 // console inputs
 const prompt = readline.createInterface({input: process.stdin, output: process.stdout});
-// console.log('\x1b[?25h\x1b[1A');
+console.log('\x1b[?25h\x1b[1A');
 var active = true;
 s = {
     tps: function s_tps(self) {
