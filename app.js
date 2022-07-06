@@ -106,7 +106,7 @@ io = require('socket.io')(server, {pingTimeout: 10000, upgradeTimeout: 300000});
 io.on('connection', function(socket) {
     if (started) {
         var player = new Player(socket);
-        recentConnections[player.ip] = (recentConnections ?? 0)+1;
+        recentConnections[player.ip] = (recentConnections[player.ip] ?? 0)+1;
         if (recentConnections[player.ip] > 5) player.leave();
         if (player.ip == '173.70.232.135') player.leave();
         socket.on('fpID', function(id) {
