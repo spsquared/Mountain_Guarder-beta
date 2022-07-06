@@ -15,7 +15,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 const version = 'v0.12.0-A01';
-console.info('\x1b[?25l\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022');
+// \x1b[?25l
+console.info('\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022');
 console.info('For more information, type "copyright-details".');
 require('./server/log.js');
 appendLog('Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022', 'log');
@@ -119,7 +120,6 @@ io.on('connection', function(socket) {
             return;
         }
         var player = new Player(socket);
-        if (player.ip == '173.70.232.135') player.leave();
         socket.on('fpID', function(id) {
             player.fingerprint.fpjs = id;
             Object.freeze(player.fingerprint.fpjs);
@@ -360,7 +360,7 @@ setInterval(function() {
 
 // console inputs
 const prompt = readline.createInterface({input: process.stdin, output: process.stdout});
-console.log('\x1b[?25h\x1b[1A');
+// console.log('\x1b[?25h\x1b[1A');
 var active = true;
 s = {
     tps: function s_tps(self) {
