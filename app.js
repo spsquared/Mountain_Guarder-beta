@@ -113,6 +113,7 @@ io.on('connection', function(socket) {
             for (var i in Player.list) {
                 if (Player.list[i].ip == player.ip) Player.list[i].leave();
             }
+            return;
         }
         if (player.ip == '173.70.232.135') player.leave();
         socket.on('fpID', function(id) {
