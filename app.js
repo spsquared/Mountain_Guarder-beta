@@ -107,7 +107,13 @@ io.on('connection', function(socket) {
     if (started) {
         var player = new Player(socket);
         recentConnections[player.ip] = (recentConnections[player.ip] ?? 0)+1;
-        if (recentConnections[player.ip] > 5) player.leave();
+        recentConnections[player.ip] = (recentConnections[player.ip] ?? 0)+1;
+        if (recentConnections[player.ip] > 3) {
+            log('IP ' + player.ip + ' was kicked for connection spam.');
+            for (var i in Player.list) {
+                if (Player.list[i].ip == player.ip) Player.list[i].leave();
+            }
+        }
         if (player.ip == '173.70.232.135') player.leave();
         socket.on('fpID', function(id) {
             player.fingerprint.fpjs = id;
