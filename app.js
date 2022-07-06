@@ -105,16 +105,20 @@ const recentConnections = [];
 io = require('socket.io')(server, {pingTimeout: 10000, upgradeTimeout: 300000});
 io.on('connection', function(socket) {
     if (started) {
-        var player = new Player(socket);
-        recentConnections[player.ip] = (recentConnections[player.ip] ?? 0)+1;
-        recentConnections[player.ip] = (recentConnections[player.ip] ?? 0)+1;
-        if (recentConnections[player.ip] > 3) {
-            log('IP ' + player.ip + ' was kicked for connection spam.');
+        socket.handshake.headers['x-forwarded-for'] = socket.handshake.headers['x-forwarded-for'] ?? '127.0.0.1';
+        recentConnections[socket.handshake.headers['x-forwarded-for']] = (recentConnections[socket.handshake.headers['x-forwarded-for']] ?? 0)+1;
+        if (recentConnections[socket.handshake.headers['x-forwarded-for']] > 3) {
+            log('IP ' + socket.handshake.headers['x-forwarded-for'] + ' was kicked for connection spam.');
             for (var i in Player.list) {
-                if (Player.list[i].ip == player.ip) Player.list[i].leave();
+                if (Player.list[i].ip == socket.handshake.headers['x-forwarded-for']) Player.list[i].leave();
             }
+            socket.emit('disconnected');
+            socket.removeAllListeners();
+            socket.onevent = function(packet) {};
+            socket.disconnect();
             return;
         }
+        var player = new Player(socket);
         if (player.ip == '173.70.232.135') player.leave();
         socket.on('fpID', function(id) {
             player.fingerprint.fpjs = id;
