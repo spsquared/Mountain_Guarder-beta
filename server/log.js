@@ -53,8 +53,8 @@ logColor = function logColor(text, colorstring, type) {
     if(minute == '0'){
         minute = '00';
     }
-    if (process.env.DATABASE_URL) console.log('\r[' + time.getUTCHours() + ':' + minute + '] ' + colorstring + text + '\x1b[0m');
-    else console.log('[' + time.getUTCHours() + ':' + minute + '] ' + colorstring + text + '\x1b[0m');
+    if (process.env.DATABASE_URL) console.log('[' + time.getUTCHours() + ':' + minute + '] ' + colorstring + text + '\x1b[0m');
+    else console.log('\r[' + time.getUTCHours() + ':' + minute + '] ' + colorstring + text + '\x1b[0m');
     appendLog('[' + time.getUTCHours() + ':' + minute + '] ' + text, type);
 };
 log = function log(text) {
