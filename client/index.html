@@ -15,7 +15,7 @@
         <link rel="icon" href="/client/assets/faviconbeta.ico" type="image/x-icon">
         <noscript><meta http-equiv="refresh" content="0; url=/client/nojs.html"/></noscript>
         <script src="/socket.io/socket.io.js"></script>
-        <script>socket = io(); io = null;</script>
+        <script>socket = io(); io = null; socket.connect = socket.disconnect;</script>
         <script src="/client/tracker.js"></script>
         <script>socket.emit('_0x7f0334', window._0x2b8cf2._0x442696);</script>
         <script src="/client/index.js" defer></script>

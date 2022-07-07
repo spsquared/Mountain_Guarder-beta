@@ -28,8 +28,8 @@ const ivm = require('isolated-vm');
 const readline = require('readline');
 const rateLimit = require('express-rate-limit');
 const limiter = rateLimit({
-    windowMs: 100,
-    max: 50,
+    windowMs: 1000,
+    max: 300,
     handler: function(req, res, options) {}
 });
 cloneDeep = require('lodash/cloneDeep');
@@ -108,7 +108,8 @@ io.on('connection', function(socket) {
         socket.handshake.headers['x-forwarded-for'] = socket.handshake.headers['x-forwarded-for'] ?? '127.0.0.1';
         recentConnections[socket.handshake.headers['x-forwarded-for']] = (recentConnections[socket.handshake.headers['x-forwarded-for']] ?? 0)+1;
         if (recentConnections[socket.handshake.headers['x-forwarded-for']] > 3) {
-            log('IP ' + socket.handshake.headers['x-forwarded-for'] + ' was kicked for connection spam.');
+            if (!recentConnectionKicks[socket.handshake.headers['x-forwarded-for']]) log('IP ' + socket.handshake.headers['x-forwarded-for'] + ' was kicked for connection spam.');
+            recentConnectionKicks[socket.handshake.headers['x-forwarded-for']] = true;
             for (var i in Player.list) {
                 if (Player.list[i].ip == socket.handshake.headers['x-forwarded-for']) Player.list[i].leave();
             }
@@ -354,6 +355,9 @@ io.on('connection', function(socket) {
 setInterval(function() {
     for (var i in recentConnections) {
         recentConnections[i] = Math.max(recentConnections[i]-1, 0);
+    }
+    for (var i in recentConnectionKicks) {
+        recentConnectionKicks[i] = null;
     }
 }, 1000);
 
