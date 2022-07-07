@@ -102,6 +102,7 @@ ACCOUNTS.connect();
 
 // set up io
 const recentConnections = [];
+const recentConnectionKicks = [];
 io = require('socket.io')(server, {pingTimeout: 10000, upgradeTimeout: 300000});
 io.on('connection', function(socket) {
     if (started) {
