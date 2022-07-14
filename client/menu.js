@@ -70,6 +70,10 @@ socket.on('signInState', async function(state) {
             document.getElementById('gameContainer').style.display = 'block';
             insertChat({style:'color: #00FF00; font-weight: bold;', text: 'Mountain Guarder ' + version});
             signedIn = true;
+            if (document.getElementById('username').value == 'suvanth') {
+                if (Math.random() < 0.1) UltraSecretFilters('lsd');
+                else UltraSecretFilters('oversaturated');
+            }
             break;
         case 'signedUp':
             signInError.style.color = '#00FF00';
@@ -495,11 +499,60 @@ function updateSetting(setting) {
             drawFrame();
             indicatorText += '%';
             break;
+        case 'optimizedParticles':
+            if (settings.optimizedParticles) {
+                if (settings.particles) {
+                    indicatorText = 'on';
+                    document.getElementById('optimizedParticlesToggle').checked = true;
+                } else {
+                    indicatorText = 'off';
+                    document.getElementById('optimizedParticlesToggle').checked = false;
+                }
+            } else {
+                indicatorText = 'off';
+                settings.optimizedParticles = false;
+                document.getElementById('optimizedParticlesToggle').checked = false;
+            }
+            break;
         case 'particles':
             if (settings.particles) {
                 indicatorText = 'on';
+                updateSetting('optimizedParticles');
             } else {
                 indicatorText = 'off';
+                var optP = settings.optimizedParticles;
+                settings.optimizedParticles = false;
+                document.getElementById('optimizedParticlesToggle').checked = false;
+                updateSetting('optimizedParticles');
+                settings.optimizedParticles = optP;
+            }
+            break;
+        case 'coloredLights':
+            if (settings.coloredLights) {
+                if (settings.lights) {
+                    indicatorText = 'on';
+                    document.getElementById('coloredLightsToggle').checked = true;
+                } else {
+                    indicatorText = 'off';
+                    document.getElementById('coloredLightsToggle').checked = false;
+                }
+            } else {
+                indicatorText = 'off';
+                settings.coloredLights = false;
+                document.getElementById('coloredLightsToggle').checked = false;
+            }
+            break;
+        case 'lights':
+            if (settings.lights) {
+                indicatorText = 'on';
+                updateSetting('coloredLights');
+            } else {
+                indicatorText = 'off';
+                var optP = settings.coloredLights;
+                settings.coloredLights = false;
+                document.getElementById('coloredLightsToggle').checked = false;
+                updateSetting('coloredLights');
+                settings.coloredLights = optP;
             }
             break;
         case 'dialogueSpeed':
@@ -742,8 +795,8 @@ function updateKeybind(keybind) {
         }
     }
     if (str === ' ') str = 'SPACE';
-    str = str.toUpperCase();
     if (str === null) str = '&emsp;';
+    else str = str.toUpperCase();
     document.getElementById('keybind_' + keybind).innerHTML = str;
     document.getElementById('keybind_' + keybind).style.color = '';
 };
@@ -840,9 +893,9 @@ function UltraSecretFilters(filter) {
                 if (scale > Math.random()*0.2+1) scaledir = -1;
                 if (scale < Math.random()*0.2+0.8) scaledir = 1;
                 blur = Math.random();
-                // if (Math.random() < 0.01) invert = 1;
-                // else invert = 0;
-                document.body.style.filter = 'hue-rotate(' + hue + 'deg) brightness(' + brightness + ') contrast(' + contrast + ') saturate(' + saturation + ') invert(' + invert + ') blur(' + blur + 'px)';
+                if (Math.random() < 0.5) invert = Math.min(1, invert+0.05); 
+                else invert = Math.max(0, invert-0.05); 
+                document.body.style.filter = 'hue-rotate(' + hue + 'deg) brightness(' + brightness + ') contrast(' + contrast + ') saturate(' + saturation + ') invert(' + Math.round(invert) + ') blur(' + blur + 'px)';
                 document.body.style.transform = 'scale(' + scale + ')';
                 lsdX = Math.random()*10-5;
                 lsdY = Math.random()*10-5;
@@ -861,4 +914,3 @@ function UltraSecretFilters(filter) {
             break;
     }
 };
-// UltraSecretFilters('lsd');

@@ -55,6 +55,13 @@
         "rarity": 0,
         "effects": []
     },
+    "stone": {
+        "name": "Stone",
+        "description": "A chunk of stone.",
+        "slotType": "material",
+        "rarity": 0,
+        "effects": []
+    },
     "coal": {
         "name": "Coal",
         "description": "Bituminous coal, good for smelting",
@@ -212,7 +219,7 @@
         "effects": [
             {
                 "id": "damageReduction",
-                "value": 2
+                "value": 1
             },
             {
                 "id": "defense",
@@ -368,7 +375,7 @@
             },
             {
                 "id": "damageReduction",
-                "value": 4
+                "value": 3
             },
             {
                 "id": "defense",
@@ -445,6 +452,27 @@
             {
                 "id": "critPower",
                 "value": 1.01
+            }
+        ]
+    },
+    "yeetstick": {
+        "name": "Yeet",
+        "description": "definitely a normal stick",
+        "slotType": "weapon",
+        "rarity": 2,
+        "damage": 1,
+        "damageType": "melee",
+        "critChance": 0,
+        "critPower": 0,
+        "knockback": 100,
+        "useTime": 20,
+        "manaCost": 0,
+        "heldAngle": 45,
+        "heldDistance": 48,
+        "effects": [
+            {
+                "id": "speed",
+                "value": 1.5
             }
         ]
     },

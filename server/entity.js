@@ -25,6 +25,7 @@ Entity = function() {
         chunky: 0,
         moveSpeed: 0,
         slowedDown: false,
+        frozen: false,
         width: 0,
         height: 0,
         noCollision: false,
@@ -47,52 +48,9 @@ Entity = function() {
     self.updatePos = function updatePos() {
         self.collide();
     };
-    // self.collide = function collide() {
-    //     if (self.xspeed != 0 || self.yspeed != 0) {
-    //         try {
-    //             if (!self.noCollision) {
-    //                 var move = {
-    //                     steps: 1,
-    //                     stepsMoved: 0
-    //                 };
-    //                 function recursive(move, i) {
-    //                     self.lastx = self.x;
-    //                     self.lasty = self.y;
-    //                     var chunk = 2**i;
-    //                     self.x += self.xspeed/chunk;
-    //                     self.y += self.yspeed/chunk;
-    //                     self.gridx = Math.floor(self.x/64);
-    //                     self.gridy = Math.floor(self.y/64);
-    //                     move.stepsMoved++;
-    //                     if (Math.abs(self.lastx-self.x) < 1 && Math.abs(self.lasty-self.y) < 1) {
-    //                         !self.noCollision && self.doPointCollision();
-    //                         self.checkLayer();
-    //                         self.checkSlowdown();
-    //                     } else if (!self.noCollision && ((self.xspeed/chunk > self.width*2 && self.yspeed/chunk > self.height*2 && self.checkLargeSpannedCollision()) || self.checkSpannedCollision())) {
-    //                         self.x = self.lastx;
-    //                         self.y = self.lasty;
-    //                         move.steps++;
-    //                         move.stepsMoved--;
-    //                         recursive(move, i+1);
-    //                         recursive(move, i+1);
-    //                     }
-    //                 };
-    //                 recursive(move, 0);
-    //                 self.x = Math.round(self.x);
-    //                 self.y = Math.round(self.y);
-    //                 self.gridx = Math.floor(self.x/64);
-    //                 self.gridy = Math.floor(self.y/64);
-    //                 self.chunkx = Math.floor(self.gridx/Collision.grid[self.map].chunkWidth);
-    //                 self.chunky = Math.floor(self.gridy/Collision.grid[self.map].chunkHeight);
-    //             }
-    //         } catch (err) {
-    //             error(err);
-    //         }
-    //     }
-    // };
     self.collide = function collide() {
         try {
-            if (self.xspeed != 0 || self.yspeed != 0) {
+            if (!self.frozen && (self.xspeed != 0 || self.yspeed != 0)) {
                 var max = Math.max(Math.abs(self.xspeed), Math.abs(self.yspeed))/(self.physicsInaccuracy*ENV.physicsInaccuracy);
                 for (var i = 0; i < max; i += max/Math.ceil(max)) {
                     self.lastx = self.x;
@@ -101,7 +59,7 @@ Entity = function() {
                     self.y += self.yspeed/max || 0;
                     self.gridx = Math.floor(self.x/64);
                     self.gridy = Math.floor(self.y/64);
-                    !self.noCollision && self.doPointCollision();
+                    if (!self.noCollision && self.doPointCollision()) break;
                     self.checkLayer();
                     self.checkSlowdown();
                 }
@@ -319,7 +277,7 @@ Entity = function() {
             for (var i = 0; i < distance; i++) {
                 ray.x += ray.xspeed;
                 ray.y += ray.yspeed;
-                if (Collision.grid[self.map][self.layer][Math.floor(ray.y/64)]) if (Collision.grid[self.map][self.layer][Math.floor(ray.y/64)][Math.floor(ray.x/64)] != null && Collision.grid[self.map][self.layer][Math.floor(ray.y/64)][Math.floor(ray.x/64)] < 15 && Collision.grid[self.map][self.layer][Math.floor(ray.y/64)][Math.floor(ray.x/64)] != 0) {
+                if (Collision.grid[self.map][self.layer][Math.floor(ray.y/64)] && Collision.grid[self.map][self.layer][Math.floor(ray.y/64)][Math.floor(ray.x/64)] != null && Collision.grid[self.map][self.layer][Math.floor(ray.y/64)][Math.floor(ray.x/64)] < 15 && Collision.grid[self.map][self.layer][Math.floor(ray.y/64)][Math.floor(ray.x/64)] != 0) {
                     return true;
                 }
             }
@@ -447,6 +405,11 @@ Rig = function() {
             x: null,
             y: null
         },
+        charge: {
+            x: 0,
+            y: 0,
+            time: 0
+        },
         idleMove: 'none',
         idleRandom: {
             walking: false,
@@ -486,7 +449,7 @@ Rig = function() {
         self.updatePos();
         self.lastAutoHeal++;
         self.lastHeal++;
-        if (self.stats.heal != 0) if (self.lastAutoHeal >= self.stats.heal && self.hp < self.maxHP && self.alive) {
+        if (self.stats.heal != 0 && self.lastAutoHeal >= self.stats.heal && self.hp < self.maxHP && self.alive) {
             self.hp = Math.min(self.hp+1, self.maxHP);
             self.lastAutoHeal = 0;
         }
@@ -496,7 +459,7 @@ Rig = function() {
             self.hp = Math.min(self.hp+20, self.maxHP);
             self.mana -= 10;
             self.lastManaUse = 0;
-            new Particle(self.map, self.x, self.y, self.layer, 'heal', '+' + self.hp-oldhp);
+            new Particle(self.map, self.x, self.y, 'heal', '+' + self.hp-oldhp);
         }
         self.lastManaRegen++;
         self.lastManaUse++;
@@ -524,17 +487,6 @@ Rig = function() {
                 else if (self.ai.idleMove != 'none') self.ai.pathIdle();
                 else self.ai.path = [];
             }
-            self.controls = {
-                up: false,
-                down: false,
-                left: false,
-                right: false,
-                xaxis: 0,
-                yaxis: 0,
-                x: 0,
-                y: 0,
-                heal: false
-            };
         } else {
             if (self.slowedDown) self.moveSpeed *= 0.5;
             self.controls.x = self.controls.xaxis;
@@ -557,8 +509,21 @@ Rig = function() {
         self.updateChunkLocation();
         self.xknockback *= 0.25;
         self.yknockback *= 0.25;
-        if (0-Math.abs(self.xknockback) > -0.5) self.xknockback = 0;
-        if (0-Math.abs(self.yknockback) > -0.5) self.yknockback = 0;
+        if (Math.abs(self.xknockback) < 0.5) self.xknockback = 0;
+        if (Math.abs(self.yknockback) < 0.5) self.yknockback = 0;
+        if (self.ai.chargeTime != -1) {
+            self.ai.charge.time -= 1;
+            if (self.ai.charge.time < 0) {
+                self.ai.charge.time = 0;
+                self.ai.charge.x *= 0.5;
+                self.ai.charge.y *= 0.5;
+                if (Math.abs(self.ai.charge.x) < 0.5 || Math.abs(self.ai.charge.y) < 0.5) {
+                    self.ai.charge.x = 0;
+                    self.ai.charge.y = 0;
+                    self.ai.charge.time = -1;
+                }
+            }
+        }
         self.animationDirection = 'facing';
         if (self.controls.x || self.controls.y) {
             var dir = Math.round(radians(Math.atan2(self.controls.y, self.controls.x))/45);
@@ -593,11 +558,11 @@ Rig = function() {
         }
         if (self.animationDirection != 'facing') self.facingDirection = self.animationDirection;
         var foundregion = false;
-        if (Region.grid[self.map][self.gridy]) if (Region.grid[self.map][self.gridy][self.gridx]) if (Region.grid[self.map][self.gridy][self.gridx].name != self.region.name) {
+        if (Region.grid[self.map][self.gridy] && Region.grid[self.map][self.gridy][self.gridx] && Region.grid[self.map][self.gridy][self.gridx].name != self.region.name) {
             self.region = Region.grid[self.map][self.gridy][self.gridx];
             self.onRegionChange();
         }
-        if (Region.grid[self.map][self.gridy]) if (Region.grid[self.map][self.gridy][self.gridx]) foundregion = true;
+        if (Region.grid[self.map][self.gridy] && Region.grid[self.map][self.gridy][self.gridx]) foundregion = true;
         if (!foundregion && self.region.name != 'The Wilderness') {
             self.region = {
                 name: 'The Wilderness',
@@ -606,7 +571,7 @@ Rig = function() {
             };
             self.onRegionChange();
         }
-        if (Teleporter.grid[self.map][self.gridy]) if (Teleporter.grid[self.map][self.gridy][self.gridx]) if (Teleporter.grid[self.map][self.gridy][self.gridx]) {
+        if (Teleporter.grid[self.map][self.gridy] && Teleporter.grid[self.map][self.gridy][self.gridx] && Teleporter.grid[self.map][self.gridy][self.gridx]) {
             if (self.yspeed != 00 || self.xspeed != 0) {
                 var direction = Teleporter.grid[self.map][self.gridy][self.gridx].direction;
                 if ((direction == 'up' && self.yspeed < 0) || (direction == 'down' && self.yspeed > 0) || (direction == 'left' && self.xspeed < 0) || (direction == 'right' && self.xspeed > 0)) {
@@ -615,67 +580,13 @@ Rig = function() {
             }
         }
     };
-    // self.collide = function collide() {
-    //     if (self.xspeed != 0 || self.yspeed != 0 || self.aiControlled) {
-    //         try {
-    //             if (!self.noCollision || self.aiControlled) {
-    //                 var move = {
-    //                     steps: 1,
-    //                     stepsMoved: 0
-    //                 };
-    //                 function recursive(move, i) {
-    //                     self.lastx = self.x;
-    //                     self.lasty = self.y;
-    //                     var chunk = 2**i;
-    //                     self.x += self.xspeed/chunk;
-    //                     self.y += self.yspeed/chunk;
-    //                     self.gridx = Math.floor(self.x/64);
-    //                     self.gridy = Math.floor(self.y/64);
-    //                     move.stepsMoved++;
-    //                     if (self.aiControlled && Math.abs(self.lastx-self.x) < 1 && Math.abs(self.lasty-self.y) < 1 && self.aiControl()) {
-    //                         self.x = self.lastx;
-    //                         self.y = self.lasty;
-    //                         move.stepsMoved--;
-    //                         recursive(move, i);
-    //                     } else if (Math.abs(self.lastx-self.x) < 1 && Math.abs(self.lasty-self.y) < 1) {
-    //                         !self.noCollision && self.doPointCollision();
-    //                         self.checkLayer();
-    //                         self.checkSlowdown();
-    //                     } else if ((self.aiControlled && self.aiControl()) || !self.noCollision && ((self.xspeed/chunk > self.width*2 && self.yspeed/chunk > self.height*2 && self.checkLargeSpannedCollision()) || self.checkSpannedCollision())) {
-    //                         self.x = self.lastx;
-    //                         self.y = self.lasty;
-    //                         move.steps++;
-    //                         move.stepsMoved--;
-    //                         recursive(move, i+1);
-    //                         recursive(move, i+1);
-    //                     }
-    //                 };
-    //                 recursive(move, 0);
-    //                 if (Collision.grid[self.map]) {
-    //                     if (self.x-self.width/2 < Collision.grid[self.map].offsetX*64) self.x = Collision.grid[self.map].offsetX*64+self.width/2;
-    //                     if (self.x+self.width/2 > Collision.grid[self.map].offsetX*64+Collision.grid[self.map].width*64) self.x = Collision.grid[self.map].offsetX*64+Collision.grid[self.map].width*64-self.width/2;
-    //                     if (self.y-self.height/2 < Collision.grid[self.map].offsetY*64) self.y = Collision.grid[self.map].offsetY*64+self.height/2;
-    //                     if (self.y+self.height/2 > Collision.grid[self.map].offsetY*64+Collision.grid[self.map].height*64) self.y = Collision.grid[self.map].offsetY*64+Collision.grid[self.map].height*64-self.height/2;
-    //                 }
-    //                 self.x = Math.round(self.x);
-    //                 self.y = Math.round(self.y);
-    //                 self.gridx = Math.floor(self.x/64);
-    //                 self.gridy = Math.floor(self.y/64);
-    //                 self.chunkx = Math.floor(self.gridx/Collision.grid[self.map].chunkWidth);
-    //                 self.chunky = Math.floor(self.gridy/Collision.grid[self.map].chunkHeight);
-    //             }
-    //         } catch (err) {
-    //             error(err);
-    //         }
-    //     }
-    // };
     self.collide = function collide() {
         try {
-            if (self.xspeed != 0 || self.yspeed != 0 || self.aiControlled) {
+            if (!self.frozen && (self.xspeed != 0 || self.yspeed != 0 || self.aiControlled)) {
                 self.aiControlled && self.aiControl();
                 var max = Math.max(Math.abs(self.xspeed), Math.abs(self.yspeed))/(self.physicsInaccuracy*ENV.physicsInaccuracy);
                 for (var i = 0; i < max; i += max/Math.ceil(max)) {
-                    self.aiControlled && self.aiControl();
+                    if (self.aiControlled && self.aiControl()) max = Math.max(Math.abs(self.xspeed), Math.abs(self.yspeed))/(self.physicsInaccuracy*ENV.physicsInaccuracy);
                     self.lastx = self.x;
                     self.lasty = self.y;
                     self.x += self.xspeed/max || 0;
@@ -704,7 +615,7 @@ Rig = function() {
         }
     };
     self.aiControl = function aiControl() {
-        var oldcontrols = self.controls;
+        var oldcontrols = cloneDeep(self.controls);
         self.controls = {
             up: false,
             down: false,
@@ -719,30 +630,33 @@ Rig = function() {
         self.xmove = 0;
         self.ymove = 0;
         if (!self.ai.frozen && self.canMove) {
-            if (self.ai.path[0]) {
-                // var angle = Math.atan2(self.ai.path[0][1]*64+32-self.y, self.ai.path[0][0]*64+32-self.x);
-                // self.controls.xaxis = Math.cos(angle);
-                // self.controls.yaxis = Math.sin(angle);
-                if (self.ai.path[0][0]*64+32 < self.x) self.controls.left = true;
-                else if (self.ai.path[0][0]*64+32 > self.x) self.controls.right = true;
-                if (self.ai.path[0][1]*64+32 < self.y) self.controls.up = true;
-                else if (self.ai.path[0][1]*64+32 > self.y) self.controls.down = true;
+            if (self.ai.charge.time != -1) {
+                self.controls.x = self.ai.charge.x;
+                self.controls.y = self.ai.charge.y;
+            } else if (self.ai.path[0]) {
+                var angle = Math.atan2(self.ai.path[0][1]*64+32-self.y, self.ai.path[0][0]*64+32-self.x);
+                self.controls.xaxis = Math.cos(angle);
+                self.controls.yaxis = Math.sin(angle);
+                // if (self.ai.path[0][0]*64+32 < self.x) self.controls.left = true;
+                // else if (self.ai.path[0][0]*64+32 > self.x) self.controls.right = true;
+                // if (self.ai.path[0][1]*64+32 < self.y) self.controls.up = true;
+                // else if (self.ai.path[0][1]*64+32 > self.y) self.controls.down = true;
                 if (Math.round(self.x) == self.ai.path[0][0]*64+32 && Math.round(self.y) == self.ai.path[0][1]*64+32) {
                     self.ai.path.shift();
                 }
                 if (self.slowedDown) self.moveSpeed *= 0.5;
                 self.controls.x = self.controls.xaxis;
                 self.controls.y = self.controls.yaxis;
-                if (self.controls.up) self.controls.y = Math.max(-1, Math.min(self.controls.y-1, 1));
-                if (self.controls.down) self.controls.y = Math.max(-1, Math.min(self.controls.y+1, 1));
-                if (self.controls.left) self.controls.x = Math.max(-1, Math.min(self.controls.x-1, 1));
-                if (self.controls.right) self.controls.x = Math.max(-1, Math.min(self.controls.x+1, 1));
-                self.xmove = Math.round(self.controls.x*self.moveSpeed);
-                self.ymove = Math.round(self.controls.y*self.moveSpeed);
-                if (self.slowedDown) self.moveSpeed *= 2;
-                self.xspeed = Math.round(self.xmove+self.xknockback);
-                self.yspeed = Math.round(self.ymove+self.yknockback);
+                // if (self.controls.up) self.controls.y = Math.max(-1, Math.min(self.controls.y-1, 1));
+                // if (self.controls.down) self.controls.y = Math.max(-1, Math.min(self.controls.y+1, 1));
+                // if (self.controls.left) self.controls.x = Math.max(-1, Math.min(self.controls.x-1, 1));
+                // if (self.controls.right) self.controls.x = Math.max(-1, Math.min(self.controls.x+1, 1));
             }
+            self.xmove = Math.round(self.controls.x*self.moveSpeed);
+            self.ymove = Math.round(self.controls.y*self.moveSpeed);
+            if (self.slowedDown) self.moveSpeed *= 2;
+            self.xspeed = Math.round(self.xmove+self.xknockback);
+            self.yspeed = Math.round(self.ymove+self.yknockback);
         }
         for (var i in self.controls) {
             if (self.controls[i] != oldcontrols[i]) return true;
@@ -852,7 +766,7 @@ Rig = function() {
         if (self.ai.posTarget) {
             self.ai.path = [];
             try {
-                if (self.getSquareGridDistance({x: self.ai.posTarget.x, y: self.ai.posTarget.y}) < self.ai.maxRange) {
+                if (self.getSquareGridDistance({x: self.ai.posTarget.x, y: self.ai.posTarget.y}) < ENV.maxPathfindRange) {
                     self.ai.path = self.ai.pathtoTarget(self.ai.posTarget.x, self.ai.posTarget.y);
                     if (self.ai.path[0] == null) {
                         // const graph = cloneDeep(Layer.graph[self.map]);
@@ -913,34 +827,33 @@ Rig = function() {
         if (typeof x == 'number' && typeof y == 'number') {
             try {
                 var retpath = [];
-                if (self.getSquareGridDistance({x: x, y: y}) < self.ai.maxRange) {
-                    var offsetx = self.gridx-self.ai.maxRange-1;
-                    var offsety = self.gridy-self.ai.maxRange-1;
-                    var x1 = self.ai.maxRange+1;
-                    var y1 = self.ai.maxRange+1;
-                    var x2 = x-offsetx;
-                    var y2 = y-offsety;
-                    var size = self.ai.maxRange*2+1;
-                    self.ai.grid = new PF.Grid(size, size);
+                if (self.getSquareGridDistance({x: x, y: y}) < ENV.maxPathfindRange) {
+                    var left = Math.min(self.gridx-ENV.pathfindBuffer, x-ENV.pathfindBuffer);
+                    var right = Math.max(self.gridy+ENV.pathfindBuffer, x+ENV.pathfindBuffer);
+                    var top = Math.min(self.gridy-ENV.pathfindBuffer, y-ENV.pathfindBuffer);
+                    var bottom = Math.max(self.gridy+ENV.pathfindBuffer, y+ENV.pathfindBuffer);
+                    self.ai.grid = new PF.Grid(right-left, bottom-top);
                     if (Collision.grid[self.map] && Collision.grid[self.map][self.layer]) {
-                        for (var writey = 0; writey < size; writey++) {
-                            for (var writex = 0; writex < size; writex++) {
-                                var checkx = writex+offsetx;
-                                var checky = writey+offsety;
-                                if (Collision.grid[self.map][self.layer][checky] && Collision.grid[self.map][self.layer][checky][checkx]) {
-                                    self.ai.grid.setWalkableAt(writex, writey, false);
-                                }
+                        for (var writey = 0; writey < bottom-top; writey++) {
+                            for (var writex = 0; writex < right-left; writex++) {
+                                var checkx = writex+left;
+                                var checky = writey+top;
+                                Collision.grid[self.map][self.layer][checky] && Collision.grid[self.map][self.layer][checky][checkx] && self.ai.grid.setWalkableAt(writex, writey, false);
                             }
                         }
                     }
-                    var path = self.ai.pathfinder.findPath(x1, y1, x2, y2, self.ai.grid);
+                    if (!(self.gridx-left > 0 && self.gridx-left < right-left && self.gridy-top > 0 && self.gridy-top < bottom-top && x-left > 0 && x-left < right-left && y-top > 0 && y-top < bottom-top)) {
+                        console.log(self.gridx-left, self.gridy-top, x-left, y-top, bottom-top, right-left)
+                    }
+                    var path = self.ai.pathfinder.findPath(self.gridx-left, self.gridy-top, x-left, y-top, self.ai.grid);
                     path.shift();
                     retpath = PF.Util.compressPath(path);
                     for (var i in retpath) {
-                        retpath[i][0] += offsetx;
-                        retpath[i][1] += offsety;
+                        retpath[i][0] += left;
+                        retpath[i][1] += top;
                     }
                 }
+                self.ai.path = retpath;
                 return retpath;
             } catch (err) {
                 error(err);
@@ -982,7 +895,7 @@ Rig = function() {
                         var lowest;
                         for (var i in waypoints) {
                             if (lowest == null) lowest = i;
-                            if (lowest) if (self.getGridDistance(waypoints[i]) < self.getGridDistance(waypoints[lowest])) {
+                            if (lowest && self.getGridDistance(waypoints[i]) < self.getGridDistance(waypoints[lowest])) {
                                 lowest = i;
                             }
                         }
@@ -1024,7 +937,7 @@ Rig = function() {
                             attempts++;
                             pos.x = Math.round(self.gridx+Math.random()*2-1);
                             pos.y = Math.round(self.gridy+Math.random()*2-1);
-                            if (Collision.grid[self.map][self.layer][pos.y]) if (Collision.grid[self.map][self.layer][pos.y][pos.x]) {}
+                            if (Collision.grid[self.map][self.layer][pos.y] && Collision.grid[self.map][self.layer][pos.y][pos.x]) {}
                             else break;
                             if (attempts >= 10) break;
                         }
@@ -1058,74 +971,74 @@ Rig = function() {
     self.onHit = function onHit(entity, type) {
         var oldhp = self.hp;
         var critHp = 0;
-        var parent;
-        if (entity.parentIsPlayer) parent = Player.list[entity.parentID];
-        else parent = Monster.list[entity.parentID];
-        if (entity.critChance) if (Math.random() < entity.critChance) critHp = entity.damage*entity.critPower;
+        var parent = Monster.list[entity.parentID] ?? Player.list[entity.parentID];
+        if (entity.critChance && Math.random() < entity.critChance) critHp = entity.damage*entity.critPower;
+        var spawnParticles = true;
         if (!self.invincible) {
             switch (type) {
                 case 'projectile':
                     if (self.invincibilityFrames[entity.type] == null) {
                         self.hp -= Math.max(Math.round(((entity.damage+critHp)*(1-self.stats.defense))-self.stats.damageReduction), 0);
                         self.invincibilityFrames[entity.type] = entity.invincibilityFrame+1;
-                    }
+                    } else spawnParticles = false;
                     var rand = 0.5+Math.random();
                     self.xknockback += entity.xspeed*entity.knockback*rand;
                     self.yknockback += entity.yspeed*entity.knockback*rand;
-                    if (self.hp < 0) {
-                        // add more death messages based on projectile type
-                        if (entity.parentIsPlayer) self.onDeath(Player.list[entity.parentID], 'killed');
-                        else self.onDeath(Monster.list[entity.parentID], 'killed');
-                    }
+                    if (self.hp < 0) self.onDeath(parent, 'killed', entity.deathMessage);
+                    break;
+                case 'touch':
+                    if (self.invincibilityFrames['touch'] == null) {
+                        self.hp -= Math.max(Math.round(Math.floor((Math.random()*(entity.touchDamage/2))+(entity.touchDamage/2)+1)*(1-self.stats.defense))-self.stats.damageReduction, 0);
+                        self.invincibilityFrames['touch'] = 2;
+                    } else spawnParticles = false;
+                    var rand = 0.5+Math.random();
+                    var angle = Math.atan2(self.y-entity.y, self.x-entity.x);
+                    self.xknockback += angle*rand*10;
+                    self.yknockback += angle*rand*10;
+                    if (self.hp < 0) self.onDeath(entity, 'killed');
                     break;
                 case 'cherrybomb':
                     self.hp -= Math.max(Math.round((500*(1-self.stats.defense))-self.stats.damageReduction), 0);
                     var rand = 0.5+Math.random();
                     var angle = Math.atan2(self.y-entity.y, self.x-entity.x);
-                    self.xknockback += angle*rand*20;
-                    self.yknockback += angle*rand*20;
-                    if (self.hp < 0) self.onDeath(entity, 'explosion');
+                    self.xknockback += angle*rand*40;
+                    self.yknockback += angle*rand*40;
+                    if (self.hp < 0) self.onDeath(entity, 'killed', 'blown up');
                     break;
                 default:
                     error('Invalid Entity type: ' + type);
                     break;
             }
         }
-        if (critHp) new Particle(self.map, self.x, self.y, self.layer, 'critdamage', self.hp-oldhp);
-        else new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
-        if (parent) if (parent.entType == 'player') parent.trackedData.damageDealt += oldhp-self.hp;
+        spawnParticles && critHp && new Particle(self.map, self.x, self.y, 'critdamage', self.hp-oldhp);
+        spawnParticles && !critHp &&  new Particle(self.map, self.x, self.y, 'damage', self.hp-oldhp);
+        if (parent && parent.entType == 'player') parent.trackedData.damageDealt += oldhp-self.hp;
     };
-    self.onDeath = function onDeath(entity, type) {
+    self.onDeath = function onDeath(entity, type, message) {
         if (!self.invincible) {
             var oldhp = self.hp;
             self.hp = 0;
             self.alive = false;
-            if (entity) if (entity.entType == 'player') {
+            if (entity && entity.entType == 'player') {
                 entity.trackedData.kills++;
             }
             if (self.hp != oldhp) {
-                new Particle(self.map, self.x, self.y, self.layer, 'damage', self.hp-oldhp);
+                new Particle(self.map, self.x, self.y, 'damage', self.hp-oldhp);
             }
-            for (var i = 0; i < 20; i++) {
-                new Particle(self.map, self.x, self.y, self.layer, 'death');
+            for (var i = 0; i < self.width*self.height/200; i++) {
+                new Particle(self.map, self.x+Math.random()*self.width-self.width/2, self.y+Math.random()*self.height-self.height/2, 'death');
             }
             if (self.bcDeaths) switch (type) {
                 case 'killed':
-                    if (entity) insertChat(self.name + ' was killed by ' + entity.name, 'death');
-                    else insertChat(self.name + ' died', 'death');
+                    if (entity) insertChat(self.name + ' was ' + (message ?? 'killed') + ' by ' + entity.name, 'death');
+                    else insertChat(self.name + ' was ' + (message ?? 'killed'), 'death');
                     break;
                 case 'explosion':
-                    insertChat(self.name + ' blew up.', 'death');
-                    break;
-                case 'cherrybomb':
-                    var rand = 0.5+Math.random();
-                    var angle = Math.atan2(self.y-entity.y, self.x-entity.x);
-                    self.xknockback += angle*rand*40;
-                    self.yknockback += angle*rand*40;
-                    insertChat(self.name + ' blew up.', 'death');
+                    if (entity) insertChat(self.name + ' was blown up by ' + entity.name, 'death');
+                    else insertChat(self.name + ' blew up', 'death');
                     break;
                 case 'fire':
-                    insertChat(self.name + ' went up in flames', 'death');
+                    insertChat(self.name + ' caught fire', 'death');
                     break;
                 case 'debug':
                     insertChat(self.name + ' was debugged', 'death');
@@ -1134,7 +1047,7 @@ Rig = function() {
                     insertChat(self.name + ' died', 'death');
                     break;
             }
-            if (entity) if (entity.entType == 'player') entity.trackedData.damageDealt += oldhp-self.hp;
+            if (entity && entity.entType == 'player') entity.trackedData.damageDealt += oldhp-self.hp;
         }
     };
     self.onRegionChange = function onRegionChange() {};
@@ -1142,7 +1055,7 @@ Rig = function() {
         if (!self.teleporting) {
             self.teleporting = true;
             for (var i = 0; i < 20; i++) {
-                new Particle(self.map, self.x, self.y, self.layer, 'teleport');
+                new Particle(self.map, self.x, self.y, 'teleport');
             }
             self.map = map;
             self.x = x*64+32;
@@ -1158,7 +1071,7 @@ Rig = function() {
             self.ai.idleWaypoints.walking = false;
             self.ai.idleWaypoints.lastWaypoints = [];
             for (var i = 0; i < 20; i++) {
-                new Particle(self.map, self.x, self.y, self.layer, 'teleport');
+                new Particle(self.map, self.x, self.y, 'teleport');
             }
             self.teleporting = false;
         }
@@ -1292,6 +1205,19 @@ Npc.getDebugData = function getDebugData() {
 
     return pack;
 };
+Npc.init = function init() {
+    for (var i in Npc.dialogues) {
+        for (var j in Npc.dialogues[i]) {
+            for (var k in Npc.dialogues[i][j].options) {
+                if (Npc.dialogues[i][j].options[k].action.includes('script_')) {
+                    Npc.dialogues[i][j].options[k].script = new Function('return ' + Npc.dialogues[i][j].options[k].action.replace('script_', ''))();
+                } else if (Npc.dialogues[i][j].options[k].action.includes('script-end_')) {
+                    Npc.dialogues[i][j].options[k].script = new Function('return ' + Npc.dialogues[i][j].options[k].action.replace('script-end_', ''))();
+                }
+            }
+        }
+    }
+};
 Npc.rawJson = require('./npc.json');
 Npc.dialogues = require('./../client/prompts.json');
 Npc.list = [];
@@ -1316,6 +1242,7 @@ Player = function(socket) {
     self.facingDirection = 'down';
     self.attacking = false;
     self.secondary = false;
+    self.controls.disableSecond = false;
     self.lastHeal = 0;
     self.stats.heal = 8;
     self.stats.maxPierce = 0;
@@ -1340,14 +1267,16 @@ Player = function(socket) {
         projectilePattern: 'single',
         useTime: 0,
         manaCost: 0,
-        lastUse: 0
+        lastUse: 0,
+        second: false
     };
     self.crystal = {
         projectile: null,
         projectilePattern: 'single',
         useTime: 0,
         manaCost: 0,
-        lastUse: 0
+        lastUse: 0,
+        second: true
     };
     self.heldItem = {
         id: null,
@@ -1457,7 +1386,7 @@ Player = function(socket) {
         maps.push(i);
     }
     socket.on('signIn', async function(cred) {
-        if (typeof cred == 'object' && cred != null) if (typeof cred.username == 'string' && typeof cred.password == 'string') {
+        if (typeof cred == 'object' && cred != null && typeof cred.username == 'string' && typeof cred.password == 'string') {
             if (ENV.isBetaServer && (cred.state == 'deleteAccount' || cred.state == 'signUp')) {
                 socket.emit('signInState', 'disabled');
                 return;
@@ -1790,7 +1719,7 @@ Player = function(socket) {
         self.updateUse(self.crystal, self.crystalStats);
         self.lastAutoHeal++;
         self.lastHeal++;
-        if (self.stats.heal != 0) if (self.lastAutoHeal >= self.stats.heal && self.hp < self.maxHP && self.alive) {
+        if (self.stats.heal != 0 && self.lastAutoHeal >= self.stats.heal && self.hp < self.maxHP && self.alive) {
             self.hp = Math.min(self.hp+1, self.maxHP);
             self.lastAutoHeal = 0;
         }
@@ -1800,7 +1729,7 @@ Player = function(socket) {
             self.hp = Math.min(self.hp+20, self.maxHP);
             self.mana -= 20;
             self.lastManaUse = 0;
-            new Particle(self.map, self.x, self.y, self.layer, 'heal', '+' + self.hp-oldhp);
+            new Particle(self.map, self.x, self.y, 'heal', '+' + self.hp-oldhp);
         }
         self.lastManaRegen++;
         self.lastManaUse++;
@@ -1857,7 +1786,7 @@ Player = function(socket) {
     };
     self.updateUse = function updateUse(attack, stats) {
         attack.lastUse++;
-        if (self.attacking && !self.region.noattack && attack.lastUse > attack.useTime && attack.projectile != null && self.mana >= attack.manaCost && self.alive) {
+        if (self.attacking && !(attack.second && self.controls.disableSecond) && attack.lastUse > attack.useTime && !self.region.noattack && attack.projectile != null && self.mana >= attack.manaCost && self.alive) {
             attack.lastUse = 0;
             var angle = Math.atan2(self.mouseY, self.mouseX);
             switch (attack.projectilePattern) {
@@ -1884,7 +1813,7 @@ Player = function(socket) {
                     new Projectile(attack.projectile, angle+degrees(120), stats, self.id);
                     break;
                 case 'ring':
-                    new Projectile(attack.projectile, angle, self.id);
+                    new Projectile(attack.projectile, angle, stats, self.id);
                     new Projectile(attack.projectile, angle-degrees(36), stats, self.id);
                     new Projectile(attack.projectile, angle-degrees(72), stats, self.id);
                     new Projectile(attack.projectile, angle-degrees(108), stats, self.id);
@@ -1922,6 +1851,7 @@ Player = function(socket) {
     self.teleport = function teleport(map, x, y, layer) {
         if (!self.teleporting) {
             self.teleporting = true;
+            self.canMove = false;
             self.teleportLocation.map = map;
             self.teleportLocation.x = x*64+32;
             self.teleportLocation.y = y*64+32;
@@ -1932,15 +1862,18 @@ Player = function(socket) {
     socket.on('teleport1', function() {
         if (self.teleporting) {
             for (var i = 0; i < 20; i++) {
-                new Particle(self.map, self.x, self.y, self.layer, 'teleport');
+                new Particle(self.map, self.x, self.y, 'teleport');
             }
             self.map = self.teleportLocation.map;
             self.x = self.teleportLocation.x;
             self.y = self.teleportLocation.y;
             self.layer = self.teleportLocation.layer;
+            self.canMove = true;
             for (var i = 0; i < 20; i++) {
-                new Particle(self.map, self.x, self.y, self.layer, 'teleport');
+                new Particle(self.map, self.x, self.y, 'teleport');
             }
+            self.gridx = Math.floor(self.x/64);
+            self.gridy = Math.floor(self.y/64);
             socket.emit('teleport2', {map: self.map, x: self.x, y: self.y});
         }
     });
@@ -1954,8 +1887,11 @@ Player = function(socket) {
         self.trackedData.damageTaken += oldhp-self.hp;
     };
     const oldonDeath = self.onDeath;
-    self.onDeath = function onDeath(entity, type) {
-        oldonDeath(entity, type);
+    self.onDeath = function onDeath(entity, type, message) {
+        oldonDeath(entity, type, message);
+        for (var i = 0; i < self.width*self.height/200; i++) {
+            new Particle(self.map, self.x+Math.random()*self.width-self.width/2, self.y+Math.random()*self.height-self.height/2, 'playerdeath');
+        }
         self.quests.failQuests('death');
         if (self.currentConversation.id) {
             self.canMove = true;
@@ -2004,7 +1940,8 @@ Player = function(socket) {
             range: 1,
             critChance: 0,
             critPower: 1,
-            knockback: 0
+            knockback: 0,
+            maxPierce: 0
         };
         self.crystalStats = {
             damageType: null,
@@ -2014,21 +1951,24 @@ Player = function(socket) {
             range: 1,
             critChance: 0,
             critPower: 1,
-            knockback: 0
+            knockback: 0,
+            maxPierce: 0
         };
         self.attack = {
             projectile: null,
             projectilePattern: 'single',
             useTime: 0,
             manaCost: 0,
-            lastUse: 0
+            lastUse: 0,
+            second: false
         };
         self.crystal = {
             projectile: null,
             projectilePattern: 'single',
             useTime: 0,
             manaCost: 0,
-            lastUse: 0
+            lastUse: 0,
+            second: true
         };
         self.heldItem.id = null;
         self.maxHP = 100;
@@ -2040,9 +1980,11 @@ Player = function(socket) {
             self.stats.critChance += item.critChance;
             self.stats.critPower += item.critPower;
             self.stats.knockback += item.knockback;
+            self.stats.maxPierce = item.maxPierce;
             self.attack.projectile = item.projectile;
             self.attack.projectilePattern = item.projectilePattern;
             self.stats.projectileSpeed = item.projectileSpeed;
+            self.stats.range = item.projectileRange;
             self.attack.useTime = item.useTime;
             self.attack.manaCost = item.manaCost;
             self.heldItem.id = item.id;
@@ -2054,9 +1996,11 @@ Player = function(socket) {
             self.crystalStats.critChance += item.critChance;
             self.crystalStats.critPower += item.critPower;
             self.crystalStats.knockback += item.knockback;
+            self.crystalStats.maxPierce = item.maxPierce;
             self.crystal.projectile = item.projectile;
             self.crystal.projectilePattern = item.projectilePattern;
             self.crystalStats.projectileSpeed = item.projectileSpeed;
+            self.crystalStats.range = item.projectileRange;
             self.crystal.useTime = item.useTime;
             self.crystal.manaCost = item.manaCost;
         }
@@ -2095,8 +2039,8 @@ Player = function(socket) {
                             self.crystalStats.critChance += effect.value;
                             break;
                         case 'critPower':
-                            self.stats.critPower += effect.value;
-                            self.crystalStats.critPower += effect.value;
+                            self.stats.critPower *= effect.value;
+                            self.crystalStats.critPower *= effect.value;
                             break;
                         case 'damageReduction':
                             self.stats.damageReduction += effect.value;
@@ -2133,7 +2077,7 @@ Player = function(socket) {
                     var bottom = localdroppeditem.y+localdroppeditem.height/2;
                     if (cx >= left && cx <= right && cy >= top && cy <= bottom) {
                         if (!self.inventory.full()) {
-                            var res = self.inventory.addItem(localdroppeditem.itemId, localdroppeditem.stackSize, localdroppeditem.enchantments);
+                            var res = self.inventory.addItem(localdroppeditem.itemId, localdroppeditem.stackSize, localdroppeditem.enchantments, true);
                             if (typeof res == 'object') {
                                 delete DroppedItem.list[i];
                             }
@@ -2143,22 +2087,24 @@ Player = function(socket) {
                 }
             }
         }
-        for (var i in Npc.list) {
-            var localnpc = Npc.list[i];
-            if (self.map == localnpc.map && self.getDistance(localnpc) < 512) {
-                var cx = self.x+x;
-                var cy = self.y+y;
-                var left = localnpc.x-localnpc.width/2;
-                var right = localnpc.x+localnpc.width/2;
-                var top = localnpc.y-localnpc.height/2;
-                var bottom = localnpc.y+localnpc.height/2;
-                if (cx >= left && cx <= right && cy >= top && cy <= bottom) {
-                    try {
-                        localnpc.rightClickEvent(self, localnpc);
-                    } catch (err) {
-                        error(err);
+        if (!self.talkingWith) {
+            for (var i in Npc.list) {
+                var localnpc = Npc.list[i];
+                if (self.map == localnpc.map && self.getDistance(localnpc) < 512) {
+                    var cx = self.x+x;
+                    var cy = self.y+y;
+                    var left = localnpc.x-localnpc.width/2;
+                    var right = localnpc.x+localnpc.width/2;
+                    var top = localnpc.y-localnpc.height/2;
+                    var bottom = localnpc.y+localnpc.height/2;
+                    if (cx >= left && cx <= right && cy >= top && cy <= bottom) {
+                        try {
+                            localnpc.rightClickEvent(self, localnpc);
+                        } catch (err) {
+                            error(err);
+                        }
+                        return;
                     }
-                    return;
                 }
             }
         }
@@ -2183,9 +2129,9 @@ Player = function(socket) {
         socket.emit('prompt', self.currentConversation);
         self.talkingWith = npcId;
     };
-    socket.on('promptChoose', function(option) {
+    socket.on('promptChoose', function(choice) {
         if (self.currentConversation.id) {
-            var option = Npc.dialogues[self.currentConversation.id][self.currentConversation.i].options[option];
+            var option = Npc.dialogues[self.currentConversation.id][self.currentConversation.i].options[choice];
             if (option) {
                 var action = option.action;
                 if (action == 'continue') {
@@ -2209,12 +2155,29 @@ Player = function(socket) {
                     if (self.quests.qualifiesFor(id)) self.quests.startQuest(id);
                     if (Npc.list[self.talkingWith]) Npc.list[self.talkingWith].endConversation();
                     self.talkingWith = null;
+                } else if (action.startsWith('item_')) {
+                    self.inventory.addItem(action.replace('item_', '').replace(action.substring(action.indexOf(':'), action.length), ''), action.substring(action.indexOf(':')+1, action.length));
+                    self.currentConversation.i++;
+                    self.prompt(self.currentConversation.id, self.talkingWith);
+                } else if (action.startsWith('script_')) {
+                    option.script(self);
+                    self.currentConversation.i++;
+                    self.prompt(self.currentConversation.id, self.talkingWith);
+                } else if (action.startsWith('script-end_')) {
+                    option.script(self);
+                    self.canMove = true;
+                    self.invincible = false;
+                    self.currentConversation.id = null;
+                    self.currentConversation.i = 0;
+                    if (Npc.list[self.talkingWith]) Npc.list[self.talkingWith].endConversation();
+                    self.talkingWith = null;
                 } else if (action.startsWith('talkedwith_')) {
                     self.canMove = true;
                     self.invincible = false;
                     self.currentConversation.id = null;
                     self.currentConversation.i = 0;
                     self.talkedWith = action.replace('talkedwith_', '');
+                    self.talkingWith = null;
                 }
             } else {
                 self.kick();
@@ -2315,7 +2278,7 @@ Player = function(socket) {
         self.updateStats();
         var noWeapon = true;
         for (var i in self.inventory.items) {
-            if (self.inventory.items[i]) if (self.inventory.items[i].slotType == 'weapon') noWeapon = false;
+            if (self.inventory.items[i] && self.inventory.items[i].slotType == 'weapon') noWeapon = false;
         }
         if (self.inventory.equips['weapon']) noWeapon = false;
         if (self.inventory.equips['weapon2']) noWeapon = false;
@@ -2510,6 +2473,7 @@ Monster = function(type, x, y, map, layer) {
         self.hp = tempmonster.hp;
         self.ai.fleeThreshold = tempmonster.fleeThreshold;
         self.maxHP = tempmonster.hp;
+        self.touchDamage = tempmonster.touchDamage;
         self.xpDrop = tempmonster.xpDrop;
         self.drops = tempmonster.drops;
         self.coinDrops = tempmonster.coinDrops;
@@ -2552,6 +2516,18 @@ Monster = function(type, x, y, map, layer) {
         if (self.active) {
             self.updateAggro();
             if (self.canMove) self.updatePos();
+            if (self.alive && Player.chunks[self.map] && Player.chunks[self.map][self.layer]) {
+                var range = Math.ceil(self.collisionBoxSize/(128*Math.max(Collision.grid[self.map].chunkWidth, Collision.grid[self.map].chunkHeight)));
+                for (var y = self.chunky-range; y <= self.chunky+range; y++) {
+                    for (var x = self.chunkx-range; x <= self.chunkx+range; x++) {
+                        if (Player.chunks[self.map][self.layer][y] && Player.chunks[self.map][self.layer][y][x]) {
+                            for (var i in Player.chunks[self.map][self.layer][y][x]) {
+                                Player.chunks[self.map][self.layer][y][x][i].alive && self.collideWith(Player.chunks[self.map][self.layer][y][x][i]) && Player.chunks[self.map][self.layer][y][x][i].onHit(self, 'touch');
+                            }
+                        }
+                    }
+                }
+            }
             self.attack();
             self.updateAnimation();
         }
@@ -2570,19 +2546,14 @@ Monster = function(type, x, y, map, layer) {
                     x: null,
                     y: null
                 };
-                for (var x = self.gridx-20; x < self.gridx+20; x++) {
-                    for (var y = self.gridy-20; y < self.gridy+20; y++) {
-                        if (Region.grid[self.map][y]) if (Region.grid[self.map][y][x]) if (Region.grid[self.map][y][x].nomonster == false) {
-                            if (closest.x == null) closest = {
+                var range = self.ai.maxRange/2;
+                for (var x = self.gridx-range; x < self.gridx+range; x++) {
+                    for (var y = self.gridy-range; y < self.gridy+range; y++) {
+                        if (Region.grid[self.map][y] && Region.grid[self.map][y][x] && Region.grid[self.map][y][x].nomonster == false) {
+                            if (closest.x == null || self.getGridDistance({x: x, y: y}) < self.getGridDistance(closest)) closest = {
                                 x: x,
                                 y: y
                             };
-                            if (self.getGridDistance({x: x, y: y}) < self.getGridDistance(closest)) {
-                                closest = {
-                                    x: x,
-                                    y: y
-                                };
-                            }
                         }
                     }
                 }
@@ -2597,15 +2568,15 @@ Monster = function(type, x, y, map, layer) {
                         var offsety = self.gridy-self.ai.maxRange-1;
                         var size = self.ai.maxRange*2+1;
                         var grid = [];
-                        for (var i = 0; i < size; i++) {
-                            grid[i] = [];
-                            for (var j = 0; j < size; j++) {
-                                grid[i][j] = {
+                        for (var y = 0; y < size; y++) {
+                            grid[y] = [];
+                            for (var x = 0; x < size; x++) {
+                                grid[y][x] = {
                                     g: 0,
                                     h: 0,
                                     f: 0,
-                                    x: i+offsetx,
-                                    y: j+offsety
+                                    x: x+offsetx,
+                                    y: y+offsety
                                 };
                             }
                         }
@@ -2613,22 +2584,21 @@ Monster = function(type, x, y, map, layer) {
                             for (var x = 0; x < size; x++) {
                                 var checkx = x+offsetx;
                                 var checky = y+offsety;
-                                grid[x][y].h = Math.sqrt(Math.pow(self.gridx-checkx, 2)+Math.pow(self.gridy-checky, 2));
-                                grid[x][y].g = Math.sqrt(Math.pow(self.ai.entityTarget.gridx-checkx, 2)+Math.pow(self.ai.entityTarget.gridy-checky, 2));
-                                grid[x][y].f = grid[x][y].h-grid[x][y].g;
-                                if (Collision.grid[self.map][self.layer][checky]) if (Collision.grid[self.map][self.layer][checky][checkx]) {
-                                    grid[x][y].g = 999;
+                                grid[y][x].h = Math.sqrt(Math.pow(self.gridx-checkx, 2)+Math.pow(self.gridy-checky, 2));
+                                grid[y][x].g = Math.sqrt(Math.pow(self.ai.entityTarget.gridx-checkx, 2)+Math.pow(self.ai.entityTarget.gridy-checky, 2));
+                                if (Collision.grid[self.map][self.layer][checky] && Collision.grid[self.map][self.layer][checky][checkx]) {
+                                    grid[y][x].g = 999;
                                 }
-                                if (Region.grid[self.map]) if (Region.grid[self.map][Math.floor(y)]) if (Region.grid[self.map][Math.floor(y)][Math.floor(x)]) if (Region.grid[self.map][Math.floor(y)][Math.floor(x)].nomonster) {
-                                    grid[x][y].g = 999;
+                                if (Region.grid[self.map] && Region.grid[self.map][Math.floor(y)] && Region.grid[self.map][Math.floor(y)][Math.floor(x)] && Region.grid[self.map][Math.floor(y)][Math.floor(x)].nomonster) {
+                                    grid[y][x].g = 999;
                                 }
+                                grid[y][x].f = grid[y][x].h-grid[y][x].g;
                             }
                         }
                         var best = null;
-                        for (var x in grid) {
-                            for (var y in grid) {
-                                if (best == null) best = grid[x][y];
-                                if (grid[x][y].f < best.f) best = grid[x][y];
+                        for (var y in grid) {
+                            for (var x in grid) {
+                                if (best == null || grid[y][x].f < best.f) best = grid[y][x];
                             }
                         }
                         if (best) {
@@ -2682,12 +2652,25 @@ Monster = function(type, x, y, map, layer) {
         self.yknockback *= 0.25;
         if (0-Math.abs(self.xknockback) > -0.5) self.xknockback = 0;
         if (0-Math.abs(self.yknockback) > -0.5) self.yknockback = 0;
+        if (self.ai.chargeTime != -1) {
+            self.ai.charge.time -= 1;
+            if (self.ai.charge.time < 0) {
+                self.ai.charge.time = 0;
+                self.ai.charge.x *= 0.5;
+                self.ai.charge.y *= 0.5;
+                if (Math.abs(self.ai.charge.x) < 0.5 || Math.abs(self.ai.charge.y) < 0.5) {
+                    self.ai.charge.x = 0;
+                    self.ai.charge.y = 0;
+                    self.ai.charge.time = -1;
+                }
+            }
+        }
         var foundregion = false;
-        if (Region.grid[self.map][self.gridy]) if (Region.grid[self.map][self.gridy][self.gridx]) if (Region.grid[self.map][self.gridy][self.gridx].name != self.region.name) {
+        if (Region.grid[self.map][self.gridy] && Region.grid[self.map][self.gridy][self.gridx] && Region.grid[self.map][self.gridy][self.gridx].name != self.region.name) {
             self.region = Region.grid[self.map][self.gridy][self.gridx];
             self.onRegionChange();
         }
-        if (Region.grid[self.map][self.gridy]) if (Region.grid[self.map][self.gridy][self.gridx]) foundregion = true;
+        if (Region.grid[self.map][self.gridy] && Region.grid[self.map][self.gridy][self.gridx]) foundregion = true;
         if (!foundregion && self.region.name != 'The Wilderness') {
             self.region = {
                 name: 'The Wilderness',
@@ -2767,7 +2750,7 @@ Monster = function(type, x, y, map, layer) {
                 if (self.ai.attackTime >= seconds(0.2)) {
                     self.ai.attackType = 'exploding';
                     for (var i = 0; i < 100; i++) {
-                        new Particle(self.map, self.x, self.y, self.layer, 'explosion');
+                        new Particle(self.map, self.x, self.y, 'explosion');
                     }
                     for (var i in Monster.list) {
                         if (parseFloat(i) != self.id && self.getDistance(Monster.list[i]) <= 64) {
@@ -2775,7 +2758,7 @@ Monster = function(type, x, y, map, layer) {
                                 Monster.list[i].ai.attackType = 'triggeredcherrybomb';
                                 Monster.list[i].ai.attackTime = 0;
                             } else if (Monster.list[i].ai.attackType != 'triggeredcherrybomb' && Monster.list[i].alive) {
-                                Monster.list[i].onDeath(self, 'cherrybomb');
+                                Monster.list[i].onDeath(self, 'explosion');
                             }
                         } else if (parseFloat(i) != self.id && self.getDistance(Monster.list[i]) <= 128) {
                             if (Monster.list[i].ai.attackType != 'cherrybomb' && Monster.list[i].ai.attackType != 'triggeredcherrybomb' && Monster.list[i].alive) {
@@ -2785,7 +2768,7 @@ Monster = function(type, x, y, map, layer) {
                     }
                     for (var i in Player.list) {
                         if (self.getDistance(Player.list[i]) <= 64 && Player.list[i].alive) Player.list[i].onDeath(self, 'cherrybomb');
-                        else if (self.getDistance(Player.list[i]) <= 128 && Player.list[i].alive) Player.list[i].onHit(self, 'cherrybomb');
+                        else if (self.getDistance(Player.list[i]) <= 128 && Player.list[i].alive) Player.list[i].onHit(self, 'explosion');
                     }
                 }
                 break;
@@ -2807,8 +2790,6 @@ Monster = function(type, x, y, map, layer) {
                     }
                 }
                 break;
-            default:
-                break;
         }
         if (self.ai.entityTarget && !self.region.noattack) {
             switch (self.ai.attackType) {
@@ -2829,15 +2810,14 @@ Monster = function(type, x, y, map, layer) {
                     break;
                 case 'snowbird':
                     if (self.ai.lastAttack > seconds(1)) {
-                        if (self.ai.attackStage == 5) {
+                        if (self.ai.attackStage == 1) {
+                            var angle = Math.atan2(self.ai.entityTarget.y-self.y, self.ai.entityTarget.x-self.x);
+                            new Projectile('fastsnowball', angle+Math.random()*0.2-0.1, self.stats, self.id);
+                        } else if (self.ai.attackStage == 5) {
                             var angle = Math.atan2(self.ai.entityTarget.y-self.y, self.ai.entityTarget.x-self.x);
                             new Projectile('fastsnowball', angle+Math.random()*0.2-0.1, self.stats, self.id);
                             self.ai.attackStage = 0;
                             self.ai.lastAttack = 0;
-                        }
-                        if (self.ai.attackStage == 1) {
-                            var angle = Math.atan2(self.ai.entityTarget.y-self.y, self.ai.entityTarget.x-self.x);
-                            new Projectile('fastsnowball', angle+Math.random()*0.2-0.1, self.stats, self.id);
                         }
                         self.ai.attackStage++;
                     }
@@ -2866,21 +2846,35 @@ Monster = function(type, x, y, map, layer) {
                         new Projectile('snowball', degrees(angle-270), self.stats, self.id);
                     }
                     break;
-                case 'ram':
-                    if (self.ai.lastAttack > seconds(1)) {
-                        if (self.ai.attackStage == 5) {
-                            var angle = Math.atan2(self.ai.entityTarget.y-self.y, self.ai.entityTarget.x-self.x);
-                            // set dash location?
-                            self.ai.attackStage = 0;
-                            self.ai.lastAttack = 0;
-                        }
+                case 'cavebird':
+                    if (self.ai.lastAttack > seconds(1.5)) {
                         if (self.ai.attackStage == 1) {
                             var angle = Math.atan2(self.ai.entityTarget.y-self.y, self.ai.entityTarget.x-self.x);
+                            new Projectile('rock', angle+Math.random()*0.3-0.15, self.stats, self.id);
+                        } else if (self.ai.attackStage == 3) {
+                            var angle = Math.atan2(self.ai.entityTarget.y-self.y, self.ai.entityTarget.x-self.x);
+                            new Projectile('rock', angle+Math.random()*0.3-0.15, self.stats, self.id);
+                        } else if (self.ai.attackStage == 5) {
+                            var angle = Math.atan2(self.ai.entityTarget.y-self.y, self.ai.entityTarget.x-self.x);
+                            new Projectile('rock', angle+Math.random()*0.3-0.15, self.stats, self.id);
+                            self.ai.attackStage = 0;
+                            self.ai.lastAttack = 0;
                         }
                         self.ai.attackStage++;
                     }
                     break;
-                    default:
+                case 'ram':
+                    if ((self.ai.lastAttack > seconds(2) && self.getGridDistance(self.ai.entityTarget) < 2) || self.ai.attackStage != 0) {
+                        self.ai.lastAttack = 0;
+                        var angle = Math.atan2(self.ai.entityTarget.y-self.y, self.ai.entityTarget.x-self.x);
+                        self.ai.charge = {
+                            x: Math.cos(angle)*20,
+                            y: Math.sin(angle)*20,
+                            time: 2
+                        };
+                    }
+                    break;
+                default:
                     error('Invalid attack type: ' + self.ai.attackType);
                     break;
             }
@@ -2897,8 +2891,8 @@ Monster = function(type, x, y, map, layer) {
         }
         if (self.hp < self.ai.fleeThreshold) self.ai.fleeing = true;
     };
-    self.onDeath = function onDeath(entity, type) {
-        if (entity) if (entity.entType == 'player') {
+    self.onDeath = function onDeath(entity, type, message) {
+        if (entity && entity.entType == 'player') {
             entity.xp += self.xpDrop;
             var found = false;
             for (var i in entity.trackedData.monstersKilled) {
@@ -2913,6 +2907,9 @@ Monster = function(type, x, y, map, layer) {
                     count: 1
                 });
             }
+        }
+        for (var i = 0; i < self.width*self.height/200; i++) {
+            new Particle(self.map, self.x+Math.random()*self.width-self.width/2, self.y+Math.random()*self.height-self.height/2, 'death');
         }
         try {
             var multiplier = 0;
@@ -2952,7 +2949,7 @@ Monster = function(type, x, y, map, layer) {
                         if (Collision.grid[self.map]) {
                             for (var checkx = self.gridx-1; checkx <= self.gridx+1; checkx++) {
                                 for (var checky = self.gridy-1; checky <= self.gridy+1; checky++) {
-                                    if (Collision.grid[self.map][checky]) if (Collision.grid[self.map][checky][checkx])
+                                    if (Collision.grid[self.map][checky] && Collision.grid[self.map][checky][checkx])
                                     collisions.push(Collision.getColEntity(self.map, checkx, checky));
                                 }
                             }
@@ -3091,6 +3088,8 @@ Projectile = function(type, angle, stats, parentID) {
     var self = new Entity();
     self.entType = 'projectile';
     self.type = type;
+    self.pierced = 0;
+    self.maxPierce = 0;
     try {
         var tempprojectile = Projectile.types[type];
         self.type = type;
@@ -3103,6 +3102,7 @@ Projectile = function(type, angle, stats, parentID) {
         self.knockback = tempprojectile.knockback;
         self.damageType = tempprojectile.damageType;
         self.invincibilityFrame = tempprojectile.invincibilityFrame;
+        self.deathMessage = tempprojectile.deathMessage;
         self.pattern = Projectile.patterns[tempprojectile.pattern];
         self.piercing = tempprojectile.piercing;
         tempprojectile = null;
@@ -3114,12 +3114,7 @@ Projectile = function(type, angle, stats, parentID) {
     self.parentID = parentID;
     self.parentIsPlayer = true;
     if (Monster.list[self.parentID]) self.parentIsPlayer = false;
-    var parent;
-    if (self.parentIsPlayer) {
-        parent = Player.list[self.parentID];
-    } else {
-        parent = Monster.list[self.parentID];
-    }
+    var parent = Player.list[self.parentID] ?? Monster.list[self.parentID];
     try {
         self.x = parent.x;
         self.y = parent.y;
@@ -3131,10 +3126,12 @@ Projectile = function(type, angle, stats, parentID) {
         self.knockback *= stats.knockback;
         self.critChance = stats.critChance;
         self.critPower = stats.critPower;
+        self.maxPierce = stats.maxPierce;
     } catch (err) {
         error(err);
         return false;
     }
+    if (!self.piercing) self.maxPierce = 0;
     self.traveltime = 0;
     self.sinAngle = Math.sin(self.angle);
     self.cosAngle = Math.cos(self.angle);
@@ -3152,75 +3149,62 @@ Projectile = function(type, angle, stats, parentID) {
     self.collisionBoxSize = Math.max(Math.abs(self.sinAngle*self.height)+Math.abs(self.cosAngle*self.width), Math.abs(self.cosAngle*self.height)+Math.abs(self.sinAngle*self.width));
     self.x += self.cosAngle*self.width/2;
     self.y += self.sinAngle*self.width/2;
-    self.pierced = 0;
     self.toDelete = false;
 
     self.update = function update() {
         if (self.toDelete) {
             delete Projectile.list[self.id];
             if (Projectile.chunks[self.chunkLocation.map] && Projectile.chunks[self.chunkLocation.map][self.chunkLocation.layer] && Projectile.chunks[self.chunkLocation.map][self.chunkLocation.layer][self.chunkLocation.chunky] && Projectile.chunks[self.chunkLocation.map][self.chunkLocation.layer][self.chunkLocation.chunky][self.chunkLocation.chunkx]) delete Projectile.chunks[self.chunkLocation.map][self.chunkLocation.layer][self.chunkLocation.chunky][self.chunkLocation.chunkx][self.id];
-            // else error('Could not delete projectile from chunks!');
-            else console.log(self.chunkLocation);
+            else error('Could not delete projectile from chunks!');
             return;
         }
-        if (self.parentIsPlayer) {
-            if (Player.list[self.parentID] == null) {
-                delete Projectile.list[self.id];
-                if (Projectile.chunks[self.chunkLocation.map] && Projectile.chunks[self.chunkLocation.map][self.chunkLocation.layer] && Projectile.chunks[self.chunkLocation.map][self.chunkLocation.layer][self.chunkLocation.chunky] && Projectile.chunks[self.chunkLocation.map][self.chunkLocation.layer][self.chunkLocation.chunky][self.chunkLocation.chunkx]) delete Projectile.chunks[self.chunkLocation.map][self.chunkLocation.layer][self.chunkLocation.chunky][self.chunkLocation.chunkx][self.id];
-                else error('Could not delete projectile from chunks!');
-                return;
-            }
-        } else {
-            if (Monster.list[self.parentID] == null) {
-                delete Projectile.list[self.id];
-                if (Projectile.chunks[self.chunkLocation.map] && Projectile.chunks[self.chunkLocation.map][self.chunkLocation.layer] && Projectile.chunks[self.chunkLocation.map][self.chunkLocation.layer][self.chunkLocation.chunky] && Projectile.chunks[self.chunkLocation.map][self.chunkLocation.layer][self.chunkLocation.chunky][self.chunkLocation.chunkx]) delete Projectile.chunks[self.chunkLocation.map][self.chunkLocation.layer][self.chunkLocation.chunky][self.chunkLocation.chunkx][self.id];
-                else error('Could not delete projectile from chunks!');
-                return;
-            }
-        }
-        if (self.updatePos()) return;
-        if (!self.parentIsPlayer || ENV.pvp) {
-            if (Player.chunks[self.map] && Player.chunks[self.map][self.layer]) {
-                var range = Math.ceil(self.collisionBoxSize/(128*Math.max(Collision.grid[self.map].chunkWidth, Collision.grid[self.map].chunkHeight)));
-                for (var y = self.chunky-range; y <= self.chunky+range; y++) {
-                    for (var x = self.chunkx-range; x <= self.chunkx+range; x++) {
-                        if (Player.chunks[self.map][self.layer][y] && Player.chunks[self.map][self.layer][y][x]) {
-                            var players = Player.chunks[self.map][self.layer][y][x];
-                            for (var i in players) {
-                                if (players[i] && self.collideWith(players[i]) && players[i].alive && i != self.parentID) {
-                                    players[i].onHit(self, 'projectile');
-                                    self.pierced++;
-                                    if (!self.piercing) self.toDelete = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            if (Monster.chunks[self.map] && Monster.chunks[self.map][self.layer]) {
-                var range = Math.ceil(self.collisionBoxSize/(128*Math.max(Collision.grid[self.map].chunkWidth, Collision.grid[self.map].chunkHeight)));
-                for (var y = self.chunky-range; y <= self.chunky+range; y++) {
-                    for (var x = self.chunkx-range; x <= self.chunkx+range; x++) {
-                        if (Monster.chunks[self.map][self.layer][y] && Monster.chunks[self.map][self.layer][y][x]) {
-                            var monsters = Monster.chunks[self.map][self.layer][y][x];
-                            for (var i in monsters) {
-                                if (self.collideWith(monsters[i]) && monsters[i].alive && i != self.parentID) {
-                                    monsters[i].onHit(self, 'projectile');
-                                    self.pierced++;
-                                    if (!self.piercing) self.toDelete = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        if (Player.list[self.parentID] == null && Monster.list[self.parentID] == null) {
+            delete Projectile.list[self.id];
+            if (Projectile.chunks[self.chunkLocation.map] && Projectile.chunks[self.chunkLocation.map][self.chunkLocation.layer] && Projectile.chunks[self.chunkLocation.map][self.chunkLocation.layer][self.chunkLocation.chunky] && Projectile.chunks[self.chunkLocation.map][self.chunkLocation.layer][self.chunkLocation.chunky][self.chunkLocation.chunkx]) delete Projectile.chunks[self.chunkLocation.map][self.chunkLocation.layer][self.chunkLocation.chunky][self.chunkLocation.chunkx][self.id];
+            else error('Could not delete projectile from chunks!');
+            return;
         }
         self.traveltime++;
         if (self.traveltime > seconds(self.maxRange)) {
             self.toDelete = true;
+            return;
+        }
+        if (self.updatePos()) return;
+        if ((!self.parentIsPlayer || ENV.pvp) && Player.chunks[self.map] && Player.chunks[self.map][self.layer]) {
+            var range = Math.ceil(self.collisionBoxSize/(128*Math.max(Collision.grid[self.map].chunkWidth, Collision.grid[self.map].chunkHeight)));
+            for (var y = self.chunky-range; y <= self.chunky+range; y++) {
+                for (var x = self.chunkx-range; x <= self.chunkx+range; x++) {
+                    if (Player.chunks[self.map][self.layer][y] && Player.chunks[self.map][self.layer][y][x]) {
+                        var players = Player.chunks[self.map][self.layer][y][x];
+                        for (var i in players) {
+                            if (players[i] && self.collideWith(players[i]) && players[i].alive && i != self.parentID) {
+                                players[i].onHit(self, 'projectile');
+                                self.pierced++;
+                                if (self.pierced > self.maxPierce) self.toDelete = true;
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if ((self.parentIsPlayer || ENV.monsterFriendlyFire) && Monster.chunks[self.map] && Monster.chunks[self.map][self.layer]) {
+            var range = Math.ceil(self.collisionBoxSize/(128*Math.max(Collision.grid[self.map].chunkWidth, Collision.grid[self.map].chunkHeight)));
+            for (var y = self.chunky-range; y <= self.chunky+range; y++) {
+                for (var x = self.chunkx-range; x <= self.chunkx+range; x++) {
+                    if (Monster.chunks[self.map][self.layer][y] && Monster.chunks[self.map][self.layer][y][x]) {
+                        var monsters = Monster.chunks[self.map][self.layer][y][x];
+                        for (var i in monsters) {
+                            if (self.collideWith(monsters[i]) && monsters[i].alive && i != self.parentID) {
+                                monsters[i].onHit(self, 'projectile');
+                                self.pierced++;
+                                if (self.pierced > self.maxPierce) self.toDelete = true;
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
         }
     };
     self.updatePos = function updatePos() {
@@ -3484,37 +3468,29 @@ Projectile.patterns = {
         }
     },
     follow: function(self) {
-        if (self.parentIsPlayer) {
-            if (Player.list[self.parentID]) {
-                self.x = Player.list[self.parentID].x;
-                self.y = Player.list[self.parentID].y;
-                self.angle = Player.list[self.parentID].heldItem.angle;
-                self.sinAngle = Math.sin(self.angle);
-                self.cosAngle = Math.cos(self.angle);
-                self.collisionBoxSize = Math.max(Math.abs(self.sinAngle*self.height)+Math.abs(self.cosAngle*self.width), Math.abs(self.cosAngle*self.height)+Math.abs(self.sinAngle*self.width));
-            }
-        } else {
-            if (Monster.list[self.parentID]) {
-                self.x = Monster.list[self.parentID].x;
-                self.y = Monster.list[self.parentID].y;
-                self.angle = Monster.list[self.parentID].heldItem.angle;
-                self.sinAngle = Math.sin(self.angle);
-                self.cosAngle = Math.cos(self.angle);
-                self.collisionBoxSize = Math.max(Math.abs(self.sinAngle*self.height)+Math.abs(self.cosAngle*self.width), Math.abs(self.cosAngle*self.height)+Math.abs(self.sinAngle*self.width));
-            }
+        var parent = Player.list[self.parentID] ?? Monster.list[self.parentID];
+        if (parent) {
+            self.x = parent.x;
+            self.y = parent.y;
+            self.angle = parent.heldItem.angle;
+            self.sinAngle = Math.sin(self.angle);
+            self.cosAngle = Math.cos(self.angle);
+            self.collisionBoxSize = Math.max(Math.abs(self.sinAngle*self.height)+Math.abs(self.cosAngle*self.width), Math.abs(self.cosAngle*self.height)+Math.abs(self.sinAngle*self.width));
+            self.x += Math.cos(self.angle)*(self.width/2+4);
+            self.y += Math.sin(self.angle)*(self.width/2+4);
+            self.xspeed = self.cosAngle;
+            self.yspeed = self.sinAngle;
+            self.frozen = true;
         }
-        self.x += Math.cos(self.angle)*(self.width/2+4);
-        self.y += Math.sin(self.angle)*(self.width/2+4);
     }
 };
 
 // particles
-Particle = function(map, x, y, layer, type, value) {
+Particle = function(map, x, y, type, value) {
     var self = {
         map: map,
         x: x,
         y: y,
-        layer: layer,
         chunkx: Math.floor(x/(Collision.grid[map].chunkWidth*64)),
         chunky: Math.floor(y/(Collision.grid[map].chunkHeight*64)),
         type: type,

@@ -80,6 +80,43 @@
             ]
         }
     ],
+    "anniversary": [
+        {
+            "text": "Hello! Sorry to startle you, but did you know it's Mountain Guarder's 1-year anniversary? Amazing right?",
+            "options": [
+                {
+                    "text": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                    "action": "continue"
+                },
+                {
+                    "text": "Oh wow!",
+                    "action": "continue"
+                },
+                {
+                    "text": "*End conversation*",
+                    "action": "close_"
+                }
+            ]
+        },
+        {
+            "text": "Anyways, as a token of appreciation for staying with us for so long, here's a gift!",
+            "options": [
+                {
+                    "text": "Oh, thanks!",
+                    "action": "item_anniversarygift:1"
+                }
+            ]
+        },
+        {
+            "text": "Off you go! Have a great day!",
+            "options": [
+                {
+                    "text": "*End conversation*",
+                    "action": "script-end_function(self) {self.trackedData.oneTimeTempThing = true; setTimeout(function() {self.onDeath(null, 'fire'); insertChat('Friendly Fire: oops', 'color: #FF5500;');}, 3000);}"
+                }
+            ]
+        }
+    ],
     "pingu": [
         {
             "text": "noot noot",

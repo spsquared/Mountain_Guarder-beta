@@ -7,70 +7,77 @@
         "enchantments": []
     },
     "coppercoin": {
-        "slotType": "none",
+        "slotType": "coin",
         "rarity": "coin",
         "maxStackSize": 100000,
         "effects": [],
         "enchantments": []
     },
     "silvercoin": {
-        "slotType": "none",
+        "slotType": "coin",
         "rarity": "coin",
         "maxStackSize": 100000,
         "effects": [],
         "enchantments": []
     },
     "goldcoin": {
-        "slotType": "none",
+        "slotType": "coin",
         "rarity": "coin",
         "maxStackSize": 100000,
         "effects": [],
         "enchantments": []
     },
     "blucoin": {
-        "slotType": "none",
+        "slotType": "coin",
         "rarity": "blucoin",
         "maxStackSize": 100,
         "effects": [],
         "enchantments": []
     },
     "wood": {
-        "slotType": "none",
+        "slotType": "material",
         "rarity": 0,
         "maxStackSize": 200,
         "effects": [],
         "enchantments": []
     },
     "planks": {
-        "slotType": "none",
+        "slotType": "material",
         "rarity": 0,
         "maxStackSize": 400,
         "effects": [],
         "enchantments": []
     },
     "sticks": {
-        "slotType": "none",
+        "slotType": "material",
         "rarity": 0,
         "maxStackSize": 800,
         "effects": [],
         "enchantments": []
     },
+    "stone": {
+        "slotType": "material",
+        "rarity": 0,
+        "maxStackSize": 80,
+        "effects": [],
+        "enchantments": []
+    },
     "coal": {
-        "slotType": "none",
+        "slotType": "material",
         "rarity": 0,
         "maxStackSize": 50,
         "effects": [],
         "enchantments": []
     },
     "ironore": {
-        "slotType": "none",
+        "slotType": "material",
         "rarity": 0,
         "maxStackSize": 50,
         "effects": [],
         "enchantments": []
     },
     "iron": {
-        "slotType": "none",
+        "slotType": "material",
         "rarity": 0,
         "maxStackSize": 50,
         "effects": [],
@@ -105,7 +112,7 @@
         "projectile": "meleedamage",
         "projectilePattern": "single",
         "projectileSpeed": 1,
-        "projectileRange": 1,
+        "projectileRange": 0.2,
         "damage": 10,
         "damageType": "melee",
         "critChance": 0.1,
@@ -244,7 +251,7 @@
         "effects": [
             {
                 "id": "damageReduction",
-                "value": 2
+                "value": 1
             },
             {
                 "id": "defense",
@@ -285,7 +292,7 @@
         "projectile": "meleedamage",
         "projectilePattern": "single",
         "projectileSpeed": 1,
-        "projectileRange": 1,
+        "projectileRange": 0.2,
         "damage": 12,
         "damageType": "melee",
         "critChance": 0.15,
@@ -308,7 +315,7 @@
         "projectile": "meleedamage",
         "projectilePattern": "single",
         "projectileSpeed": 1,
-        "projectileRange": 1,
+        "projectileRange": 0.5,
         "damage": 16,
         "damageType": "melee",
         "critChance": 0.15,
@@ -445,7 +452,7 @@
             },
             {
                 "id": "damageReduction",
-                "value": 5
+                "value": 3
             },
             {
                 "id": "defense",
@@ -478,7 +485,8 @@
         "enchantments": [
             "swiftness",
             "speed",
-            "power"
+            "power",
+            "piercing"
         ]
     },
     "titaniumstaff": {
@@ -550,6 +558,29 @@
             "efficiency",
             "unlocking"
         ]
+    },
+    "yeetstick": {
+        "slotType": "weapon",
+        "rarity": 2,
+        "maxStackSize": 1,
+        "projectile": "meleedamage",
+        "projectilePattern": "single",
+        "projectileSpeed": 1,
+        "projectileRange": 1,
+        "damage": 1,
+        "damageType": "melee",
+        "critChance": 0,
+        "critPower": 0,
+        "knockback": 1000,
+        "useTime": 20,
+        "manaCost": 0,
+        "effects": [
+            {
+                "id": "speed",
+                "value": 1.5
+            }
+        ],
+        "enchantments": []
     },
     "raresteak": {
         "slotType": "weapon",

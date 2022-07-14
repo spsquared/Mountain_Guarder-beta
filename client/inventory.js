@@ -151,7 +151,7 @@ Inventory.enchantSlot = function enchantSlot(slot, enchantments) {
 Inventory.contains = function contains(id, amount) {
     var count = 0;
     for (var i in Inventory.items) {
-        if (Inventory.items[i].item) if (Inventory.items[i].item.id == id) count += Inventory.items[i].item.stackSize;
+        if (Inventory.items[i].item && Inventory.items[i].item.id == id) count += Inventory.items[i].item.stackSize;
     }
     return count >= amount;
 };
@@ -213,8 +213,8 @@ Inventory.loadEffects = function loadEffects(item) {
             if (item.critPower != 0) {
                 str += '<br><span style="color: lime;">' + Math.round(item.critPower*100) + '% Critical hit power</span>';
             }
+            str += '<br>';
         }
-        str += '<span style="line-height: 4px;"> </span>'
         for (var i in item.effects) {
             var color = '';
             var number = '+0';
@@ -394,7 +394,7 @@ document.addEventListener('keydown', function(e) {
         if (!inchat && !indebug) {
             if (e.key.toLowerCase() == keybinds.drop) {
                 for (var i in Inventory.items) {
-                    if (Inventory.items[i].item) if (Inventory.items[i].mousedOver) {
+                    if (Inventory.items[i].item && Inventory.items[i].mousedOver) {
                         if (e.getModifierState('Control')) Inventory.dropItem(parseInt(i), Inventory.items[i].item.stackSize);
                         else Inventory.dropItem(parseInt(i), 1);
                         tooltip.style.opacity = 0;
@@ -402,7 +402,7 @@ document.addEventListener('keydown', function(e) {
                     }
                 }
                 for (var i in Inventory.equips) {
-                    if (Inventory.equips[i].item) if (Inventory.equips[i].mousedOver) {
+                    if (Inventory.equips[i].item && Inventory.equips[i].mousedOver) {
                         Inventory.dropItem(parseInt(i), Inventory.equips[i].item.stackSize);
                         tooltip.style.opacity = 0;
                         Inventory.hovering = false;
@@ -473,6 +473,13 @@ socket.on('item', function(data) {
             break;
         case 'remove':
             Inventory.removeItem(data.data.slot);
+            break;
+        case 'banner':
+            var str = '<span style="' + Inventory.getRarityColor(Inventory.itemTypes[data.data.id].rarity) + ';">+' + data.data.amount + ' ' + Inventory.itemTypes[data.data.id].name + '</span>';
+            new Banner(str, {
+                type: 'time',
+                time: 3000
+            });
             break;
         default:
             console.error('Invalid item action ' + data.action);

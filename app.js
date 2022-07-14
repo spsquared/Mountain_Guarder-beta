@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-const version = 'v0.12.0-A01';
+const version = 'v0.12.0-B01';
 console.info('\x1b[?25l\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022');
 console.info('For more information, type "copyright-details".');
 require('./server/log.js');
@@ -57,8 +57,11 @@ ENV = {
         layer: 0
     },
     pvp: false,
+    monsterFriendlyFire: true,
     difficulty: 1,
     physicsInaccuracy: 1,
+    maxPathfindRange: 32,
+    pathfindBuffer: 6,
     itemDespawnTime: 5,
     autoSaveInterval: 5,
     isBetaServer: false
@@ -138,8 +141,6 @@ io.on('connection', function(socket) {
             clearInterval(packetcheck);
             clearTimeout(checkReconnect);
             if (player) await player.leave();
-            socket = null;
-            player = null;
         });
         socket.on('disconnected', async function() {
             clearInterval(timeoutcheck);
@@ -147,8 +148,6 @@ io.on('connection', function(socket) {
             clearInterval(packetcheck);
             clearTimeout(checkReconnect);
             if (player) await player.leave();
-            socket = null;
-            player = null;
         });
         socket.on('timeout', async function() {
             clearInterval(timeoutcheck);
@@ -156,8 +155,6 @@ io.on('connection', function(socket) {
             clearInterval(packetcheck);
             clearTimeout(checkReconnect);
             if (player) await player.leave();
-            socket = null;
-            player = null;
         });
         socket.on('error', async function() {
             clearInterval(timeoutcheck);
@@ -165,8 +162,6 @@ io.on('connection', function(socket) {
             clearInterval(packetcheck);
             clearTimeout(checkReconnect);
             if (player) await player.leave();
-            socket = null;
-            player = null;
         });
         var timeout = 0;
         const timeoutcheck = setInterval(async function() {
@@ -177,8 +172,6 @@ io.on('connection', function(socket) {
                 clearInterval(packetcheck);
                 clearTimeout(checkReconnect);
                 await player.leave();
-                socket = null;
-                player = null;
             }
         }, 1000);
         // debug
@@ -316,8 +309,6 @@ io.on('connection', function(socket) {
                 clearTimeout(checkReconnect);
                 if (player.name) insertChat(player.name + ' was kicked for debug spam', 'anticheat');
                 await player.leave();
-                socket = null;
-                player = null;
             }
         }, 500);
         // performance metrics
@@ -336,7 +327,7 @@ io.on('connection', function(socket) {
             packetCount++;
         };
         const packetcheck = setInterval(async function() {
-            packetCount = Math.max(packetCount-300, 0);
+            packetCount = Math.max(packetCount-250, 0);
             if (packetCount > 0) {
                 clearInterval(timeoutcheck);
                 clearInterval(debugspamcheck);
@@ -344,8 +335,6 @@ io.on('connection', function(socket) {
                 clearTimeout(checkReconnect);
                 if (player.name) insertChat(player.name + ' was kicked for socket.io DOS', 'anticheat');
                 await player.leave();
-                socket = null;
-                player = null;
             }
         }, 1000);
     } else {
@@ -605,15 +594,14 @@ try {
                     case 'players':
                         break;
                     case 'droppedItems':
-                        entities = entities.filter(function(entity) {
-                            if (entity.playerId != null && entity.playerId != localplayer.id) return false;
-                            return entity.map == localplayer.map && (entity.chunkx < localplayer.chunkx-localplayer.renderDistance || entity.chunkx > localplayer.chunkx+localplayer.renderDistance || entity.chunky < localplayer.chunky-localplayer.renderDistance || entity.chunky > localplayer.chunky+localplayer.renderDistance);
-                        });
+                        for (var k in entities) {
+                            if ((entities[k].playerId != null && entities[k].playerId != localplayer.id) || entities[k].map != localplayer.map || entities[k].chunkx <= localplayer.chunkx-localplayer.renderDistance || entities[k].chunkx >= localplayer.chunkx+localplayer.renderDistance || entities[k].chunky <= localplayer.chunky-localplayer.renderDistance || entities[k].chunky >= localplayer.chunky+localplayer.renderDistance) delete entities[k];
+                        }
                         break;
                     default:
-                        entities = entities.filter(function(entity) {
-                            return entity.map == localplayer.map && (entity.chunkx < localplayer.chunkx-localplayer.renderDistance || entity.chunkx > localplayer.chunkx+localplayer.renderDistance || entity.chunky < localplayer.chunky-localplayer.renderDistance || entity.chunky > localplayer.chunky+localplayer.renderDistance);
-                        });
+                        for (var k in entities) {
+                            if (entities[k].map != localplayer.map || entities[k].chunkx <= localplayer.chunkx-localplayer.renderDistance || entities[k].chunkx >= localplayer.chunkx+localplayer.renderDistance || entities[k].chunky <= localplayer.chunky-localplayer.renderDistance || entities[k].chunky >= localplayer.chunky+localplayer.renderDistance) delete entities[k];
+                        }
                 }
             }
             localplayer.socket.emit('updateTick', localpack);
@@ -633,15 +621,14 @@ try {
                         case 'players':
                             break;
                         case 'droppedItems':
-                            entities = entities.filter(function(entity) {
-                                if (entity.playerId != null && entity.playerId != localplayer.id) return false;
-                                return entity.map == localplayer.map && (entity.chunkx < localplayer.chunkx-localplayer.renderDistance || entity.chunkx > localplayer.chunkx+localplayer.renderDistance || entity.chunky < localplayer.chunky-localplayer.renderDistance || entity.chunky > localplayer.chunky+localplayer.renderDistance);
-                            });
+                            for (var k in entities) {
+                                if ((entities[k].playerId != null && entities[k].playerId != localplayer.id) || entities[k].map != localplayer.map || entities[k].chunkx <= localplayer.chunkx-localplayer.renderDistance || entities[k].chunkx >= localplayer.chunkx+localplayer.renderDistance || entities[k].chunky <= localplayer.chunky-localplayer.renderDistance || entities[k].chunky >= localplayer.chunky+localplayer.renderDistance) delete entities[k];
+                            }
                             break;
                         default:
-                            entities = entities.filter(function(entity) {
-                                return entity.map == localplayer.map && (entity.chunkx < localplayer.chunkx-localplayer.renderDistance || entity.chunkx > localplayer.chunkx+localplayer.renderDistance || entity.chunky < localplayer.chunky-localplayer.renderDistance || entity.chunky > localplayer.chunky+localplayer.renderDistance);
-                            });
+                            for (var k in entities) {
+                                if (entities[k].map != localplayer.map || entities[k].chunkx <= localplayer.chunkx-localplayer.renderDistance || entities[k].chunkx >= localplayer.chunkx+localplayer.renderDistance || entities[k].chunky <= localplayer.chunky-localplayer.renderDistance || entities[k].chunky >= localplayer.chunky+localplayer.renderDistance) delete entities[k];
+                            }
                     }
                 }
                 localplayer.socket.emit('debugTick', {
@@ -661,10 +648,9 @@ try {
 const updateTicks = setInterval(function() {
     if (started) {
         try {
-            var start = new Date();
+            var start = performance.now();
             vm.runInThisContext(update, {timeout: 1000});
-            var current = new Date();
-            TICKTIME = current-start;
+            TICKTIME = Math.round((performance.now()-start)*100)/100;
             consecutiveTimeouts = 0;
         } catch (err) {
             insertChat('[!] Server tick timed out! [!]', 'error');

@@ -68,7 +68,7 @@ function generateServerItem() {
             });
         }
     }
-    var enchantments = ['swiftness', 'speed', 'range', 'accuracy', 'power', 'sharpness', 'sweepingedge', 'efficiency', 'sorcery', 'focus', 'witchcraft', 'protection', 'smashing', 'unlocking'];
+    var enchantments = ['swiftness', 'speed', 'range', 'accuracy', 'power', 'piercing', 'sharpness', 'sweepingedge', 'efficiency', 'sorcery', 'focus', 'witchcraft', 'protection', 'smashing', 'unlocking'];
     item.enchantments = [];
     for (var i in enchantments) {
         var checked = document.getElementById(enchantments[i]).checked;

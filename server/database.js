@@ -31,6 +31,7 @@ ACCOUNTS = {
             } else {
                 try {
                     await database.connect();
+                    // 69.142.222.186
                     ACCOUNTS.connected = true;
                 } catch (err) {
                     forceQuit(err, 2);
@@ -175,6 +176,24 @@ ACCOUNTS = {
         }
         warn('Failed to ban user!');
         return false;
+    },
+    ipban: async function ban(ip) {
+        if (ENV.offlineMode) return true;
+        var status = await setIPBanned(ip, true);
+        if (status) {
+            return true;
+        }
+        warn('Failed to ban user!');
+        return false;
+    },
+    ipunban: async function unban(ip) {
+        if (ENV.offlineMode) return true;
+        var status = await setIPBanned(ip, false);
+        if (status) {
+            return true;
+        }
+        warn('Failed to ban user!');
+        return false;
     }
 };
 // /*
@@ -310,14 +329,13 @@ dbDebug = {
                     var data = JSON.parse(res.rows[i].data);
                     if (data) {
                         var lastLogin = data.lastLogin;
-                        if (lastLogin == null && Date.now()-1652043631075 > 31536000) toremove = true;
-                        if (Date.now()-lastLogin > 31536000) toremove = true;
-                        if (data.playTime < 300000 || data.playTime == null) toremove = true;
+                        if (Date.now()-lastLogin > 31536000000) toremove = true;
+                        if (data.playTime < 600000 || data.playTime == null) toremove = true;
                     }
                     if (toremove) {
                         purged++;
                         try {
-                            await database.query('DELETE FROM users WHERE username=$1;', [res.rows[i].username]);
+                            // await database.query('DELETE FROM users WHERE username=$1;', [res.rows[i].username]);
                         } catch (err) {
                             error(err);
                         }
@@ -326,6 +344,7 @@ dbDebug = {
                 }
                 logColor('Purged ' + purged + ' accounts', '\x1b[33m', 'log');
                 clearInterval(updates);
+                logColor('Done', '\x1b[33m', 'log');
             });
         } catch (err) {
             forceQuit(err, 2);
@@ -428,6 +447,32 @@ async function getBanned(username) {
 async function setBanned(username, banned) {
     try {
         await database.query('UPDATE users SET banned=$2 WHERE username=$1;', [username, banned.toString()]);
+        return true;
+    } catch (err) {
+        forceQuit(err, 2);
+    }
+    return false;
+};
+async function getIPBanned(ip) {
+    try {
+        var data = await database.query('SELECT banned FROM ipbans WHERE ip=$1;', [ip]);
+        if (data.rows[0]) {
+            if (data.rows[0].banned) return true;
+        }
+    } catch (err) {
+        forceQuit(err, 2);
+    }
+    return false;
+};
+async function setIPBanned(ip, banned) {
+    try {
+        if (banned) {
+            if (!getIPBanned(ip)) {
+                await database.query('INSERT INTO ipbans (ip, banned) VALUES ($1, $2);', [ip, true]);
+            }
+        } else {
+            await database.query('DELETE FROM ipbans WHERE ip=$1', [ip]);
+        }
         return true;
     } catch (err) {
         forceQuit(err, 2);

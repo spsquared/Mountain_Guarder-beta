@@ -6,9 +6,10 @@
         "pattern": "none",
         "damage": 1,
         "range": 3,
-        "knockback": 0.5,
+        "knockback": 0.2,
         "damageType": "ranged",
         "invincibilityFrame": 0,
+        "deathMessage": "shot",
         "piercing": false,
         "noCollision": false
     },
@@ -19,9 +20,10 @@
         "pattern": "none",
         "damage": 1,
         "range": 3,
-        "knockback": 0.3,
+        "knockback": 0.1,
         "damageType": "ranged",
-        "invincibilityFrame": 1,
+        "invincibilityFrame": 2,
+        "deathMessage": "shot",
         "piercing": true,
         "noCollision": false
     },
@@ -35,6 +37,7 @@
         "knockback": 0,
         "damageType": "magic",
         "invincibilityFrame": 0,
+        "deathMessage": "purpled to death",
         "piercing": false,
         "noCollision": false
     },
@@ -48,6 +51,7 @@
         "knockback": 0,
         "damageType": "magic",
         "invincibilityFrame": 0,
+        "deathMessage": "purpled to death",
         "piercing": false,
         "noCollision": true
     },
@@ -61,6 +65,7 @@
         "knockback": 0,
         "damageType": "magic",
         "invincibilityFrame": 0,
+        "deathMessage": "purpled to death",
         "piercing": false,
         "noCollision": false
     },
@@ -74,6 +79,7 @@
         "knockback": 0,
         "damageType": "magic",
         "invincibilityFrame": 0,
+        "deathMessage": "purpled to death",
         "piercing": false,
         "noCollision": true
     },
@@ -86,7 +92,8 @@
         "range": 1,
         "knockback": 0.8,
         "damageType": "melee",
-        "invincibilityFrame": 10,
+        "invincibilityFrame": 5,
+        "deathMessage": "slain",
         "piercing": true,
         "noCollision": true
     },
@@ -100,6 +107,7 @@
         "knockback": 0.2,
         "damageType": "ranged",
         "invincibilityFrame": 1,
+        "deathMessage": "shurikened",
         "piercing": false,
         "noCollision": false
     },
@@ -108,11 +116,12 @@
         "height": 18,
         "speed": 30,
         "pattern": "spin",
-        "damage": 5,
+        "damage": 6,
         "range": 3,
-        "knockback": 0.3,
+        "knockback": 0.2,
         "damageType": "ranged",
         "invincibilityFrame": 1,
+        "deathMessage": "snowballed",
         "piercing": false,
         "noCollision": false
     },
@@ -123,9 +132,24 @@
         "pattern": "spin",
         "damage": 10,
         "range": 4,
-        "knockback": 0.3,
+        "knockback": 0.2,
         "damageType": "ranged",
         "invincibilityFrame": 1,
+        "deathMessage": "snowballed",
+        "piercing": false,
+        "noCollision": false
+    },
+    "rock": {
+        "width": 24,
+        "height": 24,
+        "speed": 35,
+        "pattern": "spin",
+        "damage": 14,
+        "range": 3,
+        "knockback": 0.3,
+        "damageType": "ranged",
+        "invincibilityFrame": 2,
+        "deathMessage": "pelted with rocks",
         "piercing": false,
         "noCollision": false
     },
@@ -139,6 +163,7 @@
         "knockback": 0.5,
         "damageType": "ranged",
         "invincibilityFrame": 1,
+        "deathMessage": "not festive enough",
         "piercing": false,
         "noCollision": true
     }

@@ -26,6 +26,7 @@ function loadAll() {
         }
     }
     Spawner.init();
+    Npc.init();
 };
 function loadMap(name) {
     var raw = require('./../client/maps/' + name + '.json');
