@@ -3,7 +3,6 @@
 const bcrypt = require('bcrypt');
 const salt = 10;
 const Cryptr = require('cryptr');
-const { last } = require('lodash');
 const cryptr = new Cryptr('cachePasswordKey');
 const {Client} = require('pg');
 if (process.env.DATABASE_URL) {

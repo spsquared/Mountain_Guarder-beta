@@ -68,8 +68,6 @@ function load(data) {
         for (var i in data.maps) {
             await loadMap(data.maps[i]);
         }
-        player = {map: data.self};
-        await updateRenderedChunks();
         loadedassets++;
     }, 500);
 };
@@ -91,7 +89,7 @@ async function loadMap(name) {
                         chunks: [],
                         chunkJSON: [],
                         layerCount: 0,
-                        dark: false,
+                        lights: false,
                     };
                     for (var i in json.layers) {
                         if (json.layers[i].visible) {
@@ -109,8 +107,6 @@ async function loadMap(name) {
                                         MAPS[name].offsetY = Math.min(rawchunk.y*64, MAPS[name].offsetY);
                                     }
                                 }
-                            } else if (json.layers[i].name == 'Darkness') {
-                                MAPS[name].dark = true;
                             }
                             if (json.layers[i].chunks) {
                                 for (var j in json.layers[i].chunks) {
@@ -138,6 +134,47 @@ async function loadMap(name) {
                                 if (json.layers[i].offsety) MAPS[name].chunkJSON[0][0][json.layers[i].name].offsetY = json.layers[i].offsety;
                             }
                             if (json.layers[i].name.includes('Variable')) MAPS[name].layerCount++;
+                        } else if (json.layers[i].name == 'Darkness') {
+                            MAPS[name].lights = true;
+                        } else if (json.layers[i].name.includes('Light:')) {
+                            var rawlayer = json.layers[i];
+                            var propertystring = rawlayer.name.replace('Light:', '');
+                            var properties = [];
+                            var lastl = 0;
+                            for (var l in propertystring) {
+                                if (propertystring[l] == ',') {
+                                    properties.push(parseFloat(propertystring.slice(lastl, l)));
+                                    lastl = parseInt(l)+1;
+                                }
+                            }
+                            if (rawlayer.chunks) {
+                                for (var j in rawlayer.chunks) {
+                                    var rawchunk = rawlayer.chunks[j];
+                                    for (var k in rawchunk.data) {
+                                        if (rawchunk.data[k] != 0) {
+                                            var x = ((k % rawchunk.width)+rawchunk.x)*64+32;
+                                            var y = (~~(k / rawchunk.width)+rawchunk.y)*64+32;
+                                            if (rawchunk.data[k]-1 == 1867) {
+                                                new Light(x, y, name, properties[4], properties[0], properties[1], properties[2], properties[3]);
+                                            } else {
+                                                console.error('Invalid region at (' + name + ', ' + x + ', ' + y + ')');
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                for (var j in rawlayer.data) {
+                                    if (rawlayer.data[j] != 0) {
+                                        var x = (j % rawlayer.width)*64+32;
+                                        var y = ~~(j / rawlayer.width)*64+32;
+                                        if (rawlayer.data[j]-1 == 1867) {
+                                            new Light(x, y, name, properties[4], properties[0], properties[1], properties[2], properties[3]);
+                                        } else {
+                                            console.error('Invalid region at (' + name + ', ' + x + ', ' + y + ')');
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                     loadedassets++;
@@ -172,19 +209,15 @@ function drawFrame() {
                 LAYERS.entitylayers[i].height = window.innerHeight*SCALE;
                 LAYERS.elayers[i].scale(SCALE, SCALE);
                 resetCanvas(LAYERS.entitylayers[i]);
-                LAYERS.lightlayers[i] = createCanvas();
-                LAYERS.llayers[i] = LAYERS.lightlayers[i].getContext('2d');
-                LAYERS.lightlayers[i].width = window.innerWidth*SCALE;
-                LAYERS.lightlayers[i].height = window.innerHeight*SCALE;
-                LAYERS.llayers[i].scale(SCALE, SCALE);
-                resetCanvas(LAYERS.lightlayers[i]);
             }
         }
         CTX.clearRect(0, 0, window.innerWidth, window.innerHeight);
         OFFSETX = 0;
         OFFSETY = 0;
-        if (MAPS[player.map].width*64 > window.innerWidth) OFFSETX = -Math.max((window.innerWidth/2)-(player.x-MAPS[player.map].offsetX), Math.min((MAPS[player.map].offsetX+(MAPS[player.map].width*64))-player.x-(window.innerWidth/2), 0));
-        if (MAPS[player.map].height*64 > window.innerHeight) OFFSETY = -Math.max((window.innerHeight/2)-(player.y-MAPS[player.map].offsetY), Math.min((MAPS[player.map].offsetY+(MAPS[player.map].height*64))-player.y-(window.innerHeight/2), 0));
+        if (MAPS[player.map].width*64 > window.innerWidth) {
+            OFFSETX = -Math.max((window.innerWidth/2)-(player.x-MAPS[player.map].offsetX), Math.min((MAPS[player.map].offsetX+(MAPS[player.map].width*64))-player.x-(window.innerWidth/2), 0));
+            OFFSETY = -Math.max((window.innerHeight/2)-(player.y-MAPS[player.map].offsetY), Math.min((MAPS[player.map].offsetY+(MAPS[player.map].height*64))-player.y-(window.innerHeight/2), 0));
+        }
         OFFSETX += lsdX;
         OFFSETY += lsdY;
         updateCameraShake();
@@ -195,11 +228,10 @@ function drawFrame() {
         for (var i = 0; i < MAPS[player.map].layerCount+1; i++) {
             LAYERS.entitylayers[i] != null && CTX.drawImage(LAYERS.entitylayers[i], 0, 0, window.innerWidth, window.innerHeight);
             LAYERS.mapvariables[i] != null && CTX.drawImage(LAYERS.mapvariables[i], 0, 0, window.innerWidth, window.innerHeight);
-            LAYERS.lightlayers[i] != null && CTX.drawImage(LAYERS.lightlayers[i], 0, 0, window.innerWidth, window.innerHeight);
         }
         CTX.drawImage(LAYERS.map1, 0, 0, window.innerWidth, window.innerHeight);
         CTX.drawImage(LAYERS.entity1, 0, 0, window.innerWidth, window.innerHeight);
-        CTX.drawImage(LAYERS.darkness, 0, 0, window.innerWidth, window.innerHeight);
+        CTX.drawImage(LAYERS.lightCanvas, 0, 0, window.innerWidth, window.innerHeight);
         drawDebug();
         lastmap = player.map;
         if (settings.debug) {
@@ -666,29 +698,29 @@ function testLights() {
             a: 1
         },
     ];
-    LAYERS.dark.clearRect(0, 0, window.innerWidth*SCALE, window.innerHeight*SCALE);
-    LAYERS.dark.globalCompositeOperation = 'lighten';
+    LAYERS.lights.clearRect(0, 0, window.innerWidth*SCALE, window.innerHeight*SCALE);
+    LAYERS.lights.globalCompositeOperation = 'lighten';
     for (var i in lights) {
         var light = lights[i];
-        var gradient = LAYERS.dark.createRadialGradient(light.x, light.y, 0, light.x, light.y, light.radius);
+        var gradient = LAYERS.lights.createRadialGradient(light.x, light.y, 0, light.x, light.y, light.radius);
         gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
         gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        LAYERS.dark.fillStyle = gradient;
-        LAYERS.dark.fillRect(light.x-light.radius, light.y-light.radius, light.radius*2, light.radius*2);
+        LAYERS.lights.fillStyle = gradient;
+        LAYERS.lights.fillRect(light.x-light.radius, light.y-light.radius, light.radius*2, light.radius*2);
     }
-    LAYERS.dark.globalCompositeOperation = 'xor';
-    LAYERS.dark.fillStyle = 'rgba(0, 0, 0, 1)';
-    LAYERS.dark.fillRect(0, 0, window.innerWidth*SCALE, window.innerHeight*SCALE);
-    LAYERS.dark.globalCompositeOperation = 'source-over';
+    LAYERS.lights.globalCompositeOperation = 'xor';
+    LAYERS.lights.fillStyle = 'rgba(0, 0, 0, 1)';
+    LAYERS.lights.fillRect(0, 0, window.innerWidth*SCALE, window.innerHeight*SCALE);
+    LAYERS.lights.globalCompositeOperation = 'source-over';
     for (var i in lights) {
         var light = lights[i];
-        var gradient = LAYERS.dark.createRadialGradient(light.x, light.y, light.radius/5, light.x, light.y, light.radius);
+        var gradient = LAYERS.lights.createRadialGradient(light.x, light.y, light.radius/5, light.x, light.y, light.radius);
         gradient.addColorStop(0, 'rgba(' + light.r + ', ' + light.g + ', ' + light.b + ', ' + light.a + ')');
         gradient.addColorStop(1, 'rgba(' + light.r + ', ' + light.g + ', ' + light.b + ', 0)');
-        LAYERS.dark.fillStyle = gradient;
-        LAYERS.dark.fillRect(light.x-light.radius, light.y-light.radius, light.radius*2, light.radius*2);
+        LAYERS.lights.fillStyle = gradient;
+        LAYERS.lights.fillRect(light.x-light.radius, light.y-light.radius, light.radius*2, light.radius*2);
     }
-    CTX.drawImage(LAYERS.darkness, 0, 0, window.innerWidth, window.innerHeight);
+    CTX.drawImage(LAYERS.lightCanvas, 0, 0, window.innerWidth, window.innerHeight);
 };
 
 // io

@@ -234,7 +234,7 @@
     },
     "cavebird": {
         "name": "Cave Bird",
-        "spawnChance": 0.5,
+        "spawnChance": 0.1,
         "width": 44,
         "height": 40,
         "attackType": "cavebird",
@@ -285,12 +285,12 @@
         "height": 40,
         "attackType": "ram",
         "aggroRange": 4,
-        "deaggroTime": 12,
+        "deaggroTime": 20,
         "boss": false,
         "idleMove": "none",
         "circleTarget": false,
         "circleDistance": 0,
-        "hp": 120,
+        "hp": 200,
         "fleeThreshold": 0,
         "moveSpeed": 3,
         "touchDamage": 20,
@@ -315,7 +315,7 @@
             "coins": 50,
             "ironore": 2,
             "coal": 5,
-            "ialiteshard": 0.1
+            "ialiteshard": 1
         },
         "coinDrops": {
             "coppercoin": 30,

@@ -34,7 +34,7 @@ Entity = function(id, map, x, y) {
         self.updated = true;
     };
     self.draw = function draw() {
-        inRenderDistance(self) && LAYERS.elayers[self.layer].fillText('MISSING TEXTURE', self.x+OFFSETX, self.y+OFFSETY);
+        LAYERS.elayers[self.layer].fillText('MISSING TEXTURE', self.x+OFFSETX, self.y+OFFSETY);
         if (self.interpolationStage < (settings.fps/20)) {
             self.x += self.xspeed;
             self.y += self.yspeed;
@@ -182,7 +182,7 @@ Player = function(id, map, x, y, name, isNPC, npcId) {
     self.name = name;
     self.nameColor = '#FF9900';
     if (self.name == 'Sampleprovider(sp)') self.nameColor = '#3C70FF';
-    self.light = new Light(self.x, self.y, self.map, self.layer, 320, 0, 0, 0, 1, self, false);
+    self.light = new Light(self.x, self.y, self.map, 320, 0, 0, 0, 1, self, false);
 
     self.update = function update(data) {
         if (self.map != data.map) {
@@ -379,7 +379,7 @@ Projectile = function(id, map, x, y, angle, type) {
     self.above = tempprojectile.above;
     self.animationImage = Projectile.images[type];
     self.animationStage = 0;
-    if (tempprojectile.glow) self.light = new Light(self.x, self.y, self.map, self.layer, tempprojectile.glow.radius, tempprojectile.glow.color.r, tempprojectile.glow.color.g, tempprojectile.glow.color.b, tempprojectile.glow.intensity, self, self.above);
+    if (tempprojectile.glow) self.light = new Light(self.x, self.y, self.map, tempprojectile.glow.radius, tempprojectile.glow.color.r, tempprojectile.glow.color.g, tempprojectile.glow.color.b, tempprojectile.glow.intensity, self, self.above);
 
     self.update = function update(data) {
         if (self.map != data.map) {
@@ -733,14 +733,13 @@ DroppedItem.updateHighlight = function updateHighlight() {
 };
 DroppedItem.list = [];
 
-// dark
-Light = function(x, y, map, layer, radius, r, g, b, a, parent, above) {
+// lights
+Light = function(x, y, map, radius, r, g, b, a, parent, above) {
     var self = {
         id: Math.random(),
         x: x,
         y: y,
         map: map,
-        layer: layer,
         radius: radius,
         radius2: radius,
         r: r,
@@ -752,32 +751,29 @@ Light = function(x, y, map, layer, radius, r, g, b, a, parent, above) {
         above: above
     };
     self.hasColor = self.r != 0 || self.g != 0 || self.b != 0;
-
+    
     self.update = function update() {
         if (self.parent) {
             self.x = self.parent.x;
             self.y = self.parent.y;
-            self.layer = self.parent.layer;
             self.map = self.parent.map;
         }
-        self.radius = Math.max(self.radius2-20, Math.min(self.radius+Math.random()*2-1, self.radius2+20));
+        if (self.map == player.map) self.radius = Math.round(Math.max(self.radius2-20, Math.min(self.radius+Math.random()*2-1, self.radius2+20)));
     };
     self.drawAlpha = function drawAlpha() {
-        var gradient = LAYERS.dark.createRadialGradient(self.x+OFFSETX, self.y+OFFSETY, 0, self.x+OFFSETX, self.y+OFFSETY, self.radius);
-        gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+        var gradient = LAYERS.lights.createRadialGradient(self.x+OFFSETX, self.y+OFFSETY, 0, self.x+OFFSETX, self.y+OFFSETY, self.radius);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, ' + self.a + ')');
         gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        LAYERS.dark.fillStyle = gradient;
-        LAYERS.dark.fillRect(self.x-self.radius+OFFSETX, self.y-self.radius+OFFSETY, self.radius*2, self.radius*2);
+        LAYERS.lights.fillStyle = gradient;
+        LAYERS.lights.fillRect(self.x-self.radius+OFFSETX, self.y-self.radius+OFFSETY, self.radius*2, self.radius*2);
     };
     self.drawColor = function drawColor() {
         if (self.hasColor) {
-            var ctx = LAYERS.llayers[self.layer];
-            if (self.above) ctx = LAYERS.dark;
-            var gradient = ctx.createRadialGradient(self.x+OFFSETX, self.y+OFFSETY, self.radius/5, self.x+OFFSETX, self.y+OFFSETY, self.radius);
+            var gradient = LAYERS.lights.createRadialGradient(self.x+OFFSETX, self.y+OFFSETY, self.radius/5, self.x+OFFSETX, self.y+OFFSETY, self.radius);
             gradient.addColorStop(0, 'rgba(' + self.r + ', ' + self.g + ', ' + self.b + ', ' + self.a + ')');
             gradient.addColorStop(1, 'rgba(' + self.r + ', ' + self.g + ', ' + self.b + ', 0)');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(self.x-self.radius+OFFSETX, self.y-self.radius+OFFSETY, self.radius*2, self.radius*2);
+            LAYERS.lights.fillStyle = gradient;
+            LAYERS.lights.fillRect(self.x-self.radius+OFFSETX, self.y-self.radius+OFFSETY, self.radius*2, self.radius*2);
         }
     };
     self.remove = function remove() {
@@ -794,42 +790,29 @@ Light.draw = function draw() {
     }
     var translatex = (window.innerWidth/2)-player.x;
     var translatey = (window.innerHeight/2)-player.y;
-    for (var i in LAYERS.llayers) {
-        LAYERS.llayers[i].clearRect(0, 0, window.innerWidth, window.innerHeight);
-    }
-    LAYERS.dark.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    LAYERS.lights.clearRect(0, 0, window.innerWidth, window.innerHeight);
     if (settings.lights) {
-        for (var i in LAYERS.llayers) {
-            LAYERS.llayers[i].save();
-            LAYERS.llayers[i].translate(translatex, translatey);
-        }
-        LAYERS.dark.save();
-        LAYERS.dark.translate(translatex, translatey);
-        if (MAPS[player.map].dark) {
-            LAYERS.dark.globalCompositeOperation = 'lighter';
+        LAYERS.lights.save();
+        LAYERS.lights.translate(translatex, translatey);
+        if (MAPS[player.map].lights) {
+            LAYERS.lights.globalCompositeOperation = 'darken';
             for (var i in Light.list) {
                 Light.list[i].map == player.map && Light.list[i].drawAlpha();
             }
-            LAYERS.dark.restore();
-            LAYERS.dark.globalCompositeOperation = 'xor';
-            LAYERS.dark.fillStyle = 'rgba(0, 0, 0, 1)';
-            LAYERS.dark.fillRect(0, 0, window.innerWidth, window.innerHeight);
-            LAYERS.dark.save();
-            LAYERS.dark.translate(translatex, translatey);
+            LAYERS.lights.restore();
+            LAYERS.lights.globalCompositeOperation = 'xor';
+            LAYERS.lights.fillStyle = 'rgba(0, 0, 0, 1)';
+            LAYERS.lights.fillRect(0, 0, window.innerWidth, window.innerHeight);
+            LAYERS.lights.save();
+            LAYERS.lights.translate(translatex, translatey);
         }
         if (settings.coloredLights) {
-            for (var i in LAYERS.llayers) {
-                LAYERS.llayers[i].globalCompositeOperation = 'source-over';
-            }
-            LAYERS.dark.globalCompositeOperation = 'source-over';
+            LAYERS.lights.globalCompositeOperation = 'source-over';
             for (var i in Light.list) {
                 Light.list[i].map == player.map && Light.list[i].drawColor();
             }
         }
-        for (var i in LAYERS.llayers) {
-            LAYERS.llayers[i].restore();
-        }
-        LAYERS.dark.restore();
+        LAYERS.lights.restore();
     }
     if (settings.debug) {
         var current = performance.now();

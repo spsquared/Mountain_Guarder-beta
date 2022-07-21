@@ -23,23 +23,21 @@ LAYERS = {
     entity0: null,
     mapvariables: [],
     entitylayers: [],
-    lightlayers: [],
     map1: createCanvas(),
     entity1: createCanvas(),
-    darkness: createCanvas(),
+    lightCanvas: createCanvas(),
     mlower: null,
     elower: null,
     mvariables: [],
     elayers: [],
-    llayers: [],
     mupper: null,
     eupper: null,
-    dark: null,
+    lights: null,
 };
 LAYERS.mlower = LAYERS.map0.getContext('2d');
 LAYERS.mupper = LAYERS.map1.getContext('2d');
 LAYERS.eupper = LAYERS.entity1.getContext('2d');
-LAYERS.dark = LAYERS.darkness.getContext('2d');
+LAYERS.lights = LAYERS.lightCanvas.getContext('2d');
 OFFSETX = 0;
 OFFSETY = 0;
 // global
@@ -131,12 +129,6 @@ function resetCanvases() {
         LAYERS.elayers[i].scale(SCALE, SCALE);
         resetCanvas(LAYERS.entitylayers[i]);
     }
-    for (var i in LAYERS.lightlayers) {
-        LAYERS.lightlayers[i].width = window.innerWidth*SCALE;
-        LAYERS.lightlayers[i].height = window.innerHeight*SCALE;
-        LAYERS.llayers[i].scale(SCALE, SCALE);
-        resetCanvas(LAYERS.lightlayers[i]);
-    }
     LAYERS.map1.width = window.innerWidth*SCALE;
     LAYERS.map1.height = window.innerHeight*SCALE;
     LAYERS.mupper.scale(SCALE, SCALE);
@@ -145,10 +137,10 @@ function resetCanvases() {
     LAYERS.entity1.height = window.innerHeight*SCALE;
     LAYERS.eupper.scale(SCALE, SCALE);
     resetCanvas(LAYERS.entity1);
-    LAYERS.darkness.width = window.innerWidth*SCALE;
-    LAYERS.darkness.height = window.innerHeight*SCALE;
-    LAYERS.dark.scale(SCALE, SCALE);
-    resetCanvas(LAYERS.darkness);
+    LAYERS.lightCanvas.width = window.innerWidth*SCALE;
+    LAYERS.lightCanvas.height = window.innerHeight*SCALE;
+    LAYERS.lights.scale(SCALE, SCALE);
+    resetCanvas(LAYERS.lightCanvas);
     CTXRAW.width = window.innerWidth*SCALE;
     CTXRAW.height = window.innerHeight*SCALE;
     CTX.scale(SCALE, SCALE);

@@ -642,5 +642,36 @@
             "sorcery",
             "focus"
         ]
+    },
+    "anniversary": {
+        "slotType": "weapon",
+        "rarity": -2,
+        "projectile": "homingmagicballnoclip",
+        "projectilePattern": "ring",
+        "projectileSpeed": 1,
+        "projectileRange": 1,
+        "damage": 1,
+        "damageType": "magic",
+        "critChance": 0.01,
+        "critPower": 0.5,
+        "knockback": 1,
+        "useTime": 30,
+        "manaCost": 40,
+        "maxStackSize": 1,
+        "effects": [
+            {
+                "id": "damageReduction",
+                "value": -10
+            }
+        ],
+        "enchantments": [
+            "swiftness",
+            "speed",
+            "accuracy",
+            "power",
+            "efficiency",
+            "sorcery",
+            "focus"
+        ]
     }
 }

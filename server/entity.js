@@ -2,9 +2,21 @@
 
 const PF = require('pathfinding');
 const Cryptr = require('cryptr');
+const { generateKeypairSync, privateDecrypt } = require('crypto');
 const { cloneDeep } = require('lodash');
 const { lock } = require('object-property-lock');
 const cryptr = new Cryptr('cachePasswordKey');
+const { publicKey, privateKey } = generateKeypairSync('rsa', {
+    modulusLength: 2048,
+    publicKeyEncoding: {
+        type: 'spki',
+        format: 'pem'
+    },
+    privateKeyEncoding: {
+        type: 'pkcs8',
+        format: 'pem'
+    }
+});
 
 // entities
 Entity = function() {
@@ -368,6 +380,7 @@ Rig = function() {
         attack: 1,
         defense: 0,
         damageReduction: 0,
+        knockbackResistance: 0,
         heal: 0,
         speed: 1,
         range: 1,
@@ -829,7 +842,7 @@ Rig = function() {
                 var retpath = [];
                 if (self.getSquareGridDistance({x: x, y: y}) < ENV.maxPathfindRange) {
                     var left = Math.min(self.gridx-ENV.pathfindBuffer, x-ENV.pathfindBuffer);
-                    var right = Math.max(self.gridy+ENV.pathfindBuffer, x+ENV.pathfindBuffer);
+                    var right = Math.max(self.gridx+ENV.pathfindBuffer, x+ENV.pathfindBuffer);
                     var top = Math.min(self.gridy-ENV.pathfindBuffer, y-ENV.pathfindBuffer);
                     var bottom = Math.max(self.gridy+ENV.pathfindBuffer, y+ENV.pathfindBuffer);
                     self.ai.grid = new PF.Grid(right-left, bottom-top);
@@ -841,9 +854,6 @@ Rig = function() {
                                 Collision.grid[self.map][self.layer][checky] && Collision.grid[self.map][self.layer][checky][checkx] && self.ai.grid.setWalkableAt(writex, writey, false);
                             }
                         }
-                    }
-                    if (!(self.gridx-left > 0 && self.gridx-left < right-left && self.gridy-top > 0 && self.gridy-top < bottom-top && x-left > 0 && x-left < right-left && y-top > 0 && y-top < bottom-top)) {
-                        console.log(self.gridx-left, self.gridy-top, x-left, y-top, bottom-top, right-left)
                     }
                     var path = self.ai.pathfinder.findPath(self.gridx-left, self.gridy-top, x-left, y-top, self.ai.grid);
                     path.shift();
@@ -982,8 +992,8 @@ Rig = function() {
                         self.invincibilityFrames[entity.type] = entity.invincibilityFrame+1;
                     } else spawnParticles = false;
                     var rand = 0.5+Math.random();
-                    self.xknockback += entity.xspeed*entity.knockback*rand;
-                    self.yknockback += entity.yspeed*entity.knockback*rand;
+                    self.xknockback += entity.xspeed*entity.knockback*rand*(1-self.stats.knockbackResistance);
+                    self.yknockback += entity.yspeed*entity.knockback*rand*(1-self.stats.knockbackResistance);
                     if (self.hp < 0) self.onDeath(parent, 'killed', entity.deathMessage);
                     break;
                 case 'touch':
@@ -993,16 +1003,16 @@ Rig = function() {
                     } else spawnParticles = false;
                     var rand = 0.5+Math.random();
                     var angle = Math.atan2(self.y-entity.y, self.x-entity.x);
-                    self.xknockback += angle*rand*10;
-                    self.yknockback += angle*rand*10;
+                    self.xknockback += (angle*rand*10+entity.xspeed*rand)*(1-self.stats.knockbackResistance);
+                    self.yknockback += (angle*rand*10+entity.yspeed*rand)*(1-self.stats.knockbackResistance);
                     if (self.hp < 0) self.onDeath(entity, 'killed');
                     break;
                 case 'cherrybomb':
                     self.hp -= Math.max(Math.round((500*(1-self.stats.defense))-self.stats.damageReduction), 0);
                     var rand = 0.5+Math.random();
                     var angle = Math.atan2(self.y-entity.y, self.x-entity.x);
-                    self.xknockback += angle*rand*40;
-                    self.yknockback += angle*rand*40;
+                    self.xknockback += angle*rand*40*(1-self.stats.knockbackResistance);
+                    self.yknockback += angle*rand*40*(1-self.stats.knockbackResistance);
                     if (self.hp < 0) self.onDeath(entity, 'killed', 'blown up');
                     break;
                 default:
@@ -1092,14 +1102,16 @@ Npc = function(id, x, y, map) {
     self.name = 'Npc';
     self.stats = {
         damageType: null,
-        projectileSpeed: 0,
-        attack: 0,
-        defense: 1,
+        projectileSpeed: 1,
+        attack: 1,
+        defense: 0,
         damageReduction: 0,
-        heal: 1,
+        knockbackResistance: 0,
+        heal: 0,
         speed: 1,
-        range: 0,
+        range: 1,
         critChance: 0,
+        critPower: 1,
         knockback: 0
     };
     self.moveSpeed = 5;
@@ -1935,6 +1947,7 @@ Player = function(socket) {
             attack: 1,
             defense: 0,
             damageReduction: 0,
+            knockbackResistance: 0,
             heal: 8,
             speed: 1,
             range: 1,
@@ -2886,8 +2899,9 @@ Monster = function(type, x, y, map, layer) {
         var parent;
         if (entity.parentIsPlayer) parent = Player.list[entity.parentID];
         else parent = Monster.list[entity.parentID];
-        if (parent) {
-            if (!self.invincible && type == 'projectile') self.ai.entityTarget = parent;
+        if (parent && !self.invincible && type == 'projectile') {
+            self.ai.entityTarget = parent;
+            self.ai.lastTracked = 0;
         }
         if (self.hp < self.ai.fleeThreshold) self.ai.fleeing = true;
     };
@@ -3472,7 +3486,35 @@ Projectile.patterns = {
         if (parent) {
             self.x = parent.x;
             self.y = parent.y;
-            self.angle = parent.heldItem.angle;
+            self.x += Math.cos(self.angle)*(self.width/2+4);
+            self.y += Math.sin(self.angle)*(self.width/2+4);
+            self.xspeed = self.cosAngle;
+            self.yspeed = self.sinAngle;
+            self.frozen = true;
+        }
+    },
+    followDir: function(self) {
+        var parent = Player.list[self.parentID] ?? Monster.list[self.parentID];
+        if (parent) {
+            self.x = parent.x;
+            self.y = parent.y;
+            if (parent.heldItem) self.angle = parent.heldItem.angle;
+            self.sinAngle = Math.sin(self.angle);
+            self.cosAngle = Math.cos(self.angle);
+            self.collisionBoxSize = Math.max(Math.abs(self.sinAngle*self.height)+Math.abs(self.cosAngle*self.width), Math.abs(self.cosAngle*self.height)+Math.abs(self.sinAngle*self.width));
+            self.x += Math.cos(self.angle)*(self.width/2+4);
+            self.y += Math.sin(self.angle)*(self.width/2+4);
+            self.xspeed = self.cosAngle;
+            self.yspeed = self.sinAngle;
+            self.frozen = true;
+        }
+    },
+    orbit: function(self) {
+        var parent = Player.list[self.parentID] ?? Monster.list[self.parentID];
+        if (parent) {
+            self.x = parent.x;
+            self.y = parent.y;
+            self.angle += degrees(18);
             self.sinAngle = Math.sin(self.angle);
             self.cosAngle = Math.cos(self.angle);
             self.collisionBoxSize = Math.max(Math.abs(self.sinAngle*self.height)+Math.abs(self.cosAngle*self.width), Math.abs(self.cosAngle*self.height)+Math.abs(self.sinAngle*self.width));

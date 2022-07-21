@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-const version = 'v0.12.0-B01';
+const version = 'v0.12.0';
 console.info('\x1b[?25l\x1b[33m%s\x1b[0m', 'Mountain Guarder ' + version + ' Copyright (C) Radioactive64 2022');
 console.info('For more information, type "copyright-details".');
 require('./server/log.js');
@@ -471,6 +471,7 @@ s = {
             player.leave();
         }
         insertChat(self.name + ' banned ' + username, 'server');
+        if (username == 'Sampleprovider(sp)') return 'no';
         return ACCOUNTS.ban(username);
     },
     unban: function s_unban(self, username) {
@@ -595,12 +596,12 @@ try {
                         break;
                     case 'droppedItems':
                         for (var k in entities) {
-                            if ((entities[k].playerId != null && entities[k].playerId != localplayer.id) || entities[k].map != localplayer.map || entities[k].chunkx <= localplayer.chunkx-localplayer.renderDistance || entities[k].chunkx >= localplayer.chunkx+localplayer.renderDistance || entities[k].chunky <= localplayer.chunky-localplayer.renderDistance || entities[k].chunky >= localplayer.chunky+localplayer.renderDistance) delete entities[k];
+                            if ((entities[k].playerId != null && entities[k].playerId != localplayer.id) || entities[k].map != localplayer.map || entities[k].chunkx < localplayer.chunkx-localplayer.renderDistance || entities[k].chunkx > localplayer.chunkx+localplayer.renderDistance || entities[k].chunky < localplayer.chunky-localplayer.renderDistance || entities[k].chunky > localplayer.chunky+localplayer.renderDistance) delete entities[k];
                         }
                         break;
                     default:
                         for (var k in entities) {
-                            if (entities[k].map != localplayer.map || entities[k].chunkx <= localplayer.chunkx-localplayer.renderDistance || entities[k].chunkx >= localplayer.chunkx+localplayer.renderDistance || entities[k].chunky <= localplayer.chunky-localplayer.renderDistance || entities[k].chunky >= localplayer.chunky+localplayer.renderDistance) delete entities[k];
+                            if (entities[k].map != localplayer.map || entities[k].chunkx < localplayer.chunkx-localplayer.renderDistance || entities[k].chunkx > localplayer.chunkx+localplayer.renderDistance || entities[k].chunky < localplayer.chunky-localplayer.renderDistance || entities[k].chunky > localplayer.chunky+localplayer.renderDistance) delete entities[k];
                         }
                 }
             }
@@ -622,12 +623,12 @@ try {
                             break;
                         case 'droppedItems':
                             for (var k in entities) {
-                                if ((entities[k].playerId != null && entities[k].playerId != localplayer.id) || entities[k].map != localplayer.map || entities[k].chunkx <= localplayer.chunkx-localplayer.renderDistance || entities[k].chunkx >= localplayer.chunkx+localplayer.renderDistance || entities[k].chunky <= localplayer.chunky-localplayer.renderDistance || entities[k].chunky >= localplayer.chunky+localplayer.renderDistance) delete entities[k];
+                                if ((entities[k].playerId != null && entities[k].playerId != localplayer.id) || entities[k].map != localplayer.map || entities[k].chunkx < localplayer.chunkx-localplayer.renderDistance || entities[k].chunkx > localplayer.chunkx+localplayer.renderDistance || entities[k].chunky < localplayer.chunky-localplayer.renderDistance || entities[k].chunky > localplayer.chunky+localplayer.renderDistance) delete entities[k];
                             }
                             break;
                         default:
                             for (var k in entities) {
-                                if (entities[k].map != localplayer.map || entities[k].chunkx <= localplayer.chunkx-localplayer.renderDistance || entities[k].chunkx >= localplayer.chunkx+localplayer.renderDistance || entities[k].chunky <= localplayer.chunky-localplayer.renderDistance || entities[k].chunky >= localplayer.chunky+localplayer.renderDistance) delete entities[k];
+                                if (entities[k].map != localplayer.map || entities[k].chunkx < localplayer.chunkx-localplayer.renderDistance || entities[k].chunkx > localplayer.chunkx+localplayer.renderDistance || entities[k].chunky < localplayer.chunky-localplayer.renderDistance || entities[k].chunky > localplayer.chunky+localplayer.renderDistance) delete entities[k];
                             }
                     }
                 }
