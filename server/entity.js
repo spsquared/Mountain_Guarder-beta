@@ -2,21 +2,21 @@
 
 const PF = require('pathfinding');
 const Cryptr = require('cryptr');
-const { generateKeypairSync, privateDecrypt } = require('crypto');
+// const { generateKeypairSync, privateDecrypt } = require('crypto');
 const { cloneDeep } = require('lodash');
 const { lock } = require('object-property-lock');
 const cryptr = new Cryptr('cachePasswordKey');
-const { publicKey, privateKey } = generateKeypairSync('rsa', {
-    modulusLength: 2048,
-    publicKeyEncoding: {
-        type: 'spki',
-        format: 'pem'
-    },
-    privateKeyEncoding: {
-        type: 'pkcs8',
-        format: 'pem'
-    }
-});
+// const { publicKey, privateKey } = generateKeypairSync('rsa', {
+//     modulusLength: 2048,
+//     publicKeyEncoding: {
+//         type: 'spki',
+//         format: 'pem'
+//     },
+//     privateKeyEncoding: {
+//         type: 'pkcs8',
+//         format: 'pem'
+//     }
+// });
 
 // entities
 Entity = function() {
